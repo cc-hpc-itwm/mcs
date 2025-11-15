@@ -1,0 +1,29 @@
+# Copyright (C) 2025 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+# usage:
+#   wait max_tests predicate
+#
+# waits at most max_tests times between 0.1 and 0.9 seconds until
+# `eval "test ${predicate}" is true`.
+# If the predicate is not true after the predicate was tested max_tests times
+# the function exits with 1.
+#
+# Example:
+#  wait 50 -s /some/file
+#
+function wait()
+{
+  max=${1}; shift
+  i=0
+  while ! eval "test ${@}"
+  do
+    sleep 0.$((1 + RANDOM % 9))
+    i=$((i+1))
+    if [ $i -gt $max ]
+    then
+      echo "wait failed: ${@}"
+      exit 1
+    fi
+  done
+}

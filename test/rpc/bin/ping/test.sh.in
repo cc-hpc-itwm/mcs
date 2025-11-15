@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Copyright (C) 2023-2024 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+
+set -euo pipefail
+
+TESTING_BASH_DIRECTORY="@TESTING_BASH_DIRECTORY@"
+
+TEST_RPC_BIN_PING_SERVER="@TEST_RPC_BIN_PING_SERVER@"
+TEST_RPC_BIN_PING_CLIENT="@TEST_RPC_BIN_PING_CLIENT@"
+
+TEST_RPC_BIN_PING_SERVICE_NUMBER_OF_SERVER_THREADS=4
+TEST_RPC_BIN_PING_SERVICE_MESSAGE_SIZE=$((2**18))
+TEST_RPC_BIN_PING_SERVICE_REPETITIONS=100
+TEST_RPC_BIN_PING_SERVICE_NUMBER_OF_CLIENTS=16
+TEST_RPC_BIN_PING_SERVICE_NUMBER_OF_CLIENT_THREADS=4
+
+source "${TESTING_BASH_DIRECTORY}/cleanup"
+source "${TESTING_BASH_DIRECTORY}/TMP_DIRECTORY"
+
+protocol=0
+
+for TEST_RPC_BIN_PING_SERVICE_PROTOCOL in               \
+    "ip::tcp()"                                         \
+    "local::stream_protocol(\"${TMP_DIRECTORY}/SOCK\")"
+do
+  TEST_RPC_BIN_PING_SERVICE_PATH="${TMP_DIRECTORY}/rpc_bin_ping_service_test-${protocol}"
+  protocol=$((protocol+1))
+
+  "${TEST_RPC_BIN_PING_SERVER}"                               \
+      "${TEST_RPC_BIN_PING_SERVICE_PROTOCOL}"                 \
+      "${TEST_RPC_BIN_PING_SERVICE_PATH}"                     \
+      "${TEST_RPC_BIN_PING_SERVICE_NUMBER_OF_SERVER_THREADS}" &
+
+  DAEMON_PATH="${TEST_RPC_BIN_PING_SERVICE_PATH}"
+  source "${TESTING_BASH_DIRECTORY}/daemonize"
+
+  "${TEST_RPC_BIN_PING_CLIENT}"                               \
+      "${TEST_RPC_BIN_PING_SERVICE_PATH}"                     \
+      "${TEST_RPC_BIN_PING_SERVICE_MESSAGE_SIZE}"             \
+      "${TEST_RPC_BIN_PING_SERVICE_REPETITIONS}"              \
+      "${TEST_RPC_BIN_PING_SERVICE_NUMBER_OF_CLIENTS}"        \
+      "${TEST_RPC_BIN_PING_SERVICE_NUMBER_OF_CLIENT_THREADS}" > "${TMP_DIRECTORY}/OUT"
+
+  EXPECTED_NUMBER_OF_LINES=2
+  NUMBER_OF_LINES_IN_OUTPUT=$(cat "${TMP_DIRECTORY}/OUT" | wc -l)
+  test 2 -eq ${EXPECTED_NUMBER_OF_LINES} ||
+      ( echo "Client output has wrong number of lines:"                    \
+      ; echo "${EXPECTED_NUMBER_OF_LINES} != ${NUMBER_OF_LINES_IN_OUTPUT}" \
+      ; echo "Client output is:"                                           \
+      ; cat "${TMP_DIRECTORY}/OUT"                                         \
+      ; exit 1
+      )
+
+  EXPECTED_LINE="^create ${TEST_RPC_BIN_PING_SERVICE_NUMBER_OF_CLIENTS} clients: [0-9][0-9]*µs -> [0-9][0-9]*µs per client$"
+  head -1 "${TMP_DIRECTORY}/OUT" | grep -q "${EXPECTED_LINE}" ||
+      ( echo "Client output has unexpected first line." \
+      ; echo                                            \
+      ; echo "Expected: '${EXPECTED_LINE}'"             \
+      ; echo                                            \
+      ; echo "Client output is:"                        \
+      ; cat "${TMP_DIRECTORY}/OUT"                      \
+      ; exit 1
+      )
+
+  EXPECTED_LINE="^ping (${TEST_RPC_BIN_PING_SERVICE_NUMBER_OF_CLIENTS}x${TEST_RPC_BIN_PING_SERVICE_REPETITIONS} times ${TEST_RPC_BIN_PING_SERVICE_MESSAGE_SIZE} bytes): [0-9][0-9]*µs -> [0-9][0-9]*µs per roundtrip = [0-9][0-9]* MB/sec$"
+  tail -1 "${TMP_DIRECTORY}/OUT" | grep -q "${EXPECTED_LINE}" ||
+      ( echo "Client output has unexpected last line." \
+      ; echo                                           \
+      ; echo "Expected: '${EXPECTED_LINE}'"            \
+      ; echo                                           \
+      ; echo "Client output is:"                       \
+      ; cat "${TMP_DIRECTORY}/OUT"                     \
+      ; exit 1
+      )
+done

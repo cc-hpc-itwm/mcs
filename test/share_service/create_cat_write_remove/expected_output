@@ -1,0 +1,4 @@
+00000000000000000000000000000000
+.123456789.1234
+Error: rpc::error::HandlerError: Unknown id 'bi_0'
+^ expected error

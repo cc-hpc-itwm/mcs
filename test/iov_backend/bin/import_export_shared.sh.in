@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# Copyright (C) 2025 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+set -euo pipefail
+
+TEST_IOV_BACKEND_PROVIDER_BIN="@TEST_IOV_BACKEND_PROVIDER_BIN@"
+TEST_IOV_BACKEND_STORAGE_PROVIDER_BIN="@TEST_IOV_BACKEND_STORAGE_PROVIDER_BIN@"
+TEST_IOV_BACKEND_COLLECTION_CREATE_BIN="@TEST_IOV_BACKEND_COLLECTION_CREATE_BIN@"
+TEST_IOV_BACKEND_STORAGE_PROVIDER_BIN="@TEST_IOV_BACKEND_STORAGE_PROVIDER_BIN@"
+TEST_IOV_BACKEND_IMPORT_SHARED_BIN="@TEST_IOV_BACKEND_IMPORT_SHARED_BIN@"
+TEST_IOV_BACKEND_EXPORT_SHARED_BIN="@TEST_IOV_BACKEND_EXPORT_SHARED_BIN@"
+
+TESTING_BASH_DIRECTORY="@TESTING_BASH_DIRECTORY@"
+source "${TESTING_BASH_DIRECTORY:?}/cleanup"
+source "${TESTING_BASH_DIRECTORY:?}/TMP_DIRECTORY"
+source "${TESTING_BASH_DIRECTORY:?}/wait"
+source "${TESTING_BASH_DIRECTORY:?}/random_data"
+
+TEST_IOV_BACKEND_PATH="${TMP_DIRECTORY:?}"
+
+TEST_IOV_BACKEND_STORAGE_SIZE=$((2**25))
+
+#############################################################################
+
+TEST_IOV_BACKEND_PROVIDER_CONNECTABLE="${TEST_IOV_BACKEND_PATH:?}/TEST_IOV_BACKEND_PROVIDER_CONNECTABLE"
+
+stdbuf -oL                                                                  \
+  ${TEST_IOV_BACKEND_PROVIDER_BIN:?}                                        \
+    'ip::tcp ()' 1                                                          \
+  | tee "${TEST_IOV_BACKEND_PROVIDER_CONNECTABLE:?}"                        &
+wait 50 -s ${TEST_IOV_BACKEND_PROVIDER_CONNECTABLE:?}
+on_exit+=("kill $(jobs -p | tail -1)")
+
+#############################################################################
+
+TEST_IOV_BACKEND_PREFIX="${TEST_IOV_BACKEND_PATH:?}/PREFIX"
+mkdir -p ${TEST_IOV_BACKEND_PREFIX:?}
+TEST_IOV_BACKEND_FILES_STORAGE_PROVIDER_OUT="${TEST_IOV_BACKEND_PATH:?}/TEST_IOV_BACKEND_FILES_STORAGE_PROVIDER_OUT"
+stdbuf -oL                                                                  \
+  ${TEST_IOV_BACKEND_STORAGE_PROVIDER_BIN:?}                                \
+    "Just ($(cat ${TEST_IOV_BACKEND_PROVIDER_CONNECTABLE:?}))"              \
+    'ip::tcp()' 1                                                           \
+    'ip::tcp()' 4                                                           \
+    "Files ( Prefix \"${TEST_IOV_BACKEND_PREFIX:?}\"                        \
+           , Limit ${TEST_IOV_BACKEND_STORAGE_SIZE:?}                       \
+           )"                                                               \
+    'Files::Size::Max()'                                                    \
+    'Files::Size::Used()'                                                   \
+    'Files::Segment::Create (Files::Segment::OnRemove::Remove())'           \
+    'Files::Segment::Remove (Nothing)'                                      \
+    'Files::Chunk::Description()'                                           \
+    'Files::File::Read()'                                                   \
+    'Files::File::Write()'                                                  \
+  | tee "${TEST_IOV_BACKEND_FILES_STORAGE_PROVIDER_OUT:?}"                  &
+wait 50 -s ${TEST_IOV_BACKEND_FILES_STORAGE_PROVIDER_OUT:?}
+on_exit+=("kill $(jobs -p | tail -1)")
+
+TEST_IOV_BACKEND_HEAP_STORAGE_PROVIDER_OUT="${TEST_IOV_BACKEND_PATH:?}/TEST_IOV_BACKEND_HEAP_STORAGE_PROVIDER_OUT"
+stdbuf -oL                                                                  \
+  ${TEST_IOV_BACKEND_STORAGE_PROVIDER_BIN:?}                                \
+    "Just ($(cat ${TEST_IOV_BACKEND_PROVIDER_CONNECTABLE:?}))"              \
+    'ip::tcp()' 1                                                           \
+    'ip::tcp()' 4                                                           \
+    "Heap (Limit ${TEST_IOV_BACKEND_STORAGE_SIZE:?})"                       \
+    'Heap::Size::Max()'                                                     \
+    'Heap::Size::Used()'                                                    \
+    'Heap::Segment::Create (Nothing)'                                       \
+    'Heap::Segment::Remove()'                                               \
+    'Heap::Chunk::Description()'                                            \
+    'Heap::File::Read()'                                                    \
+    'Heap::File::Write()'                                                   \
+  | tee "${TEST_IOV_BACKEND_HEAP_STORAGE_PROVIDER_OUT:?}"                   &
+wait 50 -s ${TEST_IOV_BACKEND_HEAP_STORAGE_PROVIDER_OUT:?}
+on_exit+=("kill $(jobs -p | tail -1)")
+
+#############################################################################
+
+TEST_IOV_BACKEND_FILESIZE=$((2*${TEST_IOV_BACKEND_STORAGE_SIZE:?}))
+
+${TEST_IOV_BACKEND_COLLECTION_CREATE_BIN:?}                                 \
+  "$(cat ${TEST_IOV_BACKEND_PROVIDER_CONNECTABLE:?})"                       \
+  101                                                                       \
+  ${TEST_IOV_BACKEND_FILESIZE:?}
+
+#############################################################################
+
+TEST_IOV_BACKEND_DATA_IN="${TEST_IOV_BACKEND_PATH:?}/DATA_IN"
+TEST_IOV_BACKEND_DATA_OUT="${TEST_IOV_BACKEND_PATH:?}/DATA_OUT"
+TEST_IOV_BACKEND_DATA_EXPECTED_EQUAL="${TEST_IOV_BACKEND_PATH:?}/DATA_EXPECTED_EQUAL"
+
+random_data ${TEST_IOV_BACKEND_FILESIZE:?} >${TEST_IOV_BACKEND_DATA_IN:?}
+
+${TEST_IOV_BACKEND_IMPORT_SHARED_BIN:?}                                     \
+  "$(cat ${TEST_IOV_BACKEND_PROVIDER_CONNECTABLE:?})"                       \
+  101                                                                       \
+  "[0..${TEST_IOV_BACKEND_FILESIZE:?})"                                     \
+  ${TEST_IOV_BACKEND_DATA_IN:?}                                             \
+  "[0..${TEST_IOV_BACKEND_FILESIZE:?})"
+
+${TEST_IOV_BACKEND_EXPORT_SHARED_BIN:?}                                     \
+  "$(cat ${TEST_IOV_BACKEND_PROVIDER_CONNECTABLE:?})"                       \
+  101                                                                       \
+  "[0..${TEST_IOV_BACKEND_FILESIZE:?})"                                     \
+  ${TEST_IOV_BACKEND_DATA_OUT}                                              \
+  "[${TEST_IOV_BACKEND_FILESIZE:?}..$((2*${TEST_IOV_BACKEND_FILESIZE:?})))"
+
+#############################################################################
+
+tail -c ${TEST_IOV_BACKEND_FILESIZE:?} ${TEST_IOV_BACKEND_DATA_OUT:?}       \
+   > ${TEST_IOV_BACKEND_DATA_EXPECTED_EQUAL:?}
+diff ${TEST_IOV_BACKEND_DATA_IN:?} ${TEST_IOV_BACKEND_DATA_EXPECTED_EQUAL:?}

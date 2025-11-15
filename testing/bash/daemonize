@@ -1,0 +1,10 @@
+# Copyright (C) 2023-2025 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+# \todo daemonize and proper return to avoid wait_for_file
+
+source ${TESTING_BASH_DIRECTORY:?}/wait
+
+wait 50 -s ${DAEMON_PATH}/PID
+on_exit+=("wait 50 ! -s ${DAEMON_PATH}/PID")
+on_exit+=("kill $(cat ${DAEMON_PATH}/PID)")

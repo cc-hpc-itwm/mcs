@@ -1,0 +1,15 @@
+# Copyright (C) 2023-2024 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+on_exit=()
+function cleanup()
+{
+  k=${#on_exit[@]}
+
+  while [ ${k} -gt 0 ]
+  do
+    k=$((k-1))
+    eval "${on_exit[$k]}"
+  done
+}
+trap cleanup EXIT

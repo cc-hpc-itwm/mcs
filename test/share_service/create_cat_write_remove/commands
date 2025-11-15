@@ -1,0 +1,11 @@
+# Copyright (C) 2023-2025 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+chunk=$(${MCS_TEST_SHARE_SERVICE_BIN_CREATE} "${MCS_TEST_SHARE_SERVICE_PATH}" 16 "SHMEM (Prefix \"${MCS_TEST_SHARE_SERVICE_TEST_SHMEM_PREFIX}\", Limit 16)")
+
+${MCS_TEST_SHARE_SERVICE_BIN_CAT} "${chunk}" | xxd -p
+echo ".123456789.1234" | ${MCS_TEST_SHARE_SERVICE_BIN_WRITE} "${chunk}"
+${MCS_TEST_SHARE_SERVICE_BIN_CAT} "${chunk}"
+
+${MCS_TEST_SHARE_SERVICE_BIN_REMOVE} "${chunk}"
+${MCS_TEST_SHARE_SERVICE_BIN_REMOVE} "${chunk}" && exit 1 || echo "^ expected error"

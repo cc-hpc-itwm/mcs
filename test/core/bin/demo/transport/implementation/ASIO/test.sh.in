@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Copyright (C) 2025 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+
+set -euo pipefail
+
+MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROTOCOL="${1:?}"
+
+TESTING_BASH_DIRECTORY="@TESTING_BASH_DIRECTORY@"
+
+MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROVIDER="@MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROVIDER@"
+MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT="@MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT@"
+
+MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROVIDER_NUMBER_OF_LONGS=$((2**10))
+MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROVIDER_NUMBER_OF_COMMAND_THREADS=2
+
+MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_LONGS=$((2**10))
+MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_REPETITIONS=100
+MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_CLIENTS=2
+MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_COMMAND_THREADS=2
+
+source "${TESTING_BASH_DIRECTORY}/cleanup"
+source "${TESTING_BASH_DIRECTORY}/TMP_DIRECTORY"
+
+for method in "get" "put"
+do
+  MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_SERVICE_PATH="${TMP_DIRECTORY}/mcs_core_bin_demo_transport_ASIO_test_${method}"
+
+  if [[ "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROTOCOL}" == "tcp" ]]
+  then
+    MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROVIDER_ENDPOINT="ip::tcp()"
+  else
+    MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROVIDER_ENDPOINT="local::stream_protocol(\"${TMP_DIRECTORY}/PROVIDER-${method}\")"
+  fi
+
+  "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROVIDER}"                             \
+    "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROVIDER_ENDPOINT}"                  \
+    "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_SERVICE_PATH}"                       \
+    "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROVIDER_NUMBER_OF_LONGS}"           \
+    "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_PROVIDER_NUMBER_OF_COMMAND_THREADS}" &
+
+  DAEMON_PATH="${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_SERVICE_PATH}"
+  source "${TESTING_BASH_DIRECTORY}/daemonize"
+
+  "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT}"                               \
+    "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_SERVICE_PATH}"                       \
+    "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_LONGS}"             \
+    "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_REPETITIONS}"                 \
+    "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_CLIENTS}"           \
+    "${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_COMMAND_THREADS}"   \
+    "${method}"                                                                   \
+    > "${TMP_DIRECTORY}/OUT"
+
+  EXPECTED_NUMBER_OF_LINES=$((MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_CLIENTS + 1))
+  NUMBER_OF_LINES_IN_OUTPUT=$(cat "${TMP_DIRECTORY}/OUT" | wc -l)
+  test ${EXPECTED_NUMBER_OF_LINES} -eq ${NUMBER_OF_LINES_IN_OUTPUT} ||
+    ( echo "Client output has wrong number of lines:"                    \
+    ; echo "${EXPECTED_NUMBER_OF_LINES} != ${NUMBER_OF_LINES_IN_OUTPUT}" \
+    ; echo                                                               \
+    ; echo "Client output is:"                                           \
+    ; cat "${TMP_DIRECTORY}/OUT"                                         \
+    ; exit 1
+    )
+
+  EXPECTED_LINE="^ASIO_memory_${method}: clients ${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_CLIENTS}: ${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_REPETITIONS} times sz_$((MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_LONGS * 8)) bytes: total/min/max [0-9][0-9]*µs/[0-9][0-9]*µs/[0-9][0-9]*µs -> total/min/max [0-9][0-9]*/[0-9][0-9]*/[0-9][0-9]* MB/sec$"
+  tail -1 "${TMP_DIRECTORY}/OUT" | grep -q "${EXPECTED_LINE}" ||
+    ( echo "Client output has unexpected last line." \
+    ; echo                                           \
+    ; echo "Expected: '${EXPECTED_LINE}'"            \
+    ; echo                                           \
+    ; echo "Client output is:"                       \
+    ; cat "${TMP_DIRECTORY}/OUT"                     \
+    ; exit 1
+    )
+
+  for ((c=0; c<MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_CLIENTS; ++c))
+  do
+    EXPECTED_LINE="^ASIO_memory_${method}: client ${c}/${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_CLIENTS}: ${MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_REPETITIONS} times sz_$((MCS_TEST_CORE_BIN_DEMO_TRANSPORT_IMPLEMENTATION_ASIO_CLIENT_NUMBER_OF_LONGS * 8)) bytes: [0-9][0-9]*µs -> [0-9][0-9]*µs per ${method} = [0-9][0-9]* MB/sec$"
+    head -$((c+1)) "${TMP_DIRECTORY}/OUT" | tail -1 | grep -q "${EXPECTED_LINE}" ||
+          ( echo "Client output has unexpected line $((c+1))." \
+          ; echo                                               \
+          ; echo "Expected: '${EXPECTED_LINE}'"                \
+          ; echo                                               \
+          ; echo "Client output is:"                           \
+          ; cat "${TMP_DIRECTORY}/OUT"                         \
+          ; exit 1
+          )
+  done
+done

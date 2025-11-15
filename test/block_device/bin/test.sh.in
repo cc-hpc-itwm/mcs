@@ -1,0 +1,274 @@
+#!/usr/bin/env bash
+# Copyright (C) 2023-2025 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+
+set -euo pipefail
+
+#######################################################################
+
+function NS()
+{
+  echo -n "mcs::block_device::block"
+}
+function make_block_id()
+{
+  echo -n "$(NS)::ID (${1:?})"
+}
+function make_block_size()
+{
+  echo -n "$(NS)::Size (${1:?})"
+}
+function make_block_count()
+{
+  echo -n "$(NS)::Count (${1:?})"
+}
+function make_block_range()
+{
+  echo -n "$(NS)::Range ($(make_block_id ${1:?}), $(make_block_id ${2:?}))"
+}
+
+#######################################################################
+
+TESTING_BASH_DIRECTORY="@TESTING_BASH_DIRECTORY@"
+
+MCS_TEST_BLOCK_DEVICE_BIN_BLOCKS="@MCS_TEST_BLOCK_DEVICE_BIN_BLOCKS@"
+MCS_TEST_BLOCK_DEVICE_BIN_BLOCK_SIZE="@MCS_TEST_BLOCK_DEVICE_BIN_BLOCK_SIZE@"
+MCS_TEST_BLOCK_DEVICE_BIN_CAT="@MCS_TEST_BLOCK_DEVICE_BIN_CAT@"
+MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER="@MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER@"
+MCS_TEST_BLOCK_DEVICE_BIN_NUMBER_OF_BLOCKS="@MCS_TEST_BLOCK_DEVICE_BIN_NUMBER_OF_BLOCKS@"
+MCS_TEST_BLOCK_DEVICE_BIN_REMOVE="@MCS_TEST_BLOCK_DEVICE_BIN_REMOVE@"
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER="@MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER@"
+MCS_TEST_BLOCK_DEVICE_BIN_WRITE="@MCS_TEST_BLOCK_DEVICE_BIN_WRITE@"
+
+source "${TESTING_BASH_DIRECTORY}/cleanup"
+source "${TESTING_BASH_DIRECTORY}/TMP_DIRECTORY"
+
+MCS_TEST_BLOCK_DEVICE_BIN_TEST_BLOCK_SIZE='128'
+
+MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH="${TMP_DIRECTORY}/meta_data_provider"
+MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_ENDPOINT="ip::tcp()"
+MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_BLOCK_SIZE="$(make_block_size ${MCS_TEST_BLOCK_DEVICE_BIN_TEST_BLOCK_SIZE})"
+MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_NUMBER_OF_THREADS="2"
+
+#######################################################################
+
+"${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER}"                     \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_ENDPOINT}"          \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"              \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_BLOCK_SIZE}"        \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_NUMBER_OF_THREADS}" &
+
+DAEMON_PATH="${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
+source "${TESTING_BASH_DIRECTORY}/daemonize"
+
+#######################################################################
+
+function expect_output()
+{
+  local expectation=${1:?}; shift
+  diff -b <(echo "${expectation}") <("${@}")
+}
+
+#######################################################################
+
+expect_output "$(make_block_size 128)"                                \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_BLOCK_SIZE}"                           \
+    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
+
+expect_output "$(make_block_count 0)"                                 \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_NUMBER_OF_BLOCKS}"                     \
+    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
+
+expect_output "[]"                                                    \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_BLOCKS}"                               \
+    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
+
+#######################################################################
+
+MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS="0"
+
+function start_storage_provider()
+{
+  local tag=${1:?}; shift
+  local number_of_blocks=${1:?}; shift
+  local protocol=${1:?}; shift
+
+  MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PATH="${TMP_DIRECTORY}/${tag}"
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER}"                          \
+    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"                 \
+    "${protocol}"                                                          \
+    "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PATH}"                   \
+    "1"                                                                    \
+    "$((MCS_TEST_BLOCK_DEVICE_BIN_TEST_BLOCK_SIZE * number_of_blocks))"    \
+    "${@}"                                                                 &
+
+  DAEMON_PATH="${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PATH}"
+  source "${TESTING_BASH_DIRECTORY}/daemonize"
+
+  MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS=$((MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS + number_of_blocks))
+
+  expect_output "$(make_block_count ${MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS})" \
+    "${MCS_TEST_BLOCK_DEVICE_BIN_NUMBER_OF_BLOCKS}"                        \
+      "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
+}
+
+function make_size()
+{
+  local number_of_blocks=${1:?}; shift
+
+  echo -n "Limit $((MCS_TEST_BLOCK_DEVICE_BIN_TEST_BLOCK_SIZE * number_of_blocks))"
+}
+
+#######################################################################
+
+MCS_TEST_BLOCK_DEVICE_UNIQUE_ID="$(hostname).$$"
+
+#######################################################################
+#                Heap      Files     SHMEM
+# tcp            [0..3)
+# local-stream
+
+
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG="tcp-Heap.${MCS_TEST_BLOCK_DEVICE_UNIQUE_ID}"
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT="ip::tcp()"
+
+start_storage_provider                                                \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"                 \
+  3                                                                   \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT}"            \
+  "Heap ($(make_size 3))"
+
+#######################################################################
+#                Heap      Files     SHMEM
+# tcp            [0..3)    [3..8)
+# local-stream
+
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG="tcp-Files.${MCS_TEST_BLOCK_DEVICE_UNIQUE_ID}"
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT="ip::tcp()"
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PREFIX="${TMP_DIRECTORY}/${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}.DATA"
+mkdir -p ${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PREFIX}
+
+start_storage_provider                                                \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"                 \
+  5                                                                   \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT}"            \
+  "Files (Prefix \"${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PREFIX}\", $(make_size 5))"
+
+#######################################################################
+#                Heap      Files     SHMEM
+# tcp            [0..3)    [3..8)    [8..15)
+# local-stream
+
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG="tcp-SHMEM.${MCS_TEST_BLOCK_DEVICE_UNIQUE_ID}"
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT="ip::tcp()"
+MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX="mcs_test_block_device_bin_storage_provider.${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"
+find /dev/shm/ 2>/dev/null -name "*${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX}*" -delete
+
+start_storage_provider                                                \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"                 \
+  7                                                                   \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT}"            \
+  "SHMEM (Prefix \"${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX}\", $(make_size 7))"
+
+#######################################################################
+#                Heap      Files     SHMEM
+# tcp            [0..3)    [3..8)    [8..15)
+# local-stream   [15..26)
+
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG="local-stream-Heap.${MCS_TEST_BLOCK_DEVICE_UNIQUE_ID}"
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT="local::stream_protocol(\"${TMP_DIRECTORY}/${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}.EP\")"
+
+start_storage_provider                                                \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"                 \
+  11                                                                  \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT}"            \
+  "Heap ($(make_size 11))"
+
+#######################################################################
+#                Heap      Files     SHMEM
+# tcp            [0..3)    [3..8)    [8..15)
+# local-stream   [15..26)  [26..39)
+
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG="local-stream-Files.${MCS_TEST_BLOCK_DEVICE_UNIQUE_ID}"
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT="local::stream_protocol(\"${TMP_DIRECTORY}/${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}.EP\")"
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PREFIX="${TMP_DIRECTORY}/${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}.DATA"
+mkdir -p ${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PREFIX}
+
+start_storage_provider                                                \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"                 \
+  13                                                                  \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT}"            \
+  "Files (Prefix \"${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PREFIX}\", $(make_size 13))"
+
+#######################################################################
+#                Heap      Files     SHMEM
+# tcp            [0..3)    [3..8)    [8..15)
+# local-stream   [15..26)  [26..39)  [39..56)
+
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG="local-stream-SHMEM.${MCS_TEST_BLOCK_DEVICE_UNIQUE_ID}"
+MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT="local::stream_protocol(\"${TMP_DIRECTORY}/${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}.EP\")"
+MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX="mcs_test_block_device_bin_storage_provider.${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"
+find /dev/shm/ 2>/dev/null -name "*${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX}*" -delete
+
+start_storage_provider                                                \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"                 \
+  17                                                                  \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT}"            \
+  "SHMEM (Prefix \"${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX}\", $(make_size 17))"
+
+#######################################################################
+
+function content
+{
+  local block_id=${1:?}; shift
+  local n=$((MCS_TEST_BLOCK_DEVICE_BIN_TEST_BLOCK_SIZE/8))
+  local begin=$((block_id * n))
+  local end=$((begin + n - 1))
+  echo -n $(seq -s '' -w $(printf '%08i' ${begin}) $(printf '%08i' ${end}))
+}
+
+for ((block_id=0; block_id<MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS; ++block_id))
+do
+  echo -n $(content ${block_id})                                    | \
+    "${MCS_TEST_BLOCK_DEVICE_BIN_WRITE}"                              \
+      "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"          \
+      "$(make_block_id ${block_id})"
+done
+
+function read_block()
+{
+  local block_id=${1:?}; shift
+  "${MCS_TEST_BLOCK_DEVICE_BIN_CAT}"                                  \
+    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"            \
+    "$(make_block_id ${block_id})"
+}
+
+for ((block_id=0; block_id<MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS; ++block_id))
+do
+  expect_output "$(content ${block_id})" read_block ${block_id}
+done
+
+#######################################################################
+#                Heap      Files     SHMEM
+# tcp            [0..3)    [3..8)    [8..15)
+# local-stream   [15..26)  [26..39)  [39..56)
+
+function make_local_stream_storage()
+{
+  local type=${1:?}; shift
+  local begin=${1:?}; shift
+  local end=${1:?}; shift
+
+  echo -n "mcs::block_device::Storage (local::stream_protocol (\"${TMP_DIRECTORY}/local-stream-${type}.${MCS_TEST_BLOCK_DEVICE_UNIQUE_ID}.EP\"), bi_0, Parameter [], sg_0, [of_$((begin * MCS_TEST_BLOCK_DEVICE_BIN_TEST_BLOCK_SIZE))..of_$((end * MCS_TEST_BLOCK_DEVICE_BIN_TEST_BLOCK_SIZE))))"
+}
+
+expect_output "[$(make_local_stream_storage Files 4 5)]"              \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_REMOVE}"                               \
+    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"            \
+    "$(make_block_range 30 31)"
+
+expect_output "[$(make_local_stream_storage Heap 5 11), $(make_local_stream_storage Files 0 4)]" \
+  "${MCS_TEST_BLOCK_DEVICE_BIN_REMOVE}"                               \
+    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"            \
+    "$(make_block_range 20 30)"

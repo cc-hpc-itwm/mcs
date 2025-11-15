@@ -1,0 +1,20 @@
+// Copyright (C) 2025 Fraunhofer ITWM
+// License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+#pragma once
+
+#include <mcs/core/storage/implementation/Files.hpp>
+#include <type_traits>
+
+namespace mcs::core::storage::implementation
+{
+  constexpr auto operator==
+    ( Files::Parameter::Chunk::Description const&
+    , Files::Parameter::Chunk::Description const&
+    ) noexcept -> bool
+  {
+    static_assert (std::is_empty_v<Files::Parameter::Chunk::Description>);
+
+    return true;
+  }
+}

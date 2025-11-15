@@ -1,0 +1,16 @@
+# Copyright (C) 2025 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+# usage: random_data size
+#
+# Writes size many random bytes.
+#
+# Example:
+#  random_data $((2**20)) > /some/file
+#
+function random_data()
+{
+  size=${1:?}; shift;
+
+  dd if=/dev/urandom bs=${size:?} count=1
+}
