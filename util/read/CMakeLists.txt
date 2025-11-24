@@ -10,4 +10,8 @@ target_link_libraries (mcs_util_read
   PUBLIC mcs_util_string
 )
 
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
+
 add_subdirectory (src)

@@ -7,3 +7,7 @@ target_link_libraries (mcs_util_hash
   INTERFACE mcs_config
   INTERFACE mcs_util
 )
+
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()

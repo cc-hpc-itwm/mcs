@@ -14,5 +14,9 @@ target_link_libraries (mcs_util_ASIO
   PUBLIC mcs_serialization
 )
 
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
+
 add_subdirectory (src)
 add_subdirectory (demo)

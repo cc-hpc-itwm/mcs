@@ -16,4 +16,9 @@ target_link_libraries (mcs_rpc
   PUBLIC mcs_util_ASIO
   PUBLIC mcs_util_FMT
 )
+
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
+
 add_subdirectory (src)

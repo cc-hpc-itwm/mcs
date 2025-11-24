@@ -18,11 +18,6 @@ add_subdirectory (serialization)
 add_subdirectory (share_service)
 add_subdirectory (util)
 
-if (MCS_IOV_BACKEND)
-  add_subdirectory (3rdparty/libiov) # todo: replace with find_package
-  add_subdirectory (iov_backend)
-endif()
-
 if (MCS_TEST)
   enable_testing()
   add_subdirectory (3rdparty/gtest)

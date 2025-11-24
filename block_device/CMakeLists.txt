@@ -17,4 +17,9 @@ target_link_libraries (mcs_block_device
   PUBLIC mcs_util
   PUBLIC mcs_util_ASIO
 )
+
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
+
 add_subdirectory (src)

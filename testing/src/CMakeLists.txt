@@ -31,14 +31,3 @@ target_link_libraries (mcs_testing_core
   PUBLIC mcs_core
 )
 add_subdirectory (core)
-
-if (MCS_IOV_BACKEND)
-  add_library (mcs_testing_iov_backend)
-  target_link_libraries (mcs_testing_iov_backend
-    PUBLIC mcs_config
-    PUBLIC mcs_iov_backend
-    PUBLIC iov::iov
-    PUBLIC mcs_testing_RPC
-  )
-  add_subdirectory (iov_backend)
-endif()

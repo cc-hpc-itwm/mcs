@@ -9,3 +9,7 @@ target_link_libraries (mcs_util_type
   INTERFACE mcs_util
   INTERFACE mcs_util_read
 )
+
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()

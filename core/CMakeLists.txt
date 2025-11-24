@@ -26,4 +26,8 @@ target_link_libraries (mcs_core
 add_library (mcs_core_storage_c_api INTERFACE)
 target_include_directories (mcs_core_storage_c_api INTERFACE include)
 
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
+
 add_subdirectory (src)

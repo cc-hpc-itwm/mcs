@@ -8,4 +8,9 @@ target_link_libraries (mcs_serialization
   PUBLIC mcs_util
   PUBLIC mcs_util_read
 )
+
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
+
 add_subdirectory (src)

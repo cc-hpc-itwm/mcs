@@ -10,3 +10,7 @@ target_link_libraries (mcs_util_FMT
   INTERFACE mcs_util_string
   INTERFACE fmt
 )
+
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()

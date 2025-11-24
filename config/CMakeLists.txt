@@ -5,6 +5,10 @@ add_library (mcs_config INTERFACE)
 target_compile_features (mcs_config INTERFACE cxx_std_${MCS_CXX_STANDARD})
 target_include_directories (mcs_config INTERFACE include)
 
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
+
 include ("${CMAKE_CURRENT_LIST_DIR}/options.cmake")
 
 if (MCS_WARNINGS)

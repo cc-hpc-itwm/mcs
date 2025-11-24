@@ -18,4 +18,8 @@ target_include_directories (mcs_share_service_tcp_provider PUBLIC include)
 add_library (mcs_share_service_shmem_client)
 target_include_directories (mcs_share_service_shmem_client PUBLIC include)
 
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
+
 add_subdirectory (src)

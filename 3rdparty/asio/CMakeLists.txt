@@ -20,3 +20,9 @@ target_include_directories (asio
 )
 target_link_libraries (asio INTERFACE Threads::Threads)
 target_compile_definitions (asio INTERFACE ASIO_STANDALONE)
+
+if (MCS_INSTALL)
+  install (DIRECTORY ${CMAKE_BINARY_DIR}/3rdparty/asio/asio/include/asio
+    DESTINATION include
+  )
+endif()

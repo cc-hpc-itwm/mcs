@@ -11,3 +11,7 @@ target_link_libraries (mcs_util_tuplish
   INTERFACE mcs_util_read
   INTERFACE mcs_serialization
 )
+
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()

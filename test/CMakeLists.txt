@@ -12,7 +12,3 @@ add_subdirectory (serialization)
 add_subdirectory (share_service)
 add_subdirectory (testing)
 add_subdirectory (util)
-
-if (MCS_IOV_BACKEND)
-  add_subdirectory (iov_backend)
-endif()

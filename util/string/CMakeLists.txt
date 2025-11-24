@@ -11,4 +11,8 @@ target_link_libraries (mcs_util_string
   PUBLIC mcs_util_hash
 )
 
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
+
 add_subdirectory (src)

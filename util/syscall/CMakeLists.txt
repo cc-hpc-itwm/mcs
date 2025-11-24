@@ -8,4 +8,8 @@ target_link_libraries (mcs_util_syscall
   PUBLIC mcs_error
 )
 
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
+
 add_subdirectory (src)

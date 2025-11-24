@@ -10,3 +10,7 @@ target_link_libraries (mcs_util_HeterogeneousMap
   INTERFACE fmt
   INTERFACE mcs_nonstd_scope
 )
+
+if (MCS_INSTALL)
+  INSTALL (DIRECTORY include/mcs DESTINATION include)
+endif()
