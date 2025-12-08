@@ -12,6 +12,17 @@
 #define MCS_CONFIG_GCC_WORKAROUND_BROKEN_DEFAULT_CONSTRUCTOR_LINKAGE
 #endif
 
+#if defined (__GNUC__) && (  __GNUC__ == 12                           \
+                          || __GNUC__ == 13                           \
+                          || __GNUC__ == 14                           \
+                          )
+#define MCS_CONFIG_GCC_WORKAROUND_FALSE_WARNING_WITH_DEFAULT_COMPARE
+#endif
+
+#if defined (__GNUC__) && (__GNUC__ == 13)
+#define MCS_CONFIG_GCC_WORKAROUND_FALSE_WARNING_WITH_RANGES_COMPARE
+#endif
+
 #if defined (__clang__) && (  __clang_major__ == 19                   \
                            || __clang_major__ == 20                   \
                            || __clang_major__ == 21                   \

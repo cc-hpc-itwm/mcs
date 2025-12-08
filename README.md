@@ -20,15 +20,24 @@ Requirements:
 - [git](https://git-scm.com/)
 - [cmake](https://cmake.org/), version 3.24 or higher
 - a c++20 compiler
-  * tested: [gcc](https://gcc.gnu.org/) version 11, 12, 13, 14, 15
-  * tested: [clang](https://clang.llvm.org/) version 19, 20, 21
+  * tested: [gcc](https://gcc.gnu.org/) versions 11, 12, 13, 14, 15
+  * tested: [clang](https://clang.llvm.org/) versions 19, 20, 21
+  * tested: [Intel oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/overview.html) version 2025.3
+
+MCS is tested on
+
+- [Alpine Linux](https://alpinelinux.org/) versions 3.21.5, 3.22.2
+- [archlinux](https://archlinux.org/)
+- [Oracle Linux](https://www.oracle.com/linux/) version 9
+- [Rocky Linux](https://rockylinux.org/) version 9
+- [Ubuntu](https://ubuntu.com/) versions 22.04, 24.04, 25.04
 
 How to install:
 ---------------
 
 ```
 > git clone https://github.com/cc-hpc-itwm/mcs
-> cmake -S mcs -B ${MCS_BUILD_DIR:?} --install-prefix ${MCS_INSTALL_PREFIX:?}
+> cmake -S mcs -B ${MCS_BUILD_DIR:?} --install-prefix ${MCS_INSTALL_PREFIX:?} -DCMAKE_BUILD_TYPE=Release
 > cmake --build ${MCS_BUILD_DIR:?}
 > cmake --install ${MCS_BUILD_DIR:?}
 ```
@@ -40,6 +49,13 @@ Please note that the configure step will retrieve the source dependencies:
 
 Options:
 --------
+
+## Support libfabric for data transport:
+
+- `MCS_TRANSPORT_LIBFABRIC`: ON, OFF
+- Default: `-DMCS_TRANSPORT_LIBFABRIC=OFF`
+- Additional source dependency:
+  * [libfabric](https://github.com/ofiwg/libfabric)
 
 ## The C++ standard version:
 
@@ -61,6 +77,7 @@ Please see the individual README files for details about the components.
 - [core/README.md](core/README.md)
 - [share_service/README.md](share_service/README.md)
 - [block_device/README.md](block_device/README.md)
+- [core/transport/implementation/libfabric/README.md](core/include/mcs/core/transport/implementation/libfabric/README.md)
 
 Background: Summary:
 ====================

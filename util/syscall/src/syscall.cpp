@@ -36,6 +36,7 @@
 #include <mcs/util/syscall/shm_open.hpp>
 #include <mcs/util/syscall/shm_unlink.hpp>
 #include <mcs/util/syscall/statfs.hpp>
+#include <mcs/util/syscall/strdup.hpp>
 #include <mcs/util/syscall/sysconf.hpp>
 #include <mcs/util/syscall/write.hpp>
 #include <mutex>
@@ -739,6 +740,22 @@ namespace mcs::util::syscall
       );
   }
 
+  auto strdup (char const* s) -> char*
+  try
+  {
+    return nullptr_fails_with_errno (::strdup (s));
+  }
+  catch (...)
+  {
+    std::throw_with_nested
+      ( Error
+        { fmt::format ( "syscall::strdup (s = {})"
+                      , s
+                      )
+        }
+      );
+  }
+
   auto sysconf (int name) -> long
   try
   {
@@ -768,7 +785,7 @@ namespace mcs::util::syscall
   {
     std::throw_with_nested
       ( Error
-        { fmt::format ( "syscall::write (fd = {}, buf = {}, nbyte = {}"
+        { fmt::format ( "syscall::write (fd = {}, buf = {}, nbyte = {})"
                       , fd
                       , buf
                       , nbyte

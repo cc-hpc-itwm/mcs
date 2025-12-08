@@ -6,6 +6,10 @@ project (mcs VERSION 0.0.1 LANGUAGES CXX C)
 
 include ("${CMAKE_CURRENT_LIST_DIR}/options.cmake")
 
+if (MCS_TRANSPORT_LIBFABRIC)
+  add_subdirectory (3rdparty/libfabric)
+endif()
+
 add_subdirectory (3rdparty/asio)
 add_subdirectory (3rdparty/fmt)
 add_subdirectory (block_device)

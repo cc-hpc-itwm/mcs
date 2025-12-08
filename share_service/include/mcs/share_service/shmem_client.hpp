@@ -1,8 +1,7 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#ifndef MCS_SHARE_SERVICE_SHMEM_CLIENT_HPP
-#define MCS_SHARE_SERVICE_SHMEM_CLIENT_HPP
+#pragma once
 
 // C++11 interface with stable ABI to an mcs_share_service Client that
 // uses the SHMEM memory backend.
@@ -265,4 +264,3 @@ namespace mcs
 #undef MCS_SHARE_SERVICE_SHMEM_CLIENT_CONST_MEMBER
 #undef MCS_SHARE_SERVICE_SHMEM_CLIENT_CONST_OBSERVER
 #undef MCS_SHARE_SERVICE_SHMEM_CLIENT_CONSTRUCTOR
-#endif

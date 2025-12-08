@@ -2,3 +2,7 @@
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 add_subdirectory (ASIO)
+
+if (MCS_TRANSPORT_LIBFABRIC)
+  add_subdirectory (libfabric)
+endif()
