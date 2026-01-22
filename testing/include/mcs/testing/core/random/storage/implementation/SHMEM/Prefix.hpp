@@ -8,7 +8,8 @@
 
 namespace mcs::testing::random
 {
-  template<> struct value<core::storage::implementation::SHMEM::Prefix>
+  template<>
+    struct value<core::storage::implementation::SHMEM::Prefix>
   {
     auto operator()() -> core::storage::implementation::SHMEM::Prefix;
 

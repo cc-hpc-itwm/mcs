@@ -10,7 +10,8 @@ namespace mcs::testing::random
 {
   // produces a random boolean
   //
-  template<> struct value<bool>
+  template<>
+    struct value<bool>
   {
     auto operator()() -> bool;
 

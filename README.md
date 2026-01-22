@@ -21,7 +21,7 @@ Requirements:
 - [cmake](https://cmake.org/), version 3.24 or higher
 - a c++20 compiler
   * tested: [gcc](https://gcc.gnu.org/) versions 11, 12, 13, 14, 15
-  * tested: [clang](https://clang.llvm.org/) versions 19, 20, 21
+  * tested: [clang](https://clang.llvm.org/) versions 20, 21
   * tested: [Intel oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/overview.html) version 2025.3
 
 MCS is tested on
@@ -30,7 +30,7 @@ MCS is tested on
 - [archlinux](https://archlinux.org/)
 - [Oracle Linux](https://www.oracle.com/linux/) version 9
 - [Rocky Linux](https://rockylinux.org/) version 9
-- [Ubuntu](https://ubuntu.com/) versions 22.04, 24.04, 25.04
+- [Ubuntu](https://ubuntu.com/) versions 22.04, 24.04, 25.10
 
 How to install:
 ---------------
@@ -57,6 +57,18 @@ Options:
 - Additional source dependency:
   * [libfabric](https://github.com/ofiwg/libfabric)
 
+## The FUSE presentation
+
+Present MCS storage content as a filesystem.
+
+- `MCS_FUSE`: ON, OFF
+- Default: `MCS_FUSE=OFF`
+- Additional source dependency:
+  * [libfuse3](https://github.com/libfuse/libfuse) version 3.18.1
+- Additional runtime dependency:
+  * The kernel must support fuse, the fuse-kernel module must be
+    installed and inserted.
+
 ## The C++ standard version:
 
 - `MCS_CXX_STANDARD`: 20, 23.
@@ -74,6 +86,7 @@ Components details:
 
 Please see the individual README files for details about the components.
 
+- [fuse/bin/storage/README.md](fuse/bin/storage/README.md)
 - [core/README.md](core/README.md)
 - [share_service/README.md](share_service/README.md)
 - [block_device/README.md](block_device/README.md)

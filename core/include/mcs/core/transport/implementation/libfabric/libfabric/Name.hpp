@@ -4,10 +4,10 @@
 #pragma once
 
 #include <cstddef>
-#include <mcs/serialization/access.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/read/declare.hpp>
+#include <fmt/base.h>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 #include <vector>
 
 namespace mcs::core::transport::implementation::libfabric::libfabric
@@ -20,7 +20,7 @@ namespace mcs::core::transport::implementation::libfabric::libfabric
     [[nodiscard]] operator std::vector<std::byte> const&() const noexcept;
 
   private:
-    MCS_SERIALIZATION_ACCESS();
+    template<typename> friend struct serialization::Implementation;
     std::vector<std::byte> _value;
   };
 }
@@ -28,25 +28,43 @@ namespace mcs::core::transport::implementation::libfabric::libfabric
 namespace fmt
 {
   template<>
-    MCS_UTIL_FMT_DECLARE
-      (mcs::core::transport::implementation::libfabric::libfabric::Name)
-    ;
+    struct formatter<mcs::core::transport::implementation::libfabric::libfabric::Name>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::transport::implementation::libfabric::libfabric::Name const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  }
+  ;
 }
 
 namespace mcs::util::read
 {
   template<>
-    MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (core::transport::implementation::libfabric::libfabric::Name)
-    ;
+    struct Read<core::transport::implementation::libfabric::libfabric::Name>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> core::transport::implementation::libfabric::libfabric::Name
+        ;
+  };
 }
 
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (core::transport::implementation::libfabric::libfabric::Name)
-    ;
+    struct Implementation<core::transport::implementation::libfabric::libfabric::Name>
+  {
+    using Type = core::transport::implementation::libfabric::libfabric::Name;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/Name.ipp"

@@ -1,8 +1,7 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
-#include <mcs/util/read/define.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/prefix.hpp>
 #include <mcs/util/read/uint.hpp>
 
@@ -43,11 +42,16 @@ namespace mcs::util
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, mcs::core::storage::segment::ID)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::segment::ID>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (id, ctx, mcs::core::storage::segment::ID)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::segment::ID>::format
+      ( mcs::core::storage::segment::ID const& id
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to (ctx.out(), "sg_{}", id._value);
   }
@@ -55,10 +59,10 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    ( state
-    , core::storage::segment::ID
-    )
+  template<typename Char>
+    auto Read<core::storage::segment::ID>::read
+      ( State<Char>& state
+      ) -> core::storage::segment::ID
   {
     maybe_prefix (state, "sg_");
 

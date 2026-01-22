@@ -27,19 +27,25 @@ namespace mcs::share_service::provider
         , core::memory::Size size
         )
     {
+      auto const read_write_access {storages.read_write_access()};
+
       auto const storage_id
-        { storages.template create<StorageImplementation>
-            ( storages.write_access()
-            , parameters.create
+        { read_write_access.template create<StorageImplementation>
+            ( parameters.create
             )
         };
 
       auto const segment_id
-        { storages.template segment_create<StorageImplementation>
-            ( storages.write_access()
-            , storage_id
-            , parameters.segment_create
-            , size
+        { read_write_access
+          . template modify<StorageImplementation>
+            ( storage_id
+            , [&] (auto& storage_implementation)
+              {
+                return storage_implementation.segment_create
+                  ( parameters.segment_create
+                  , size
+                  );
+              }
             )
         };
 
@@ -84,16 +90,21 @@ namespace mcs::share_service::provider
         {
           using Parameters = std::remove_cvref_t<decltype (parameters)>;
 
-          _storages.template segment_remove<typename Parameters::Storage>
-            ( _storages.write_access()
-            , chunk.storage_id
-            , parameters.segment_remove
-            , chunk.segment_id
+          auto const read_write_access {_storages.read_write_access()};
+
+          read_write_access.template modify<typename Parameters::Storage>
+            ( chunk.storage_id
+            , [&] (auto& storage_implementation)
+              {
+                return storage_implementation.segment_remove
+                  ( parameters.segment_remove
+                  , chunk.segment_id
+                  );
+              }
             );
 
-          _storages.remove
-            ( _storages.write_access()
-            , chunk.storage_id
+          read_write_access.remove
+            ( chunk.storage_id
             );
         }
       , command_remove.parameters
@@ -109,20 +120,29 @@ namespace mcs::share_service::provider
     auto const& chunk {command_attach.chunk};
 
     return std::visit
-      ( [&] (auto const& parameters)
+      ( [&] ( auto const& parameters
+            ) -> core::chunk::Description<Access, StorageImplementations...>
         {
           using Parameters = std::remove_cvref_t<decltype (parameters)>;
 
-          return _storages
-            . template chunk_description<typename Parameters::Storage, Access>
-              ( _storages.read_access()
-              , chunk.storage_id
-              , parameters.chunk_description
-              , chunk.segment_id
-              , core::memory::make_range ( core::memory::make_offset (0)
-                                         , chunk.size
-                                         )
-              );
+          return _storages.read_access()
+            . template invoke<typename Parameters::Storage>
+              ( chunk.storage_id
+              , [&] (auto const& storage_implementation)
+                {
+                  return storage_implementation
+                    . template chunk_description<Access>
+                      ( parameters.chunk_description
+                      , chunk.segment_id
+                      , core::memory::make_range
+                        ( core::memory::make_offset (0)
+                        , chunk.size
+                        )
+                      )
+                    ;
+                }
+              )
+            ;
         }
       , command_attach.parameters
       );

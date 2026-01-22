@@ -4,7 +4,7 @@
 #pragma once
 
 #include <map>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 
 namespace mcs::serialization
 {
@@ -13,9 +13,13 @@ namespace mcs::serialization
           , is_serializable Compare
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (std::map<Key, T, Compare, Allocator>)
-    ;
+    struct Implementation<std::map<Key, T, Compare, Allocator>>
+  {
+    using Type = std::map<Key, T, Compare, Allocator>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/map.ipp"

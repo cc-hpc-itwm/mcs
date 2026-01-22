@@ -18,7 +18,11 @@ namespace mcs
   //   struct Error : public mcs::Error
   //   {
   //     Error();
-  //     MCS_ERROR_COPY_MOVE_DEFAULT (Error);
+  //     ~Error() override;
+  //     Error (Error const&) = default;
+  //     Error (Error&&) noexcept = default;
+  //     auto operator= (Error const&) -> Error& = default;
+  //     auto operator= (Error&&) noexcept  -> Error& = default;
   //   };
   // };
   //
@@ -44,8 +48,3 @@ namespace mcs
     std::string _what;
   };
 }
-
-#define MCS_ERROR_COPY_MOVE_DEFAULT(_name)      \
-  MCS_ERROR_COPY_MOVE_DEFAULT_IMPL(_name)
-
-#include "detail/Error.ipp"

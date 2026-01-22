@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <mcs/util/FMT/declare.hpp>
+#include <fmt/base.h>
 
 namespace mcs::core::storage::trace::event
 {
@@ -13,9 +13,17 @@ namespace mcs::core::storage::trace::event
 namespace fmt
 {
   template<>
-    MCS_UTIL_FMT_DECLARE
-      ( mcs::core::storage::trace::event::Destruct
-      );
+    struct formatter<mcs::core::storage::trace::event::Destruct>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::trace::event::Destruct const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/Destruct.ipp"

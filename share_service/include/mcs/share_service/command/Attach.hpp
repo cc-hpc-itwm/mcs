@@ -5,7 +5,7 @@
 
 #include <mcs/core/chunk/Access.hpp>
 #include <mcs/core/chunk/Description.hpp>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/share_service/Chunk.hpp>
 #include <mcs/share_service/SupportedStorageImplementations.hpp>
 #include <variant>
@@ -42,16 +42,24 @@ namespace mcs::share_service::command
 namespace mcs::serialization
 {
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (share_service::command::Attach<Access>)
-    ;
+    struct Implementation<share_service::command::Attach<Access>>
+  {
+    using Type = share_service::command::Attach<Access>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 
   template< share_service::is_supported_storage_implementation
               StorageImplementation
           >
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (share_service::command::attach::Parameters<StorageImplementation>)
-    ;
+    struct Implementation<share_service::command::attach::Parameters<StorageImplementation>>
+  {
+    using Type = share_service::command::attach::Parameters<StorageImplementation>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/Attach.ipp"

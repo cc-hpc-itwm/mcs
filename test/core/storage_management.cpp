@@ -71,22 +71,33 @@ namespace mcs::core
           )
       };
 
+    auto const read_access {storages.read_access()};
+
     ASSERT_EQ
       ( max_size
-      , storages.template size_max<typename TestingStorage::Storage>
-        ( storages.read_access()
-        , storage->id()
-        , testing_storage.parameter_size_max()
+      , read_access.template invoke<typename TestingStorage::Storage>
+        ( storage->id()
+        , [&] (auto const& storage_implementation)
+          {
+            return storage_implementation.size_max
+              ( testing_storage.parameter_size_max()
+              );
+          }
         )
       );
 
     ASSERT_EQ
       ( memory::make_size (0)
-      , storages.template size_used<typename TestingStorage::Storage>
-        ( storages.read_access()
-        , storage->id()
-        , testing_storage.parameter_size_used()
-        )
+      , read_access
+        . template invoke<typename TestingStorage::Storage>
+          ( storage->id()
+          , [&] (auto const& storage_implementation)
+            {
+              return storage_implementation.size_used
+                ( testing_storage.parameter_size_used()
+                );
+            }
+          )
       );
   }
 
@@ -111,44 +122,56 @@ namespace mcs::core
     testing::require_exception
       ( [&]
         {
-          std::ignore = storages
-            . template size_max<typename TestingStorage::Storage>
-              ( storages.read_access()
-              , storage_id
-              , testing_storage.parameter_size_max()
+          std::ignore = storages.read_access()
+            . template invoke<typename TestingStorage::Storage>
+              ( storage_id
+              , [&] (auto const& storage_implementation)
+                {
+                  return storage_implementation.size_max
+                    ( testing_storage.parameter_size_max()
+                    );
+                }
               );
         }
-      , testing::assert_type_and_what<typename decltype (storages)::Error::UnknownID>
-          (fmt::format ("Unknown id '{}'", storage_id))
+      , testing::assert_type_and_what<typename decltype (storages)::Error::UnknownKey>
+          (fmt::format ("Unknown key '{}'", storage_id))
       );
 
     testing::require_exception
       ( [&]
         {
-          std::ignore = storages
-            . template size_used<typename TestingStorage::Storage>
-              ( storages.read_access()
-              , storage_id
-              , testing_storage.parameter_size_used()
+          std::ignore = storages.read_access()
+            . template invoke<typename TestingStorage::Storage>
+              ( storage_id
+              , [&] (auto const& storage_implementation)
+                {
+                  return storage_implementation.size_used
+                    ( testing_storage.parameter_size_used()
+                    );
+                }
               );
         }
-      , testing::assert_type_and_what<typename decltype (storages)::Error::UnknownID>
-          (fmt::format ("Unknown id '{}'", storage_id))
+      , testing::assert_type_and_what<typename decltype (storages)::Error::UnknownKey>
+          (fmt::format ("Unknown key '{}'", storage_id))
       );
 
     testing::require_exception
       ( [&]
         {
-          std::ignore = storages
-            . template segment_create<typename TestingStorage::Storage>
-              ( storages.write_access()
-              , storage_id
-              , testing_storage.parameter_segment_create()
-              , testing::random::value<memory::Size>{}()
+          std::ignore = storages.read_write_access()
+            . template modify<typename TestingStorage::Storage>
+              ( storage_id
+              , [&] (auto& storage_implementation)
+                {
+                  return storage_implementation.segment_create
+                    ( testing_storage.parameter_segment_create()
+                    , testing::random::value<memory::Size>{}()
+                    );
+                }
               );
         }
-      , testing::assert_type_and_what<typename decltype (storages)::Error::UnknownID>
-          (fmt::format ("Unknown id '{}'", storage_id))
+      , testing::assert_type_and_what<typename decltype (storages)::Error::UnknownKey>
+          (fmt::format ("Unknown key '{}'", storage_id))
       );
   }
 }

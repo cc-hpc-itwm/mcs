@@ -7,7 +7,6 @@
 #include <mcs/core/storage/MaxSize.hpp>
 #include <mcs/core/storage/Parameter.hpp>
 #include <mcs/core/storage/implementation/Virtual.hpp>
-#include <mcs/testing/core/storage/implementation/Heap.hpp>
 #include <string>
 
 namespace mcs::testing::core::storage::implementation

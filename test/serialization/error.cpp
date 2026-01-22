@@ -3,8 +3,9 @@
 
 #include <exception>
 #include <fmt/format.h>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
 #include <mcs/serialization/error/AdditionalBytes.hpp>
 #include <mcs/serialization/error/Load.hpp>
 #include <mcs/serialization/error/Save.hpp>

@@ -1,7 +1,10 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::serialization
@@ -9,17 +12,16 @@ namespace mcs::serialization
   template< share_service::is_supported_storage_implementation
               StorageImplementation
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , share_service::command::create::Parameters<StorageImplementation>
-      )
+    auto Implementation<share_service::command::create::Parameters<StorageImplementation>>::input
+      ( IArchive& ia
+      ) -> share_service::command::create::Parameters<StorageImplementation>
   {
     using Parameters =
       share_service::command::create::Parameters<StorageImplementation>
       ;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, create, Parameters);
-    MCS_SERIALIZATION_LOAD_FIELD (ia, segment_create, Parameters);
+    auto create {load<decltype (Parameters::create)> (ia)};
+    auto segment_create {load<decltype (Parameters::segment_create)> (ia)};
 
     return Parameters {create, segment_create};
   }
@@ -27,14 +29,13 @@ namespace mcs::serialization
   template< share_service::is_supported_storage_implementation
               StorageImplementation
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , parameters
-      , share_service::command::create::Parameters<StorageImplementation>
-      )
+    auto Implementation<share_service::command::create::Parameters<StorageImplementation>>::output
+      ( OArchive& oa
+      , share_service::command::create::Parameters<StorageImplementation> const& parameters
+      ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, parameters, create);
-    MCS_SERIALIZATION_SAVE_FIELD (oa, parameters, segment_create);
+    save (oa, parameters.create);
+    save (oa, parameters.segment_create);
 
     return oa;
   }

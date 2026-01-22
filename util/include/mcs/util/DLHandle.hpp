@@ -35,7 +35,11 @@ namespace mcs::util
       {
         [[nodiscard]] constexpr auto name() const noexcept -> char const*;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (Symbol);
+        ~Symbol() override;
+        Symbol (Symbol const&) = default;
+        Symbol (Symbol&&) noexcept = default;
+        auto operator= (Symbol const&) -> Symbol& = default;
+        auto operator= (Symbol&&) noexcept  -> Symbol& = default;
 
       private:
         friend struct DLHandle;
@@ -64,10 +68,7 @@ namespace mcs::util
 // EXAMPLE:
 //   extern "C" { auto f_impl (int) -> void; }
 //   auto const dlhandle {path};
-//   auto const f {MCS_UTIL_DLHANDLE_SYMBOL (dlhandle, f_impl)};
+//   auto const f {dlhandle.symbol<decltype (f_impl)> ("f_impl")};
 //   std::invoke (f, 42);
-//
-#define MCS_UTIL_DLHANDLE_SYMBOL(dlhandle_, symbol_)    \
-  MCS_UTIL_DLHANDLE_SYMBOL_IMPL (dlhandle_, symbol_)
 
 #include "detail/DLHandle.ipp"

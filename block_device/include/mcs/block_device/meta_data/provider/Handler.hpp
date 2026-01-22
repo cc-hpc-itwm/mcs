@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -10,6 +10,8 @@
 #include <mcs/block_device/meta_data/command/Location.hpp>
 #include <mcs/block_device/meta_data/command/NumberOfBlocks.hpp>
 #include <mcs/block_device/meta_data/command/Remove.hpp>
+#include <mcs/util/Lock.hpp>
+#include <mcs/util/lock/queue/Fast.hpp>
 #include <mcs/util/not_null.hpp>
 
 namespace mcs::block_device::meta_data::provider
@@ -28,6 +30,7 @@ namespace mcs::block_device::meta_data::provider
     auto operator() (command::Location) const -> command::Location::Response;
 
   private:
+    util::lock::SharedMutex<util::lock::queue::Fast> _guard;
     util::not_null<Blocks> _blocks;
   };
 }

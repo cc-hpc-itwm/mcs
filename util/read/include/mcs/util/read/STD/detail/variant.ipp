@@ -1,7 +1,7 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/read/define.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/maybe.hpp>
 
 namespace mcs::util::read
@@ -38,10 +38,10 @@ namespace mcs::util::read
   }
 
   template<is_readable... Ts>
-    MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-      ( state
-      , std::variant<Ts...>
-      )
+    template<typename Char>
+      auto Read<std::variant<Ts...>>::read
+        ( State<Char>& state
+        ) -> std::variant<Ts...>
   {
     return detail::VariantElement<std::variant<Ts...>, Ts...>{} (state);
   }

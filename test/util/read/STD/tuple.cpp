@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -181,7 +181,11 @@ namespace mcs::util::read
           std::ignore = parse<std::tuple<>> (state);
         }
       , testing::assert_type_and_what<ParseError>
-          (fmt::format ("ParseError:\n{}\n ^\n : Expected ')'.", input))
+          ( fmt::format ("ParseError:\n{0}\n{1}^\n{1}: Expected ')'."
+                        , input
+                        , std::string (prefix.size(), ' ')
+                        )
+          )
       );
   }
 
@@ -223,10 +227,14 @@ namespace mcs::util::read
     testing::require_exception
       ( [&]
         {
-          fmt::print ("{}\n", parse<std::tuple<unsigned int>> (state));
+          std::ignore = parse<std::tuple<unsigned int>> (state);
         }
       , testing::assert_type_and_what<ParseError>
-          (fmt::format ("ParseError:\n{}\n ^\n : Expected ')'.", input))
+          ( fmt::format ("ParseError:\n{0}\n{1}^\n{1}: Expected ')'."
+                        , input
+                        , std::string (prefix.size(), ' ')
+                        )
+          )
       );
   }
 
@@ -246,7 +254,11 @@ namespace mcs::util::read
     testing::require_exception
       ( [&]
         {
-          std::ignore = parse<std::tuple<unsigned int, unsigned int>> (state);
+          std::ignore = parse< std::tuple
+                               < unsigned int
+                               , unsigned int
+                               >
+                             > (state);
         }
       , testing::assert_type_and_what<ParseError>
           ( fmt::format

@@ -5,9 +5,10 @@
 #include <iterator>
 #include <mcs/nonstd/scope.hpp>
 #include <mcs/util/FMT/STD/optional.hpp>
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/execute_and_die_on_exception.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/prefix.hpp>
 #include <mcs/util/syscall/close.hpp>
 #include <mcs/util/syscall/ftruncate.hpp>
 #include <mcs/util/syscall/mlock.hpp>
@@ -15,7 +16,6 @@
 #include <mcs/util/syscall/munlock.hpp>
 #include <mcs/util/syscall/shm_open.hpp>
 #include <mcs/util/syscall/shm_unlink.hpp>
-#include <mcs/util/tuplish/define.hpp>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -300,98 +300,475 @@ namespace mcs::core::storage::implementation
   }
 }
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "mcs::core::storage::implementation::SHMEM"
-  , mcs::core::storage::implementation::SHMEM::Tag
-  );
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Tag>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Tag>::format
+      ( mcs::core::storage::implementation::SHMEM::Tag const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "mcs::core::storage::implementation::SHMEM"
+      , std::make_tuple()
+      );
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1_SIMPLE
-  ( "Prefix "
-  , mcs::core::storage::implementation::SHMEM::Prefix
-  , value
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ2
-  ( "SHMEM "
-  , mcs::core::storage::implementation::SHMEM::Parameter::Create
-  , prefix
-  , max_size
-  );
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Tag>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Tag
+  {
+    prefix (state, "mcs::core::storage::implementation::SHMEM");
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "SHMEM::Size::Max"
-  , mcs::core::storage::implementation::SHMEM::Parameter::Size::Max
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "SHMEM::Size::Used"
-  , mcs::core::storage::implementation::SHMEM::Parameter::Size::Used
-  );
+    return std::make_from_tuple<mcs::core::storage::implementation::SHMEM::Tag>
+      (parse<std::tuple<>> (state));
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1
-  ( "SHMEM::Segment::AccessMode"
-  , mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode
-  , value
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "SHMEM::Segment::MLOCKed"
-  , mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ2
-  ( "SHMEM::Segment::Create "
-  , mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create
-  , access_mode
-  , mlocked
-  );
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Prefix>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Prefix>::format
+      ( mcs::core::storage::implementation::SHMEM::Prefix const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to (ctx.out(), "{}{}", "Prefix ", value.value);
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "SHMEM::Segment::Remove"
-  , mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove
-  );
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Prefix>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Prefix
+  {
+    prefix (state, "Prefix ");
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "SHMEM::Chunk::Description"
-  , mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description
-  );
+    using Prefix = mcs::core::storage::implementation::SHMEM::Prefix;
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "SHMEM::File::Read"
-  , mcs::core::storage::implementation::SHMEM::Parameter::File::Read
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "SHMEM::File::Write"
-  , mcs::core::storage::implementation::SHMEM::Parameter::File::Write
-  );
+    return Prefix {parse<decltype (Prefix::value)> (state)};
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Create>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Create>::format
+      ( mcs::core::storage::implementation::SHMEM::Parameter::Create const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "SHMEM "
+      , std::make_tuple (value.prefix, value.max_size)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Parameter::Create>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Parameter::Create
+  {
+    prefix (state, "SHMEM ");
+
+    using Create = mcs::core::storage::implementation::SHMEM::Parameter::Create;
+    return std::make_from_tuple<Create>
+      ( parse< std::tuple
+               < decltype (Create::prefix)
+               , decltype (Create::max_size)
+               >
+             > (state)
+      );
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Size::Max>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Size::Max>::format
+      ( mcs::core::storage::implementation::SHMEM::Parameter::Size::Max const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "SHMEM::Size::Max"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Parameter::Size::Max>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Parameter::Size::Max
+  {
+    prefix (state, "SHMEM::Size::Max");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::SHMEM::Parameter::Size::Max>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Size::Used>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Size::Used>::format
+      ( mcs::core::storage::implementation::SHMEM::Parameter::Size::Used const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "SHMEM::Size::Used"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Parameter::Size::Used>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Parameter::Size::Used
+  {
+    prefix (state, "SHMEM::Size::Used");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::SHMEM::Parameter::Size::Used>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode>::format
+      ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "SHMEM::Segment::AccessMode"
+      , std::make_tuple (value.value)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode
+  {
+    prefix (state, "SHMEM::Segment::AccessMode");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode>
+      (parse<std::tuple<decltype (mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode::value)>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed>::format
+      ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "SHMEM::Segment::MLOCKed"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed
+  {
+    prefix (state, "SHMEM::Segment::MLOCKed");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create>::format
+      ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "SHMEM::Segment::Create "
+      , std::make_tuple (value.access_mode, value.mlocked)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create
+  {
+    prefix (state, "SHMEM::Segment::Create ");
+
+    using Create = mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create;
+    return std::make_from_tuple<Create>
+      ( parse< std::tuple
+               < decltype (Create::access_mode)
+               , decltype (Create::mlocked)
+               >
+             > (state)
+      );
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove>::format
+      ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "SHMEM::Segment::Remove"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove
+  {
+    prefix (state, "SHMEM::Segment::Remove");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description>::format
+      ( mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "SHMEM::Chunk::Description"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description
+  {
+    prefix (state, "SHMEM::Chunk::Description");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::File::Read>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::File::Read>::format
+      ( mcs::core::storage::implementation::SHMEM::Parameter::File::Read const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "SHMEM::File::Read"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Parameter::File::Read>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Parameter::File::Read
+  {
+    prefix (state, "SHMEM::File::Read");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::SHMEM::Parameter::File::Read>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::File::Write>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::File::Write>::format
+      ( mcs::core::storage::implementation::SHMEM::Parameter::File::Write const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "SHMEM::File::Write"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::SHMEM::Parameter::File::Write>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::SHMEM::Parameter::File::Write
+  {
+    prefix (state, "SHMEM::File::Write");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::SHMEM::Parameter::File::Write>
+      (parse<std::tuple<>> (state));
+  }
+}
 
 namespace mcs::serialization
 {
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , description
-      , core::storage::implementation::SHMEM::Chunk::Description<Access>
-      )
+    auto Implementation<core::storage::implementation::SHMEM::Chunk::Description<Access>>::output
+      ( OArchive& oa
+      , core::storage::implementation::SHMEM::Chunk::Description<Access> const& description
+      ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, description, prefix);
-    MCS_SERIALIZATION_SAVE_FIELD (oa, description, segment_id);
-    MCS_SERIALIZATION_SAVE_FIELD (oa, description, size);
-    MCS_SERIALIZATION_SAVE_FIELD (oa, description, range);
+    save (oa, description.prefix);
+    save (oa, description.segment_id);
+    save (oa, description.size);
+    save (oa, description.range);
 
     return oa;
   }
 
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , core::storage::implementation::SHMEM::Chunk::Description<Access>
-      )
+    auto Implementation<core::storage::implementation::SHMEM::Chunk::Description<Access>>::input
+      ( IArchive& ia
+      ) -> core::storage::implementation::SHMEM::Chunk::Description<Access>
   {
     using Description
       = core::storage::implementation::SHMEM::Chunk::Description<Access>
       ;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, prefix, Description);
-    MCS_SERIALIZATION_LOAD_FIELD (ia, segment_id, Description);
-    MCS_SERIALIZATION_LOAD_FIELD (ia, size, Description);
-    MCS_SERIALIZATION_LOAD_FIELD (ia, range, Description);
+    auto prefix {load<decltype (Description::prefix)> (ia)};
+    auto segment_id {load<decltype (Description::segment_id)> (ia)};
+    auto size {load<decltype (Description::size)> (ia)};
+    auto range {load<decltype (Description::range)> (ia)};
 
     return Description {prefix, segment_id, size, range};
   }
@@ -400,20 +777,18 @@ namespace mcs::serialization
 namespace fmt
 {
   template<mcs::core::chunk::is_access Access>
-    MCS_UTIL_FMT_DEFINE_PARSE
-      ( context
-      , mcs::core::storage::implementation::SHMEM::Chunk::Description<Access>
-      )
+    template<typename ParseContext>
+      constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Chunk::Description<Access>>::parse (ParseContext& context)
   {
     return context.begin();
   }
 
   template<mcs::core::chunk::is_access Access>
-    MCS_UTIL_FMT_DEFINE_FORMAT
-      ( description
-      , context
-      , mcs::core::storage::implementation::SHMEM::Chunk::Description<Access>
-      )
+    template<typename FormatContext>
+      constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Chunk::Description<Access>>::format
+        ( mcs::core::storage::implementation::SHMEM::Chunk::Description<Access> const& description
+        , FormatContext& context
+        ) const -> decltype (context.out())
   {
     return fmt::format_to
       ( context.out()

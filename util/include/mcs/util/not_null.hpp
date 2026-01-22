@@ -40,7 +40,11 @@ namespace mcs::util
       struct MustNotBeNull : public mcs::Error
       {
         MustNotBeNull();
-        MCS_ERROR_COPY_MOVE_DEFAULT (MustNotBeNull);
+        ~MustNotBeNull() override;
+        MustNotBeNull (MustNotBeNull const&) = default;
+        MustNotBeNull (MustNotBeNull&&) noexcept = default;
+        auto operator= (MustNotBeNull const&) -> MustNotBeNull& = default;
+        auto operator= (MustNotBeNull&&) noexcept  -> MustNotBeNull& = default;
       };
     };
 

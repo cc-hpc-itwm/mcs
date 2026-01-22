@@ -4,11 +4,13 @@
 #include <fmt/format.h>
 #include <mcs/core/storage/implementation/SHMEM.hpp>
 #include <mcs/nonstd/scope.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <mcs/util/Copy.hpp>
 #include <mcs/util/syscall/munmap.hpp>
 #include <mcs/util/touch.hpp>
-#include <mcs/util/tuplish/define.hpp>
 #include <utility>
 
 namespace mcs::core::storage::implementation
@@ -81,22 +83,72 @@ namespace mcs::core::storage::implementation
     ;
 }
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::SHMEM::Prefix
-  , value
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::SHMEM::Prefix>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::SHMEM::Prefix const& value
+    ) -> OArchive&
+  {
+    save (oa, value.value);
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION2
-  ( mcs::core::storage::implementation::SHMEM::Parameter::Create
-  , prefix
-  , max_size
-  );
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::SHMEM::Prefix>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::SHMEM::Prefix
+  {
+    auto value {load<decltype (mcs::core::storage::implementation::SHMEM::Prefix::value)> (ia)};
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION2
-  ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create
-  , access_mode
-  , mlocked
-  );
+    return mcs::core::storage::implementation::SHMEM::Prefix {value};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::SHMEM::Parameter::Create>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::SHMEM::Parameter::Create const& value
+    ) -> OArchive&
+  {
+    save (oa, value.prefix);
+    save (oa, value.max_size);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::SHMEM::Parameter::Create>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::SHMEM::Parameter::Create
+  {
+    auto prefix {load<decltype (mcs::core::storage::implementation::SHMEM::Parameter::Create::prefix)> (ia)};
+    auto max_size {load<decltype (mcs::core::storage::implementation::SHMEM::Parameter::Create::max_size)> (ia)};
+
+    return mcs::core::storage::implementation::SHMEM::Parameter::Create {prefix, max_size};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create const& value
+    ) -> OArchive&
+  {
+    save (oa, value.access_mode);
+    save (oa, value.mlocked);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create
+  {
+    auto access_mode {load<decltype (mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create::access_mode)> (ia)};
+    auto mlocked {load<decltype (mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create::mlocked)> (ia)};
+
+    return mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create {access_mode, mlocked};
+  }
+}
 
 namespace mcs::core::storage::implementation
 {
@@ -219,7 +271,23 @@ namespace mcs::core::storage::implementation
   }
 }
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode
-  , value
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode const& value
+    ) -> OArchive&
+  {
+    save (oa, value.value);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode
+  {
+    auto value {load<decltype (mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode::value)> (ia)};
+
+    return mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode {value};
+  }
+}

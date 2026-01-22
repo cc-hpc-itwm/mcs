@@ -6,9 +6,9 @@
 #include <cstdint>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/serialization/OArchive.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/save.hpp>
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/util/cast.hpp>
@@ -31,20 +31,34 @@ namespace
 
 namespace mcs::serialization
 {
-  template<> MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION (Append);
-  template<> MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION (Stream);
+  template<>
+    struct Implementation<Append>
+  {
+    using Type = Append;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+  template<>
+    struct Implementation<Stream>
+  {
+    using Type = Stream;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace mcs::serialization
 {
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT (oa, x, Append)
+  auto Implementation<Append>::output (OArchive& oa, Append const& x) -> OArchive&
   {
     save (oa, x.xs.size());
     oa.append (std::span {x.xs});
 
     return oa;
   }
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT (oa, x, Stream)
+  auto Implementation<Stream>::output (OArchive& oa, Stream const& x) -> OArchive&
   {
     save (oa, x.xs.size());
     oa.stream (std::span {x.xs});

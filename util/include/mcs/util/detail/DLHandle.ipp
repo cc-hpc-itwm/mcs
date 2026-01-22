@@ -26,9 +26,6 @@ namespace mcs::util
   }
 }
 
-#define MCS_UTIL_DLHANDLE_SYMBOL_IMPL(_dlhandle, _symbol)       \
-  (_dlhandle).symbol<decltype (_symbol)> (#_symbol)
-
 namespace mcs::util
 {
   constexpr auto DLHandle::Error::Symbol::name() const noexcept -> char const*

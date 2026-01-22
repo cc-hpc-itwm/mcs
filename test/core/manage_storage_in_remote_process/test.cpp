@@ -93,11 +93,15 @@ namespace mcs::core
       {util::read::from_file<storage::ID> (storage_id_file)};
 
     ASSERT_EQ ( max_size
-              , storages
-                . template size_max<typename storage::implementation::SHMEM>
-                    ( storages.read_access()
-                    , storage_id
-                    , storage::implementation::SHMEM::Parameter::Size::Max{}
+              , storages.read_access()
+                . template invoke<typename storage::implementation::SHMEM>
+                    ( storage_id
+                    , [&] (auto const& storage_implementation)
+                      {
+                        return storage_implementation.size_max
+                          ( storage::implementation::SHMEM::Parameter::Size::Max{}
+                          );
+                      }
                     )
               );
 
@@ -116,15 +120,19 @@ namespace mcs::core
     testing::require_exception
       ( [&]
         {
-          std::ignore = storages
-            . template size_max<storage::implementation::SHMEM>
-              ( storages.read_access()
-              , storage_id
-              , storage::implementation::SHMEM::Parameter::Size::Max{}
+          std::ignore = storages.read_access()
+            . template invoke<storage::implementation::SHMEM>
+              ( storage_id
+              , [&] (auto const& storage_implementation)
+                {
+                  return storage_implementation.size_max
+                    ( storage::implementation::SHMEM::Parameter::Size::Max{}
+                    );
+                }
               );
         }
-      , testing::assert_type_and_what<typename decltype (storages)::Error::UnknownID>
-          (fmt::format ("Unknown id '{}'", storage_id))
+      , testing::assert_type_and_what<typename decltype (storages)::Error::UnknownKey>
+          (fmt::format ("Unknown key '{}'", storage_id))
       );
   }
 }

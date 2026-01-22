@@ -118,8 +118,7 @@ namespace mcs::share_service
 #define MCS_SHARE_SERVICE_IMPLEMENTATION_OK(_name)      \
   auto _name::ok() const noexcept -> bool               \
   {                                                     \
-    return !_implementation                             \
-      || !_implementation->_error.has_value();          \
+    return _implementation && !_implementation->_error; \
   } MCS_UTIL_REQUIRE_SEMI()
 #define MCS_SHARE_SERVICE_IMPLEMENTATION_ERROR(_name)   \
   auto _name::error() const noexcept -> char const*     \

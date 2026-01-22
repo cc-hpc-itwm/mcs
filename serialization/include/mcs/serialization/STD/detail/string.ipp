@@ -1,7 +1,10 @@
 // Copyright (C) 2022-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::serialization
@@ -10,11 +13,10 @@ namespace mcs::serialization
           , class Traits
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , s
-      , std::basic_string<CharT, Traits, Allocator>
-      )
+    auto Implementation<std::basic_string<CharT, Traits, Allocator>>::output
+      ( OArchive& oa
+      , std::basic_string<CharT, Traits, Allocator> const& s
+      ) -> OArchive&
   {
     oa.tag<detail::tag::STD::String> (s.size());
 
@@ -29,10 +31,9 @@ namespace mcs::serialization
           , class Traits
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , std::basic_string<CharT, Traits, Allocator>
-      )
+    auto Implementation<std::basic_string<CharT, Traits, Allocator>>::input
+      ( IArchive& ia
+      ) -> std::basic_string<CharT, Traits, Allocator>
   {
     auto size {ia.tag<detail::tag::STD::String>().size};
 

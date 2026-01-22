@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <functional>
@@ -8,7 +8,7 @@
 
 namespace mcs::util
 {
-  template<typename Fun, long ClockScale, typename Clock>
+  template<long ClockScale, typename Clock, typename Fun>
     auto timed (Fun&& fun)
   {
     auto timer {Timer<ClockScale, Clock>{}};

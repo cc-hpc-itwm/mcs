@@ -11,7 +11,11 @@ namespace mcs::util::read
   struct ParseError : public mcs::Error
   {
   public:
-    MCS_ERROR_COPY_MOVE_DEFAULT (ParseError);
+    ~ParseError() override;
+    ParseError (ParseError const&) = default;
+    ParseError (ParseError&&) noexcept = default;
+    auto operator= (ParseError const&) -> ParseError& = default;
+    auto operator= (ParseError&&) noexcept  -> ParseError& = default;
 
   private:
     template<typename> friend struct State;

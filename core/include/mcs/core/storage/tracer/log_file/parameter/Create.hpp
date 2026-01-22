@@ -5,7 +5,7 @@
 
 #include <filesystem>
 #include <mcs/core/storage/Concepts.hpp>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 
 namespace mcs::core::storage::tracer::log_file::parameter
 {
@@ -19,9 +19,13 @@ namespace mcs::core::storage::tracer::log_file::parameter
 namespace mcs::serialization
 {
   template<core::storage::is_implementation Storage>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( core::storage::tracer::log_file::parameter::Create<Storage>
-      );
+    struct Implementation<core::storage::tracer::log_file::parameter::Create<Storage>>
+  {
+    using Type = core::storage::tracer::log_file::parameter::Create<Storage>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/Create.ipp"

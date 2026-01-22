@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Copyright (C) 2025-2026 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+set -euo pipefail
+
+version="iozone3_508"
+
+curl -O "https://www.iozone.org/src/current/${version}.tar"
+tar xf "${version}.tar"
+make -C "${version}/src/current" linux-AMD64
+
+# -f filename  to use
+# -a  Auto mode
+# -e  Include flush (fsync,fflush) in the timing calculations
+# -c  Include close in the timing calculations
+# -+d  File I/O diagnostic mode. (To troubleshoot a broken file I/O subsystem)
+# -g #  Set maximum file size (in kBytes) for auto mode (or #m or #g)
+#
+# -I  Use VxFS VX_DIRECT, O_DIRECT,or O_DIRECTIO for all file operations
+# -o  Writes are synch (O_SYNC)
+# -+r Enable O_RSYNC|O_SYNC for all testing.
+# -+D Enable O_DSYNC mode.
+#
+# -B  Use mmap() files
+# -D  Use msync(MS_ASYNC) on mmap files
+# -G  Use msync(MS_SYNC) on mmap files
+#
+# -Z  Enable mixing of mmap I/O and file I/O
+#
+# -H #  Use POSIX async I/O with # async operations
+# -k #  Use POSIX async I/O (no bcopy) with # async operations
+
+iozone="${version}/src/current/iozone -f iozone-test-file -a -e -c -+d -g 1M"
+
+${iozone}
+${iozone} -I
+${iozone} -o
+${iozone} -+r
+${iozone} -+D
+
+${iozone} -B
+${iozone} -B -D
+${iozone} -B -G
+
+${iozone} -Z
+
+${iozone} -H 8
+${iozone} -k 8

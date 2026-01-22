@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include <fmt/base.h>
 #include <mcs/core/storage/Concepts.hpp>
 #include <mcs/core/storage/trace/Concepts.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/util/FMT/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 
 namespace mcs::core::storage::implementation::trace::parameter
 {
@@ -26,20 +26,30 @@ namespace mcs::serialization
 {
   template<typename Tracer, core::storage::is_implementation Storage>
     requires (core::storage::trace::is_tracer<Tracer, Storage>)
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( core::storage::implementation::trace::parameter
-          ::Create<Tracer, Storage>
-      );
+    struct Implementation<core::storage::implementation::trace::parameter::Create<Tracer, Storage>>
+  {
+    using Type = core::storage::implementation::trace::parameter::Create<Tracer, Storage>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace fmt
 {
   template<typename Tracer, mcs::core::storage::is_implementation Storage>
     requires (mcs::core::storage::trace::is_tracer<Tracer, Storage>)
-    MCS_UTIL_FMT_DECLARE
-      ( mcs::core::storage::implementation::trace::parameter
-          ::Create<Tracer, Storage>
-      );
+    struct formatter<mcs::core::storage::implementation::trace::parameter::Create<Tracer, Storage>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::trace::parameter::Create<Tracer, Storage> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/Create.ipp"

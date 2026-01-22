@@ -4,11 +4,12 @@
 add_library (mcs_util_HeterogeneousMap INTERFACE)
 target_include_directories (mcs_util_HeterogeneousMap INTERFACE include)
 target_link_libraries (mcs_util_HeterogeneousMap
+  INTERFACE fmt
   INTERFACE mcs_config
   INTERFACE mcs_error
-  INTERFACE mcs_util_type
-  INTERFACE fmt
   INTERFACE mcs_nonstd_scope
+  INTERFACE mcs_util_lock
+  INTERFACE mcs_util_type
 )
 
 if (MCS_INSTALL)

@@ -3,13 +3,31 @@
 
 #include <fmt/format.h>
 #include <mcs/block_device/block/Range.hpp>
-#include <mcs/util/tuplish/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION2
-  ( mcs::block_device::block::Range
-  , _begin
-  , _end
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::block_device::block::Range>::output
+    ( OArchive& oa
+    , mcs::block_device::block::Range const& value
+    ) -> OArchive&
+  {
+    save (oa, value._begin);
+    save (oa, value._end);
+
+    return oa;
+  }
+  auto Implementation<mcs::block_device::block::Range>::input
+    ( IArchive& ia
+    ) -> mcs::block_device::block::Range
+  {
+    auto _begin {load<decltype (mcs::block_device::block::Range::_begin)> (ia)};
+    auto _end {load<decltype (mcs::block_device::block::Range::_end)> (ia)};
+
+    return mcs::block_device::block::Range {_begin, _end};
+  }
+}
 
 namespace mcs::block_device::block
 {

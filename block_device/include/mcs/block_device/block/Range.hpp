@@ -3,10 +3,13 @@
 
 #pragma once
 
+#include <fmt/base.h>
 #include <mcs/Error.hpp>
 #include <mcs/block_device/block/ID.hpp>
-#include <mcs/util/tuplish/access.hpp>
-#include <mcs/util/tuplish/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
+#include <mcs/util/require_semi.hpp>
 
 namespace mcs::block_device::block
 {
@@ -32,7 +35,11 @@ namespace mcs::block_device::block
         [[nodiscard]] constexpr auto begin() const noexcept -> ID;
         [[nodiscard]] constexpr auto end() const noexcept -> ID;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (BeginMustBeSmallerThanEnd);
+        ~BeginMustBeSmallerThanEnd() override;
+        BeginMustBeSmallerThanEnd (BeginMustBeSmallerThanEnd const&) = default;
+        BeginMustBeSmallerThanEnd (BeginMustBeSmallerThanEnd&&) noexcept = default;
+        auto operator= (BeginMustBeSmallerThanEnd const&) -> BeginMustBeSmallerThanEnd& = default;
+        auto operator= (BeginMustBeSmallerThanEnd&&) noexcept  -> BeginMustBeSmallerThanEnd& = default;
 
       private:
         friend struct Range;
@@ -51,7 +58,9 @@ namespace mcs::block_device::block
     ID _begin;
     ID _end;
 
-    MCS_UTIL_TUPLISH_ACCESS();
+    template<typename, typename, typename> friend struct fmt::formatter;
+    template<typename> friend struct serialization::Implementation;
+    template<typename> friend struct util::read::Read;
   };
 
   [[nodiscard]] constexpr auto UNSAFE_make_range (ID, ID) noexcept -> Range;
@@ -62,6 +71,45 @@ namespace mcs::block_device::block
   [[nodiscard]] constexpr auto size (Range) noexcept -> Count;
 }
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION (mcs::block_device::block::Range);
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::block_device::block::Range>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::block_device::block::Range const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::block_device::block::Range>
+  {
+    using Type = mcs::block_device::block::Range;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::block_device::block::Range>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::block_device::block::Range
+        ;
+  };
+}
 
 #include "detail/Range.ipp"

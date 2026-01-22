@@ -3,9 +3,9 @@
 
 #pragma once
 
+#include <fmt/base.h>
 #include <mcs/core/storage/Concepts.hpp>
 #include <mcs/core/storage/segment/ID.hpp>
-#include <mcs/util/FMT/declare.hpp>
 
 namespace mcs::core::storage::trace::event::segment
 {
@@ -20,9 +20,17 @@ namespace mcs::core::storage::trace::event::segment
 namespace fmt
 {
   template<mcs::core::storage::is_implementation Storage>
-    MCS_UTIL_FMT_DECLARE
-      ( mcs::core::storage::trace::event::segment::Remove<Storage>
-      );
+    struct formatter<mcs::core::storage::trace::event::segment::Remove<Storage>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::trace::event::segment::Remove<Storage> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/Remove.ipp"

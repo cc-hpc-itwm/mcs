@@ -1,8 +1,8 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 cmake_minimum_required (VERSION 3.24)
-project (mcs VERSION 0.0.1 LANGUAGES CXX C)
+project (mcs VERSION 0.8 LANGUAGES CXX C)
 
 include ("${CMAKE_CURRENT_LIST_DIR}/options.cmake")
 
@@ -21,6 +21,11 @@ add_subdirectory (rpc)
 add_subdirectory (serialization)
 add_subdirectory (share_service)
 add_subdirectory (util)
+
+if (MCS_FUSE)
+  add_subdirectory (3rdparty/fuse3)
+  add_subdirectory (fuse)
+endif()
 
 if (MCS_TEST)
   enable_testing()

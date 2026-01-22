@@ -1,10 +1,10 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/overloaded.hpp>
-#include <mcs/util/read/declare.hpp>
+#include <mcs/util/read/State.hpp>
 #include <mcs/util/read/uint.hpp>
+#include <tuple>
 
 namespace mcs::rpc::multi_client
 {
@@ -20,12 +20,17 @@ namespace mcs::rpc::multi_client
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, mcs::rpc::multi_client::ParallelCallsLimit)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::rpc::multi_client::ParallelCallsLimit>::parse
+      (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT
-    (parallel_calls_limit, ctx, mcs::rpc::multi_client::ParallelCallsLimit)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::rpc::multi_client::ParallelCallsLimit>::format
+      ( mcs::rpc::multi_client::ParallelCallsLimit const& parallel_calls_limit
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return std::visit
       ( mcs::util::overloaded
@@ -49,8 +54,10 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    (state, rpc::multi_client::ParallelCallsLimit)
+  template<typename Char>
+    auto Read<rpc::multi_client::ParallelCallsLimit>::read
+      ( State<Char>& state
+      ) -> rpc::multi_client::ParallelCallsLimit
   {
     prefix (state, "ParallelCalls::");
 

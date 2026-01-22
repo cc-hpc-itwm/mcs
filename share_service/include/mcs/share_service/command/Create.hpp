@@ -6,8 +6,8 @@
 #include <mcs/core/memory/Size.hpp>
 #include <mcs/core/storage/ID.hpp>
 #include <mcs/core/storage/segment/ID.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/serialization/STD/tuple.hpp>
-#include <mcs/serialization/declare.hpp>
 #include <mcs/share_service/SupportedStorageImplementations.hpp>
 #include <tuple>
 
@@ -44,16 +44,24 @@ namespace mcs::share_service::command
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (share_service::command::Create)
-    ;
+    struct Implementation<share_service::command::Create>
+  {
+    using Type = share_service::command::Create;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 
   template< share_service::is_supported_storage_implementation
               StorageImplementation
           >
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (share_service::command::create::Parameters<StorageImplementation>)
-    ;
+    struct Implementation<share_service::command::create::Parameters<StorageImplementation>>
+  {
+    using Type = share_service::command::create::Parameters<StorageImplementation>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/Create.ipp"

@@ -1,8 +1,11 @@
 // Copyright (C) 2022-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
 #include <mcs/serialization/STD/variant.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::rpc::detail

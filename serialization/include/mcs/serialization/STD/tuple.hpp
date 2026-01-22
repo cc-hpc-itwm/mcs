@@ -3,15 +3,19 @@
 
 #pragma once
 
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <tuple>
 
 namespace mcs::serialization
 {
   template<is_serializable... Ts>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (std::tuple<Ts...>)
-    ;
+    struct Implementation<std::tuple<Ts...>>
+  {
+    using Type = std::tuple<Ts...>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/tuple.ipp"

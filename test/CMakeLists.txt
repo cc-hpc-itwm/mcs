@@ -12,3 +12,7 @@ add_subdirectory (serialization)
 add_subdirectory (share_service)
 add_subdirectory (testing)
 add_subdirectory (util)
+
+if (MCS_FUSE)
+  add_subdirectory (fuse)
+endif()

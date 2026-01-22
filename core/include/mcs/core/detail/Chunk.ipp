@@ -61,9 +61,8 @@ namespace mcs::core
       , memory::Range memory_range
       ) -> Chunk<Access, StorageImplementations...>
   {
-    return storages->visit
-      ( storages->read_access()
-      , storage_id
+    return storages->read_access().visit
+      ( storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation const& implementation
           )

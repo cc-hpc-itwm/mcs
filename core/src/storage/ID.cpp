@@ -2,18 +2,36 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/storage/ID.hpp>
-#include <mcs/util/hash/define.hpp>
-#include <mcs/util/tuplish/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::ID
-  , _value
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::ID>::output
+    ( OArchive& oa
+    , mcs::core::storage::ID const& value
+    ) -> OArchive&
+  {
+    save (oa, value._value);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::ID>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::ID
+  {
+    auto _value {load<decltype (mcs::core::storage::ID::_value)> (ia)};
+
+    return mcs::core::storage::ID {_value};
+  }
+}
 
 namespace std
 {
-  MCS_UTIL_HASH_DEFINE_VIA_HASH_OF_UNDERLYING_TYPE
-    ( _value
-    , mcs::core::storage::ID
-    );
+  auto hash<mcs::core::storage::ID>::operator()
+    ( mcs::core::storage::ID x
+    ) const noexcept -> size_t
+  {
+    return std::invoke (_hash, x._value);
+  }
 }

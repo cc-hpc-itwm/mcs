@@ -13,6 +13,10 @@ namespace mcs::util::syscall
   struct Error : public mcs::Error
   {
     using mcs::Error::Error;
-    MCS_ERROR_COPY_MOVE_DEFAULT (Error);
+    ~Error() override;
+    Error (Error const&) = default;
+    Error (Error&&) noexcept = default;
+    auto operator= (Error const&) -> Error& = default;
+    auto operator= (Error&&) noexcept  -> Error& = default;
   };
 }

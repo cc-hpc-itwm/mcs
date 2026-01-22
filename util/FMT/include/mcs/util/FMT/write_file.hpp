@@ -29,7 +29,11 @@ namespace mcs::util::FMT
   {
     auto path() const -> std::filesystem::path;
 
-    MCS_ERROR_COPY_MOVE_DEFAULT (WriteFileFailed);
+    ~WriteFileFailed() override;
+    WriteFileFailed (WriteFileFailed const&) = default;
+    WriteFileFailed (WriteFileFailed&&) noexcept = default;
+    auto operator= (WriteFileFailed const&) -> WriteFileFailed& = default;
+    auto operator= (WriteFileFailed&&) noexcept  -> WriteFileFailed& = default;
 
   private:
     template<typename... Args> friend auto write_file

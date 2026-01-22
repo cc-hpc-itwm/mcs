@@ -1,8 +1,7 @@
 // Copyright (C) 2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
-#include <mcs/util/read/define.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/prefix.hpp>
 #include <mcs/util/read/uint.hpp>
 
@@ -22,11 +21,17 @@ namespace mcs::core::transport::client
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, mcs::core::transport::client::ID)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::transport::client::ID>::parse
+      (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (id, ctx, mcs::core::transport::client::ID)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::transport::client::ID>::format
+      ( mcs::core::transport::client::ID const& id
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to (ctx.out(), "pi_{}", id._value);
   }
@@ -34,9 +39,10 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    ( state, core::transport::client::ID
-    )
+  template<typename Char>
+    auto Read<core::transport::client::ID>::read
+      ( State<Char>& state
+      ) -> core::transport::client::ID
   {
     maybe_prefix (state, "pi_");
 

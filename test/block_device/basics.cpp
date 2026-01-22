@@ -95,18 +95,25 @@ namespace
              < mcs::core::Chunk
              , mcs::core::chunk::access::Mutable
              >
-           { _used_storages
-           . template chunk_description
-               < typename TestingStorage::Storage
-               , mcs::core::chunk::access::Mutable
-               >
-             ( _used_storages.read_access()
-             , _storage->id()
-             , _testing_storage.parameter_chunk_description()
-             , _segment->id()
-             , mcs::core::memory::make_range
-                 (mcs::core::memory::make_offset (0), size)
-             )
+           { _used_storages.read_access()
+             . template invoke<typename TestingStorage::Storage>
+               ( _storage->id()
+               , [&] (auto const& storage_implementation)
+                 {
+                   return storage_implementation
+                     . template chunk_description
+                         < mcs::core::chunk::access::Mutable
+                         >
+                       ( _testing_storage.parameter_chunk_description()
+                       , _segment->id()
+                       , mcs::core::memory::make_range
+                         ( mcs::core::memory::make_offset (0)
+                         , size
+                         )
+                       )
+                     ;
+                 }
+               )
            }
         };
       auto const elements {mcs::core::as<Element> (chunk)};

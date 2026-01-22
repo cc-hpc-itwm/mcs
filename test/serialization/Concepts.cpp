@@ -3,7 +3,6 @@
 
 #include <gtest/gtest.h>
 #include <mcs/serialization/Concepts.hpp>
-#include <mcs/serialization/declare.hpp>
 #include <string>
 #include <type_traits>
 
@@ -157,7 +156,8 @@ namespace mcs::serialization
     NonTrivialWithoutDefaultCtor() = delete;
     std::string s;
   };
-  template<> struct Implementation<NonTrivialWithoutDefaultCtor>
+  template<>
+    struct Implementation<NonTrivialWithoutDefaultCtor>
   {
     static auto input (IArchive&) -> NonTrivialWithoutDefaultCtor;
     static auto output (OArchive&, NonTrivialWithoutDefaultCtor) -> OArchive&;

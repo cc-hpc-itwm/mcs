@@ -5,12 +5,10 @@
 
 #include <compare>
 #include <cstdint>
-#include <mcs/serialization/access.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/util/FMT/access.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/read/access.hpp>
-#include <mcs/util/read/declare.hpp>
+#include <fmt/base.h>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 
 namespace mcs::util::type
 {
@@ -46,32 +44,51 @@ namespace mcs::util::type
 
     std::size_t _id;
 
-    MCS_UTIL_FMT_ACCESS();
-    MCS_SERIALIZATION_ACCESS();
-    MCS_UTIL_READ_ACCESS();
+    template<typename, typename, typename> friend struct fmt::formatter;
+    template<typename> friend struct serialization::Implementation;
+    template<typename> friend struct util::read::Read;
   };
 }
 
 namespace fmt
 {
   template<typename... Ts>
-    MCS_UTIL_FMT_DECLARE (mcs::util::type::ID<Ts...>);
+    struct formatter<mcs::util::type::ID<Ts...>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::util::type::ID<Ts...> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace mcs::serialization
 {
   template<typename... Ts>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( util::type::ID<Ts...>
-      );
+    struct Implementation<util::type::ID<Ts...>>
+  {
+    using Type = util::type::ID<Ts...>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace mcs::util::read
 {
   template<typename... Ts>
-    MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( util::type::ID<Ts...>
-      );
+    struct Read<util::type::ID<Ts...>>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> util::type::ID<Ts...>
+        ;
+  };
 }
 
 #include "detail/ID.ipp"

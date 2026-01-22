@@ -1,11 +1,10 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/divru.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/STD/tuple.hpp>
-#include <mcs/util/read/define.hpp>
 #include <mcs/util/read/prefix.hpp>
 #include <mcs/util/read/uint.hpp>
 #include <type_traits>
@@ -119,11 +118,16 @@ namespace mcs::core::memory
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, mcs::core::memory::Size)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::memory::Size>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (size, ctx, mcs::core::memory::Size)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::memory::Size>::format
+      ( mcs::core::memory::Size const& size
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to (ctx.out(), "sz_{}", size._value);
   }
@@ -131,7 +135,10 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION (state, core::memory::Size)
+  template<typename Char>
+    auto Read<core::memory::Size>::read
+      ( State<Char>& state
+      ) -> core::memory::Size
   {
     maybe_prefix (state, "sz_");
 

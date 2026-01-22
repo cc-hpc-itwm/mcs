@@ -10,14 +10,16 @@ namespace
 {
   template<typename> struct F;
 
-  template<> struct F<int>
+  template<>
+    struct F<int>
   {
     [[nodiscard]] constexpr auto operator() (int i) const noexcept
     {
       return 2 * i;
     }
   };
-  template<> struct F<long>
+  template<>
+    struct F<long>
   {
     [[nodiscard]] constexpr auto operator() (long) const noexcept
     {

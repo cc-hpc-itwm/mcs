@@ -2,7 +2,10 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <cstdint>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 
 namespace mcs::serialization
 {
@@ -28,11 +31,10 @@ namespace mcs::serialization
   }
 
   template<is_serializable... Ts>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , tuple
-      , std::tuple<Ts...>
-      )
+    auto Implementation<std::tuple<Ts...>>::output
+      ( OArchive& oa
+      , std::tuple<Ts...> const& tuple
+      ) -> OArchive&
   {
     std::apply
       ( [&] (auto const&... ts) noexcept (noexcept ((save (oa, ts),...)))
@@ -46,10 +48,9 @@ namespace mcs::serialization
   }
 
   template<is_serializable... Ts>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , std::tuple<Ts...>
-      )
+    auto Implementation<std::tuple<Ts...>>::input
+      ( IArchive& ia
+      ) -> std::tuple<Ts...>
   {
     return detail::input<0, std::tuple<Ts...>> (ia);
   }

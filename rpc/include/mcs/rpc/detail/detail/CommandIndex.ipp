@@ -34,7 +34,8 @@ namespace mcs::rpc::detail
 
 namespace fmt
 {
-  template<> struct formatter<mcs::rpc::detail::CommandIndex>
+  template<>
+    struct formatter<mcs::rpc::detail::CommandIndex>
   {
     template<typename ParseContext>
       constexpr auto parse (ParseContext& ctx) const

@@ -2,8 +2,8 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/overloaded.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/STD/tuple.hpp>
-#include <mcs/util/read/define.hpp>
 #include <mcs/util/read/maybe.hpp>
 #include <mcs/util/read/prefix.hpp>
 #include <mcs/util/read/uint.hpp>
@@ -39,10 +39,10 @@ namespace mcs::util::ASIO
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    ( state
-    , asio::ip::tcp::endpoint
-    )
+  template<typename Char>
+    auto Read<asio::ip::tcp::endpoint>::read
+      ( State<Char>& state
+      ) -> asio::ip::tcp::endpoint
   {
     using EP = asio::ip::tcp::endpoint;
     using Port = decltype (std::declval<EP>().port());
@@ -64,8 +64,10 @@ namespace mcs::util::read
     }
   }
 
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    (state, asio::local::stream_protocol::endpoint)
+  template<typename Char>
+    auto Read<asio::local::stream_protocol::endpoint>::read
+      ( State<Char>& state
+      ) -> asio::local::stream_protocol::endpoint
   {
     prefix (state, "local::stream_protocol");
 

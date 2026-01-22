@@ -1,7 +1,6 @@
 // Copyright (C) 2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <fmt/format.h>
 #include <functional>
 #include <mcs/core/transport/implementation/libfabric/error/LibfabricError.hpp>
 #include <mcs/util/cast.hpp>

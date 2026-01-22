@@ -4,9 +4,9 @@
 #include <exception>
 #include <fmt/ranges.h>
 #include <iterator>
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/cast.hpp>
-#include <mcs/util/tuplish/define.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/prefix.hpp>
 #include <tuple>
 
 namespace mcs::core::storage::implementation
@@ -125,84 +125,393 @@ namespace mcs::core::storage::implementation
   {}
 }
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "mcs::core::storage::implementation::Heap"
-  , mcs::core::storage::implementation::Heap::Tag
-  );
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Tag>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Tag>::format
+      ( mcs::core::storage::implementation::Heap::Tag const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "mcs::core::storage::implementation::Heap"
+      , std::make_tuple()
+      );
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1
-  ( "Heap "
-  , mcs::core::storage::implementation::Heap::Parameter::Create
-  , max_size
-  );
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Heap::Tag>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Heap::Tag
+  {
+    prefix (state, "mcs::core::storage::implementation::Heap");
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "Heap::Size::Max"
-  , mcs::core::storage::implementation::Heap::Parameter::Size::Max
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "Heap::Size::Used"
-  , mcs::core::storage::implementation::Heap::Parameter::Size::Used
-  );
+    return std::make_from_tuple<mcs::core::storage::implementation::Heap::Tag>
+      (parse<std::tuple<>> (state));
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "Heap::Segment::MLOCKed"
-  , mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1
-  ( "Heap::Segment::Create "
-  , mcs::core::storage::implementation::Heap::Parameter::Segment::Create
-  , mlocked
-  );
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Create>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Create>::format
+      ( mcs::core::storage::implementation::Heap::Parameter::Create const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Heap "
+      , std::make_tuple (value.max_size)
+      );
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "Heap::Segment::Remove"
-  , mcs::core::storage::implementation::Heap::Parameter::Segment::Remove
-  );
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Heap::Parameter::Create>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Heap::Parameter::Create
+  {
+    prefix (state, "Heap ");
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "Heap::Chunk::Description"
-  , mcs::core::storage::implementation::Heap::Parameter::Chunk::Description
-  );
+    return std::make_from_tuple<mcs::core::storage::implementation::Heap::Parameter::Create>
+      (parse<std::tuple<decltype (mcs::core::storage::implementation::Heap::Parameter::Create::max_size)>> (state));
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "Heap::File::Read"
-  , mcs::core::storage::implementation::Heap::Parameter::File::Read
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "Heap::File::Write"
-  , mcs::core::storage::implementation::Heap::Parameter::File::Write
-  );
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Max>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Max>::format
+      ( mcs::core::storage::implementation::Heap::Parameter::Size::Max const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Heap::Size::Max"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Heap::Parameter::Size::Max>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Heap::Parameter::Size::Max
+  {
+    prefix (state, "Heap::Size::Max");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Heap::Parameter::Size::Max>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Used>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Used>::format
+      ( mcs::core::storage::implementation::Heap::Parameter::Size::Used const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Heap::Size::Used"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Heap::Parameter::Size::Used>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Heap::Parameter::Size::Used
+  {
+    prefix (state, "Heap::Size::Used");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Heap::Parameter::Size::Used>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed>::format
+      ( mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Heap::Segment::MLOCKed"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed
+  {
+    prefix (state, "Heap::Segment::MLOCKed");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>::format
+      ( mcs::core::storage::implementation::Heap::Parameter::Segment::Create const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Heap::Segment::Create "
+      , std::make_tuple (value.mlocked)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Heap::Parameter::Segment::Create
+  {
+    prefix (state, "Heap::Segment::Create ");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>
+      (parse<std::tuple<decltype (mcs::core::storage::implementation::Heap::Parameter::Segment::Create::mlocked)>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Remove>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Remove>::format
+      ( mcs::core::storage::implementation::Heap::Parameter::Segment::Remove const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Heap::Segment::Remove"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Heap::Parameter::Segment::Remove>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Heap::Parameter::Segment::Remove
+  {
+    prefix (state, "Heap::Segment::Remove");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Heap::Parameter::Segment::Remove>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Chunk::Description>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Chunk::Description>::format
+      ( mcs::core::storage::implementation::Heap::Parameter::Chunk::Description const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Heap::Chunk::Description"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Heap::Parameter::Chunk::Description>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Heap::Parameter::Chunk::Description
+  {
+    prefix (state, "Heap::Chunk::Description");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Heap::Parameter::Chunk::Description>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::File::Read>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::File::Read>::format
+      ( mcs::core::storage::implementation::Heap::Parameter::File::Read const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Heap::File::Read"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Heap::Parameter::File::Read>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Heap::Parameter::File::Read
+  {
+    prefix (state, "Heap::File::Read");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Heap::Parameter::File::Read>
+      (parse<std::tuple<>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::File::Write>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::File::Write>::format
+      ( mcs::core::storage::implementation::Heap::Parameter::File::Write const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Heap::File::Write"
+      , std::make_tuple()
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Heap::Parameter::File::Write>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Heap::Parameter::File::Write
+  {
+    prefix (state, "Heap::File::Write");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Heap::Parameter::File::Write>
+      (parse<std::tuple<>> (state));
+  }
+}
 
 namespace mcs::serialization
 {
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , description
-      , core::storage::implementation::Heap::Chunk::Description<Access>
-      )
+    auto Implementation<core::storage::implementation::Heap::Chunk::Description<Access>>::output
+      ( OArchive& oa
+      , core::storage::implementation::Heap::Chunk::Description<Access> const& description
+      ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, description, _begin);
-    MCS_SERIALIZATION_SAVE_FIELD (oa, description, _size);
-    MCS_SERIALIZATION_SAVE_FIELD (oa, description, _range);
+    save (oa, description._begin);
+    save (oa, description._size);
+    save (oa, description._range);
 
     return oa;
   }
 
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , core::storage::implementation::Heap::Chunk::Description<Access>
-      )
+    auto Implementation<core::storage::implementation::Heap::Chunk::Description<Access>>::input
+      ( IArchive& ia
+      ) -> core::storage::implementation::Heap::Chunk::Description<Access>
   {
     using Description
       = core::storage::implementation::Heap::Chunk::Description<Access>
       ;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, _begin, Description);
-    MCS_SERIALIZATION_LOAD_FIELD (ia, _size, Description);
-    MCS_SERIALIZATION_LOAD_FIELD (ia, _range, Description);
+    auto _begin {load<decltype (Description::_begin)> (ia)};
+    auto _size {load<decltype (Description::_size)> (ia)};
+    auto _range {load<decltype (Description::_range)> (ia)};
 
     return Description {_begin, _size, _range};
   }
@@ -211,20 +520,18 @@ namespace mcs::serialization
 namespace fmt
 {
   template<mcs::core::chunk::is_access Access>
-    MCS_UTIL_FMT_DEFINE_PARSE
-      ( context
-      , mcs::core::storage::implementation::Heap::Chunk::Description<Access>
-      )
+    template<typename ParseContext>
+      constexpr auto formatter<mcs::core::storage::implementation::Heap::Chunk::Description<Access>>::parse (ParseContext& context)
   {
     return context.begin();
   }
 
   template<mcs::core::chunk::is_access Access>
-    MCS_UTIL_FMT_DEFINE_FORMAT
-      ( description
-      , context
-      , mcs::core::storage::implementation::Heap::Chunk::Description<Access>
-      )
+    template<typename FormatContext>
+      constexpr auto formatter<mcs::core::storage::implementation::Heap::Chunk::Description<Access>>::format
+        ( mcs::core::storage::implementation::Heap::Chunk::Description<Access> const& description
+        , FormatContext& context
+        ) const -> decltype (context.out())
   {
     return fmt::format_to
       ( context.out()

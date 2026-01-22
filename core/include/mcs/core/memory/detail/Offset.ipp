@@ -1,10 +1,9 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/cast.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/STD/tuple.hpp>
-#include <mcs/util/read/define.hpp>
 #include <mcs/util/read/prefix.hpp>
 #include <mcs/util/read/uint.hpp>
 
@@ -34,6 +33,11 @@ namespace mcs::core::memory
   constexpr auto Offset::operator+= (Size const& size) -> Offset&
   {
     return *this = *this + size;
+  }
+
+  constexpr auto operator- (Offset offset) -> Offset
+  {
+    return make_offset (-offset._value);
   }
 
   constexpr auto operator-
@@ -97,11 +101,16 @@ namespace mcs::core::memory
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, mcs::core::memory::Offset)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::memory::Offset>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (size, ctx, mcs::core::memory::Offset)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::memory::Offset>::format
+      ( mcs::core::memory::Offset const& size
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to (ctx.out(), "of_{}", size._value);
   }
@@ -109,7 +118,10 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION (state, core::memory::Offset)
+  template<typename Char>
+    auto Read<core::memory::Offset>::read
+      ( State<Char>& state
+      ) -> core::memory::Offset
   {
     maybe_prefix (state, "of_");
 

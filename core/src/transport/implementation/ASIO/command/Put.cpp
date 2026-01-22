@@ -2,7 +2,10 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/transport/implementation/ASIO/command/Put.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 
 namespace mcs::core::transport::implementation::ASIO::command
 {
@@ -25,16 +28,15 @@ namespace mcs::core::transport::implementation::ASIO::command
 
 namespace mcs::serialization
 {
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-    ( oa
-    , put
-    , core::transport::implementation::ASIO::command::Put
-    )
+  auto Implementation<core::transport::implementation::ASIO::command::Put>::output
+    ( OArchive& oa
+    , core::transport::implementation::ASIO::command::Put const& put
+    ) -> OArchive&
   {
     namespace ASIO = core::transport::implementation::ASIO;
     using Put = ASIO::command::Put;
 
-    MCS_SERIALIZATION_SAVE_FIELD (oa, put, destination);
+    save (oa, put.destination);
 
     // when saving, the bytes must be available
     auto bytes {std::get<typename Put::Bytes> (put.bytes_or_size)};
@@ -47,15 +49,14 @@ namespace mcs::serialization
     return oa;
   }
 
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-    ( ia
-    , core::transport::implementation::ASIO::command::Put
-    )
+  auto Implementation<core::transport::implementation::ASIO::command::Put>::input
+    ( IArchive& ia
+    ) -> core::transport::implementation::ASIO::command::Put
   {
     namespace ASIO = core::transport::implementation::ASIO;
     using Put = ASIO::command::Put;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, destination, Put);
+    auto destination {load<decltype (Put::destination)> (ia)};
 
     // to restore read the number of bytes but do not extract the
     // bytes from the channel, that is the task of the command

@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <fmt/base.h>
 #include <mcs/core/chunk/Access.hpp>
 #include <mcs/core/storage/Concepts.hpp>
 #include <mcs/core/storage/trace/Concepts.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/util/FMT/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <utility>
 
 namespace mcs::core::storage::implementation::trace::chunk
@@ -41,9 +41,13 @@ namespace mcs::serialization
           , core::chunk::is_access Access
           >
     requires (core::storage::trace::is_tracer<Tracer, Storage>)
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( core::storage::implementation::trace::chunk::Description<Tracer, Storage, Access>
-      );
+    struct Implementation<core::storage::implementation::trace::chunk::Description<Tracer, Storage, Access>>
+  {
+    using Type = core::storage::implementation::trace::chunk::Description<Tracer, Storage, Access>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace fmt
@@ -53,9 +57,17 @@ namespace fmt
           , mcs::core::chunk::is_access Access
           >
     requires (mcs::core::storage::trace::is_tracer<Tracer, Storage>)
-    MCS_UTIL_FMT_DECLARE
-      ( mcs::core::storage::implementation::trace::chunk::Description<Tracer, Storage, Access>
-      );
+    struct formatter<mcs::core::storage::implementation::trace::chunk::Description<Tracer, Storage, Access>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::trace::chunk::Description<Tracer, Storage, Access> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/Description.ipp"

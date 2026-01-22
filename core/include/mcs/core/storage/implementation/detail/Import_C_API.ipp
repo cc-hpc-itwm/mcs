@@ -11,10 +11,11 @@
 #include <mcs/nonstd/scope.hpp>
 #include <mcs/util/FMT/STD/filesystem/path.hpp>
 #include <mcs/util/cast.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/STD/filesystem/path.hpp>
 #include <mcs/util/read/STD/vector.hpp>
+#include <mcs/util/read/prefix.hpp>
 #include <mcs/util/read/uint.hpp>
-#include <mcs/util/tuplish/define.hpp>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -449,60 +450,303 @@ namespace mcs::core::storage::implementation
   }
 }
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ0
-  ( "mcs::core::storage::implementation::Import_C_API"
-  , mcs::core::storage::implementation::Import_C_API::Tag
-  );
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Tag>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Tag>::format
+      ( mcs::core::storage::implementation::Import_C_API::Tag const&
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "mcs::core::storage::implementation::Import_C_API"
+      , std::make_tuple()
+      );
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1
-  ( "Import_C_API::Size::Max"
-  , mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max
-  , _parameter_size_max
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1
-  ( "Import_C_API::Size::Used"
-  , mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used
-  , _parameter_size_used
-  );
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Import_C_API::Tag>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Import_C_API::Tag
+  {
+    prefix (state, "mcs::core::storage::implementation::Import_C_API");
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1
-  ( "Import_C_API::Segment::Create "
-  , mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create
-  , _parameter_segment_create
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1
-  ( "Import_C_API::Segment::Remove "
-  , mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove
-  , _parameter_segment_remove
-  );
+    return std::make_from_tuple<mcs::core::storage::implementation::Import_C_API::Tag>
+      (parse<std::tuple<>> (state));
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1
-  ( "Import_C_API::Chunk::Description"
-  , mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description
-  , _parameter_chunk_description
-  );
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max>::format
+      ( mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Import_C_API::Size::Max"
+      , std::make_tuple (value._parameter_size_max)
+      );
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1
-  ( "Import_C_API::File::Read"
-  , mcs::core::storage::implementation::Import_C_API::Parameter::File::Read
-  , _parameter_file_read
-  );
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ1
-  ( "Import_C_API::File::Write"
-  , mcs::core::storage::implementation::Import_C_API::Parameter::File::Write
-  , _parameter_file_write
-  );
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max
+  {
+    prefix (state, "Import_C_API::Size::Max");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max>
+      (parse<std::tuple<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max::_parameter_size_max)>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used>::format
+      ( mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Import_C_API::Size::Used"
+      , std::make_tuple (value._parameter_size_used)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used
+  {
+    prefix (state, "Import_C_API::Size::Used");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used>
+      (parse<std::tuple<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used::_parameter_size_used)>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create>::format
+      ( mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Import_C_API::Segment::Create "
+      , std::make_tuple (value._parameter_segment_create)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create
+  {
+    prefix (state, "Import_C_API::Segment::Create ");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create>
+      (parse<std::tuple<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create::_parameter_segment_create)>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove>::format
+      ( mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Import_C_API::Segment::Remove "
+      , std::make_tuple (value._parameter_segment_remove)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove
+  {
+    prefix (state, "Import_C_API::Segment::Remove ");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove>
+      (parse<std::tuple<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove::_parameter_segment_remove)>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description>::format
+      ( mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Import_C_API::Chunk::Description"
+      , std::make_tuple (value._parameter_chunk_description)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description
+  {
+    prefix (state, "Import_C_API::Chunk::Description");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description>
+      (parse<std::tuple<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description::_parameter_chunk_description)>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::File::Read>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::File::Read>::format
+      ( mcs::core::storage::implementation::Import_C_API::Parameter::File::Read const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Import_C_API::File::Read"
+      , std::make_tuple (value._parameter_file_read)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Import_C_API::Parameter::File::Read>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Import_C_API::Parameter::File::Read
+  {
+    prefix (state, "Import_C_API::File::Read");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Import_C_API::Parameter::File::Read>
+      (parse<std::tuple<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::File::Read::_parameter_file_read)>> (state));
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::File::Write>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Parameter::File::Write>::format
+      ( mcs::core::storage::implementation::Import_C_API::Parameter::File::Write const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "Import_C_API::File::Write"
+      , std::make_tuple (value._parameter_file_write)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Import_C_API::Parameter::File::Write>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Import_C_API::Parameter::File::Write
+  {
+    prefix (state, "Import_C_API::File::Write");
+
+    return std::make_from_tuple<mcs::core::storage::implementation::Import_C_API::Parameter::File::Write>
+      (parse<std::tuple<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::File::Write::_parameter_file_write)>> (state));
+  }
+}
 
 namespace mcs::serialization
 {
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , description
-      , core::storage::implementation::Import_C_API::Chunk::Description<Access>
-      )
+    auto Implementation<core::storage::implementation::Import_C_API::Chunk::Description<Access>>::output
+      ( OArchive& oa
+      , core::storage::implementation::Import_C_API::Chunk::Description<Access> const& description
+      ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, description, _description);
+    save (oa, description._description);
     save (oa, util::cast<std::uintmax_t> (description._storage.get()));
     save (oa, util::cast<std::uintmax_t> (description._instance.get()));
 
@@ -510,16 +754,15 @@ namespace mcs::serialization
   }
 
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , core::storage::implementation::Import_C_API::Chunk::Description<Access>
-      )
+    auto Implementation<core::storage::implementation::Import_C_API::Chunk::Description<Access>>::input
+      ( IArchive& ia
+      ) -> core::storage::implementation::Import_C_API::Chunk::Description<Access>
   {
     using Description
       = core::storage::implementation::Import_C_API::Chunk::Description<Access>
       ;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, _description, Description);
+    auto _description {load<decltype (Description::_description)> (ia)};
     auto const storage {load<std::uintmax_t> (ia)};
     auto const instance {load<std::uintmax_t> (ia)};
 
@@ -534,20 +777,18 @@ namespace mcs::serialization
 namespace fmt
 {
   template<mcs::core::chunk::is_access Access>
-    MCS_UTIL_FMT_DEFINE_PARSE
-      ( context
-      , mcs::core::storage::implementation::Import_C_API::Chunk::Description<Access>
-      )
+    template<typename ParseContext>
+      constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Chunk::Description<Access>>::parse (ParseContext& context)
   {
     return context.begin();
   }
 
   template<mcs::core::chunk::is_access Access>
-    MCS_UTIL_FMT_DEFINE_FORMAT
-      ( description
-      , context
-      , mcs::core::storage::implementation::Import_C_API::Chunk::Description<Access>
-      )
+    template<typename FormatContext>
+      constexpr auto formatter<mcs::core::storage::implementation::Import_C_API::Chunk::Description<Access>>::format
+        ( mcs::core::storage::implementation::Import_C_API::Chunk::Description<Access> const& description
+        , FormatContext& context
+        ) const -> decltype (context.out())
   {
     return fmt::format_to
       ( context.out()

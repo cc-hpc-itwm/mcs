@@ -33,7 +33,7 @@ namespace mcs::core
     [[nodiscard]] constexpr auto id() const noexcept -> storage::ID;
 
     using ImplementationID
-      = typename Storages<SupportedStorageImplementations>::ImplementationID
+      = typename Storages<SupportedStorageImplementations>::ID
       ;
 
     [[nodiscard]] constexpr auto implementation_id

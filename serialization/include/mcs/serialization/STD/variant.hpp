@@ -3,15 +3,19 @@
 
 #pragma once
 
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <variant>
 
 namespace mcs::serialization
 {
   template<is_serializable... Ts>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (std::variant<Ts...>)
-    ;
+    struct Implementation<std::variant<Ts...>>
+  {
+    using Type = std::variant<Ts...>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/variant.ipp"

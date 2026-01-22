@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <mcs/util/FMT/declare.hpp>
+#include <fmt/base.h>
 #include <type_traits>
 
 namespace mcs::util
@@ -35,7 +35,17 @@ namespace mcs::util::timer
 namespace fmt
 {
   template<long ClockScale>
-    MCS_UTIL_FMT_DECLARE (mcs::util::timer::Ticks<ClockScale>);
+    struct formatter<mcs::util::timer::Ticks<ClockScale>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::util::timer::Ticks<ClockScale> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/Ticks.ipp"

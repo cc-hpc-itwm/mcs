@@ -14,6 +14,10 @@ namespace mcs::serialization::error
   {
     explicit AdditionalBytes (std::size_t) noexcept;
 
-    MCS_ERROR_COPY_MOVE_DEFAULT (AdditionalBytes);
+    ~AdditionalBytes() override;
+    AdditionalBytes (AdditionalBytes const&) = default;
+    AdditionalBytes (AdditionalBytes&&) noexcept = default;
+    auto operator= (AdditionalBytes const&) -> AdditionalBytes& = default;
+    auto operator= (AdditionalBytes&&) noexcept  -> AdditionalBytes& = default;
   };
 }

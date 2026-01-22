@@ -6,7 +6,7 @@
 #include <mcs/Error.hpp>
 #include <mcs/core/memory/Size.hpp>
 #include <mcs/core/transport/Address.hpp>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <memory>
 
 namespace mcs::core::transport::implementation::ASIO::command
@@ -45,7 +45,11 @@ namespace mcs::core::transport::implementation::ASIO::command
         constexpr auto wanted() const noexcept -> Wanted;
         constexpr auto read() const noexcept -> Read;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (CouldNotReadAllData);
+        ~CouldNotReadAllData() override;
+        CouldNotReadAllData (CouldNotReadAllData const&) = default;
+        CouldNotReadAllData (CouldNotReadAllData&&) noexcept = default;
+        auto operator= (CouldNotReadAllData const&) -> CouldNotReadAllData& = default;
+        auto operator= (CouldNotReadAllData&&) noexcept  -> CouldNotReadAllData& = default;
 
       private:
         friend struct Get;
@@ -62,9 +66,13 @@ namespace mcs::core::transport::implementation::ASIO::command
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (core::transport::implementation::ASIO::command::Get)
-    ;
+    struct Implementation<core::transport::implementation::ASIO::command::Get>
+  {
+    using Type = core::transport::implementation::ASIO::command::Get;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/Get.ipp"

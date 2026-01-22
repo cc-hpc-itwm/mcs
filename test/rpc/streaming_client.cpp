@@ -15,8 +15,11 @@
 #include <mcs/rpc/Dispatcher.hpp>
 #include <mcs/rpc/Provider.hpp>
 #include <mcs/rpc/ScopedRunningIOContext.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <mcs/testing/RPC/ProtocolState.hpp>
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/value/integral.hpp>
@@ -111,21 +114,35 @@ namespace
 
 namespace mcs::serialization
 {
-  template<> MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION (Put);
-  template<> MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION (Get);
+  template<>
+    struct Implementation<Put>
+  {
+    using Type = Put;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+  template<>
+    struct Implementation<Get>
+  {
+    using Type = Get;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace mcs::serialization
 {
   // Serialize size only, the stream operator will write the data
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT (oa, x, Put)
+  auto Implementation<Put>::output (OArchive& oa, Put const& x) -> OArchive&
   {
     auto const& xs {std::get<Bytes> (x.bytes_or_size)};
     save (oa, xs.size());
 
     return oa;
   }
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT (ia, Put)
+  auto Implementation<Put>::input (IArchive& ia) -> Put
   {
     auto const size {load<std::size_t> (ia)};
 
@@ -133,13 +150,13 @@ namespace mcs::serialization
   }
 
   // Serialize size only, the stream operator will read the data
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT (oa, x, Get)
+  auto Implementation<Get>::output (OArchive& oa, Get const& x) -> OArchive&
   {
     save (oa, x.size);
 
     return oa;
   }
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT (ia, Get)
+  auto Implementation<Get>::input (IArchive& ia) -> Get
   {
     auto const size {load<std::size_t> (ia)};
 

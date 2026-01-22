@@ -4,6 +4,7 @@
 #pragma once
 
 #include <filesystem>
+#include <fmt/base.h>
 #include <mcs/Error.hpp>
 #include <mcs/core/chunk/Access.hpp>
 #include <mcs/core/memory/Offset.hpp>
@@ -12,8 +13,11 @@
 #include <mcs/core/storage/MaxSize.hpp>
 #include <mcs/core/storage/implementation/Import_C_API.hpp>
 #include <mcs/core/storage/segment/ID.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/util/DLHandle.hpp>
-#include <mcs/util/tuplish/declare.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
+#include <mcs/util/require_semi.hpp>
 
 namespace mcs::core::storage::implementation
 {
@@ -52,7 +56,11 @@ namespace mcs::core::storage::implementation
           ) const noexcept -> Parameter::Create const&
           ;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (Create);
+        ~Create() override;
+        Create (Create const&) = default;
+        Create (Create&&) noexcept = default;
+        auto operator= (Create const&) -> Create& = default;
+        auto operator= (Create&&) noexcept  -> Create& = default;
 
       private:
         friend struct Virtual;
@@ -123,12 +131,86 @@ namespace mcs::core::storage::implementation
   };
 }
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Virtual::Tag
-  );
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Virtual::Tag>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Virtual::Parameter::Create
-  );
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Virtual::Tag const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Virtual::Tag>
+  {
+    using Type = mcs::core::storage::implementation::Virtual::Tag;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Virtual::Tag>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Virtual::Tag
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Virtual::Parameter::Create>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Virtual::Parameter::Create const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Virtual::Parameter::Create>
+  {
+    using Type = mcs::core::storage::implementation::Virtual::Parameter::Create;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Virtual::Parameter::Create>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Virtual::Parameter::Create
+        ;
+  };
+}
 
 #include "detail/Virtual.ipp"

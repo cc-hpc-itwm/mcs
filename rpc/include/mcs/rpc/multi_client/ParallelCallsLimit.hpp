@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <fmt/base.h>
 #include <mcs/Error.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/read/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 #include <variant>
 
 namespace mcs::rpc::multi_client
@@ -23,7 +24,11 @@ namespace mcs::rpc::multi_client
         struct MustBePositive : public mcs::Error
         {
         public:
-          MCS_ERROR_COPY_MOVE_DEFAULT (MustBePositive);
+          ~MustBePositive() override;
+          MustBePositive (MustBePositive const&) = default;
+          MustBePositive (MustBePositive&&) noexcept = default;
+          auto operator= (MustBePositive const&) -> MustBePositive& = default;
+          auto operator= (MustBePositive&&) noexcept  -> MustBePositive& = default;
 
         private:
           friend ParallelCalls;
@@ -44,13 +49,31 @@ namespace mcs::rpc::multi_client
 
 namespace fmt
 {
-  template<> MCS_UTIL_FMT_DECLARE (mcs::rpc::multi_client::ParallelCallsLimit);
+  template<>
+    struct formatter<mcs::rpc::multi_client::ParallelCallsLimit>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::rpc::multi_client::ParallelCallsLimit const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace mcs::util::read
 {
-  template<> MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-    (rpc::multi_client::ParallelCallsLimit);
+  template<>
+    struct Read<rpc::multi_client::ParallelCallsLimit>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> rpc::multi_client::ParallelCallsLimit
+        ;
+  };
 }
 
 #include "detail/ParallelCallsLimit.ipp"

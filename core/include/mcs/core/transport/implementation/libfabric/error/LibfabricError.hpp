@@ -29,6 +29,10 @@ namespace mcs::core::transport::implementation::libfabric::error
     };
 
     LibfabricError (FunctionName, ErrorName);
-    MCS_ERROR_COPY_MOVE_DEFAULT (LibfabricError);
+    ~LibfabricError() override;
+    LibfabricError (LibfabricError const&) = default;
+    LibfabricError (LibfabricError&&) noexcept = default;
+    auto operator= (LibfabricError const&) -> LibfabricError& = default;
+    auto operator= (LibfabricError&&) noexcept  -> LibfabricError& = default;
   };
 }

@@ -12,7 +12,8 @@ namespace mcs::core::storage::c_api
 {
   template<typename> struct Traits;
 
-  template<> struct Traits<chunk::access::Const>
+  template<>
+    struct Traits<chunk::access::Const>
   {
     using ChunkState = ::mcs_core_storage_chunk_const_state;
     using Byte = ::MCS_CORE_STORAGE_BYTE const;
@@ -20,7 +21,8 @@ namespace mcs::core::storage::c_api
     static constexpr auto chunk_state (::mcs_core_storage const&);
     static constexpr auto chunk_state_destruct (::mcs_core_storage const&);
   };
-  template<> struct Traits<chunk::access::Mutable>
+  template<>
+    struct Traits<chunk::access::Mutable>
   {
     using ChunkState = ::mcs_core_storage_chunk_mutable_state;
     using Byte = ::MCS_CORE_STORAGE_BYTE;

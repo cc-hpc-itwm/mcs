@@ -3,14 +3,16 @@
 
 #pragma once
 
+#include <fmt/base.h>
 #include <mcs/Error.hpp>
 #include <mcs/core/memory/Offset.hpp>
 #include <mcs/core/memory/Size.hpp>
-#include <mcs/serialization/access.hpp>
-#include <mcs/serialization/define.hpp>
-#include <mcs/util/FMT/access.hpp>
-#include <mcs/util/FMT/define.hpp>
-#include <mcs/util/read/define.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
+#include <mcs/util/read/Read.hpp>
 
 namespace mcs::core::memory
 {
@@ -35,7 +37,11 @@ namespace mcs::core::memory
         [[nodiscard]] constexpr auto begin() const noexcept -> Offset;
         [[nodiscard]] constexpr auto end() const noexcept -> Offset;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (BeginMustNotBeLargerThanEnd);
+        ~BeginMustNotBeLargerThanEnd() override;
+        BeginMustNotBeLargerThanEnd (BeginMustNotBeLargerThanEnd const&) = default;
+        BeginMustNotBeLargerThanEnd (BeginMustNotBeLargerThanEnd&&) noexcept = default;
+        auto operator= (BeginMustNotBeLargerThanEnd const&) -> BeginMustNotBeLargerThanEnd& = default;
+        auto operator= (BeginMustNotBeLargerThanEnd&&) noexcept  -> BeginMustNotBeLargerThanEnd& = default;
 
       private:
         friend struct Range;
@@ -53,8 +59,8 @@ namespace mcs::core::memory
     Offset _begin;
     Offset _end;
 
-    MCS_UTIL_FMT_ACCESS();
-    MCS_SERIALIZATION_ACCESS();
+    template<typename, typename, typename> friend struct fmt::formatter;
+    template<typename> friend struct serialization::Implementation;
   };
 
   template<std::integral I>
@@ -76,20 +82,42 @@ namespace mcs::core::memory
 namespace fmt
 {
   template<>
-    MCS_UTIL_FMT_DECLARE (mcs::core::memory::Range);
+    struct formatter<mcs::core::memory::Range>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::memory::Range const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace mcs::serialization
 {
-  template<> MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-    ( core::memory::Range
-    );
+  template<>
+    struct Implementation<core::memory::Range>
+  {
+    using Type = core::memory::Range;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace mcs::util::read
 {
   template<>
-    MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION (core::memory::Range);
+    struct Read<core::memory::Range>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> core::memory::Range
+        ;
+  };
 }
 
 #include "detail/Range.ipp"

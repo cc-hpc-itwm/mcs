@@ -71,15 +71,47 @@ namespace mcs::core::storage::implementation
     ;
 }
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Heap::Parameter::Create
-  , max_size
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Heap::Parameter::Create>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Heap::Parameter::Create const& value
+    ) -> OArchive&
+  {
+    save (oa, value.max_size);
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Heap::Parameter::Segment::Create
-  , mlocked
-  );
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Heap::Parameter::Create>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Heap::Parameter::Create
+  {
+    auto max_size {load<decltype (mcs::core::storage::implementation::Heap::Parameter::Create::max_size)> (ia)};
+
+    return mcs::core::storage::implementation::Heap::Parameter::Create {max_size};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Heap::Parameter::Segment::Create const& value
+    ) -> OArchive&
+  {
+    save (oa, value.mlocked);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Heap::Parameter::Segment::Create
+  {
+    auto mlocked {load<decltype (mcs::core::storage::implementation::Heap::Parameter::Segment::Create::mlocked)> (ia)};
+
+    return mcs::core::storage::implementation::Heap::Parameter::Segment::Create {mlocked};
+  }
+}
 
 namespace mcs::core::storage::implementation
 {

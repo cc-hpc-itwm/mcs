@@ -4,12 +4,11 @@
 #pragma once
 
 #include <compare>
+#include <fmt/base.h>
 #include <mcs/core/memory/Size.hpp>
-#include <mcs/serialization/access.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/util/FMT/access.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/read/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 #include <variant>
 
 namespace mcs::core::storage
@@ -48,8 +47,8 @@ namespace mcs::core::storage
 
     constexpr MaxSize (decltype (_limit)) noexcept;
 
-    MCS_UTIL_FMT_ACCESS();
-    MCS_SERIALIZATION_ACCESS();
+    template<typename, typename, typename> friend struct fmt::formatter;
+    template<typename> friend struct serialization::Implementation;
 
     // \note defined in (some) tests
     friend constexpr auto operator==
@@ -73,20 +72,42 @@ namespace mcs::core::storage
 namespace fmt
 {
   template<>
-    MCS_UTIL_FMT_DECLARE (mcs::core::storage::MaxSize);
+    struct formatter<mcs::core::storage::MaxSize>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::MaxSize const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (core::storage::MaxSize);
+    struct Implementation<core::storage::MaxSize>
+  {
+    using Type = core::storage::MaxSize;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace mcs::util::read
 {
   template<>
-    MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION (core::storage::MaxSize);
+    struct Read<core::storage::MaxSize>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> core::storage::MaxSize
+        ;
+  };
 }
 
 #include "detail/MaxSize.ipp"

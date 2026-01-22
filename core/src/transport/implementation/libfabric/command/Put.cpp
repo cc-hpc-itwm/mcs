@@ -2,32 +2,33 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/transport/implementation/libfabric/command/Put.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 
 namespace mcs::serialization
 {
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-    ( oa
-    , put
-    , core::transport::implementation::libfabric::command::Put
-    )
+  auto Implementation<core::transport::implementation::libfabric::command::Put>::output
+    ( OArchive& oa
+    , core::transport::implementation::libfabric::command::Put const& put
+    ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, put, destination);
-    MCS_SERIALIZATION_SAVE_FIELD (oa, put, size);
+    save (oa, put.destination);
+    save (oa, put.size);
 
     return oa;
   }
 
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-    ( ia
-    , core::transport::implementation::libfabric::command::Put
-    )
+  auto Implementation<core::transport::implementation::libfabric::command::Put>::input
+    ( IArchive& ia
+    ) -> core::transport::implementation::libfabric::command::Put
   {
     namespace libfabric = core::transport::implementation::libfabric;
     using Put = libfabric::command::Put;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, destination, Put);
-    MCS_SERIALIZATION_LOAD_FIELD (ia, size, Put);
+    auto destination {load<decltype (Put::destination)> (ia)};
+    auto size {load<decltype (Put::size)> (ia)};
 
     return Put {destination, size};
   }

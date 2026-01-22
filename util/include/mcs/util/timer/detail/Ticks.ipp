@@ -2,7 +2,6 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <limits>
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/cast.hpp>
 #include <utility>
 
@@ -45,16 +44,17 @@ namespace mcs::util::timer
 namespace fmt
 {
   template<long ClockScale>
-    MCS_UTIL_FMT_DEFINE_PARSE (context, mcs::util::timer::Ticks<ClockScale>)
+    template<typename ParseContext>
+      constexpr auto formatter<mcs::util::timer::Ticks<ClockScale>>::parse (ParseContext& context)
   {
     return context.begin();
   }
   template<long ClockScale>
-    MCS_UTIL_FMT_DEFINE_FORMAT
-      ( ticks
-      , context
-      , mcs::util::timer::Ticks<ClockScale>
-      )
+    template<typename FormatContext>
+      constexpr auto formatter<mcs::util::timer::Ticks<ClockScale>>::format
+        ( mcs::util::timer::Ticks<ClockScale> const& ticks
+        , FormatContext& context
+        ) const -> decltype (context.out())
   {
     return fmt::format_to
       ( context.out()

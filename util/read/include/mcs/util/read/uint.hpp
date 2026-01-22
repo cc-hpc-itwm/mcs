@@ -5,25 +5,56 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <mcs/util/read/declare.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 
 namespace mcs::util::read
 {
-  template<> MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-    ( std::uint_least8_t
-    );
-  template<> MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-    ( std::uint_least16_t
-    );
-  template<> MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-    ( std::uint_least32_t
-    );
-  template<> MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-    ( std::uint_least64_t
-    );
-  template<> MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-    ( std::byte
-    );
+  template<>
+    struct Read<std::uint_least8_t>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> std::uint_least8_t
+        ;
+  };
+  template<>
+    struct Read<std::uint_least16_t>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> std::uint_least16_t
+        ;
+  };
+  template<>
+    struct Read<std::uint_least32_t>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> std::uint_least32_t
+        ;
+  };
+  template<>
+    struct Read<std::uint_least64_t>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> std::uint_least64_t
+        ;
+  };
+  template<>
+    struct Read<std::byte>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> std::byte
+        ;
+  };
 }
 
 #include "detail/uint.ipp"

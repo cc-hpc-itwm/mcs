@@ -3,8 +3,8 @@
 
 #pragma once
 
+#include <fmt/base.h>
 #include <mcs/core/memory/Size.hpp>
-#include <mcs/util/FMT/declare.hpp>
 
 namespace mcs::core::storage::trace::event::segment::remove
 {
@@ -17,9 +17,17 @@ namespace mcs::core::storage::trace::event::segment::remove
 namespace fmt
 {
   template<>
-    MCS_UTIL_FMT_DECLARE
-      ( mcs::core::storage::trace::event::segment::remove::Result
-      );
+    struct formatter<mcs::core::storage::trace::event::segment::remove::Result>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::trace::event::segment::remove::Result const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/Result.ipp"

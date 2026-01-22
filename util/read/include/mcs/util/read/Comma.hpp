@@ -3,13 +3,22 @@
 
 #pragma once
 
-#include <mcs/util/read/declare.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 
 namespace mcs::util::read
 {
   struct Comma{};
 
-  template<> MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION (Comma);
+  template<>
+    struct Read<Comma>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> Comma
+        ;
+  };
 }
 
 #include "detail/Comma.ipp"

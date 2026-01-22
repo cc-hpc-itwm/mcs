@@ -3,9 +3,9 @@
 
 #pragma once
 
+#include <fmt/base.h>
 #include <mcs/core/storage/Concepts.hpp>
 #include <mcs/core/storage/trace/Concepts.hpp>
-#include <mcs/util/FMT/declare.hpp>
 
 namespace mcs::core::storage::implementation::trace
 {
@@ -18,9 +18,17 @@ namespace fmt
 {
   template<typename Tracer, mcs::core::storage::is_implementation Storage>
     requires (mcs::core::storage::trace::is_tracer<Tracer, Storage>)
-    MCS_UTIL_FMT_DECLARE
-      ( mcs::core::storage::implementation::trace::Tag<Tracer, Storage>
-      );
+    struct formatter<mcs::core::storage::implementation::trace::Tag<Tracer, Storage>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::trace::Tag<Tracer, Storage> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/Tag.ipp"

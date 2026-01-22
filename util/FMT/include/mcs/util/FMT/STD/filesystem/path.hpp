@@ -4,11 +4,22 @@
 #pragma once
 
 #include <filesystem>
-#include <mcs/util/FMT/declare.hpp>
+#include <fmt/base.h>
 
 namespace fmt
 {
-  template<> MCS_UTIL_FMT_DECLARE (std::filesystem::path);
+  template<>
+    struct formatter<std::filesystem::path>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( std::filesystem::path const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/path.ipp"

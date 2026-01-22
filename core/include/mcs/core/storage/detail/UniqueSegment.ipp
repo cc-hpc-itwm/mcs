@@ -23,11 +23,16 @@ namespace mcs::core::storage
           parameter_segment_create
       )
         : _id
-            { storages->template segment_create<StorageImplementation>
-                ( storages->write_access()
-                , storage_id
-                , parameter_segment_create
-                , size
+            { storages->read_write_access()
+              . template modify<StorageImplementation>
+                ( storage_id
+                , [&] (auto& storage_implementation)
+                  {
+                    return storage_implementation.segment_create
+                      ( parameter_segment_create
+                      , size
+                      );
+                  }
                 )
             }
   {}
@@ -80,11 +85,15 @@ namespace mcs::core::storage::segment
       ( "mcs::core::storage::segment::Deleter"
       , [&]
         {
-          _storages->template segment_remove<StorageImplementation>
-            ( _storages->write_access()
-            , _storage_id
-            , _parameter_segment_remove
-            , segment->id()
+          _storages->read_write_access().template modify<StorageImplementation>
+            ( _storage_id
+            , [&] (auto& storage_implementation)
+              {
+                return storage_implementation.segment_remove
+                  ( _parameter_segment_remove
+                  , segment->id()
+                  );
+              }
             );
 
           std::default_delete

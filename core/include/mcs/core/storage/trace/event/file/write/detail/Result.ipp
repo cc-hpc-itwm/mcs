@@ -1,23 +1,21 @@
 // Copyright (C) 2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
-
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE
-    ( context
-    , mcs::core::storage::trace::event::file::write::Result
-    )
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::trace::event::file::write::Result>
+      ::parse (ParseContext& context)
   {
     return context.begin();
   }
 
-  MCS_UTIL_FMT_DEFINE_FORMAT
-    ( file_write
-    , context
-    , mcs::core::storage::trace::event::file::write::Result
-    )
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::trace::event::file::write::Result>
+      ::format
+        ( mcs::core::storage::trace::event::file::write::Result const& file_write
+        , FormatContext& context
+        ) const -> decltype (context.out())
   {
     return fmt::format_to
       ( context.out()

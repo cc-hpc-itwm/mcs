@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <fmt/base.h>
 #include <mcs/Error.hpp>
 #include <mcs/core/chunk/Access.hpp>
 #include <mcs/core/memory/Offset.hpp>
@@ -16,11 +17,12 @@
 #include <mcs/core/storage/c_api/storage.h>
 #include <mcs/core/storage/c_api/types.h>
 #include <mcs/core/storage/segment/ID.hpp>
-#include <mcs/serialization/access.hpp>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/not_null.hpp>
-#include <mcs/util/tuplish/declare.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
+#include <mcs/util/require_semi.hpp>
 #include <memory>
 #include <vector>
 
@@ -103,7 +105,11 @@ namespace mcs::core::storage::implementation
       //
       struct MethodNotProvided : public mcs::Error
       {
-        MCS_ERROR_COPY_MOVE_DEFAULT (MethodNotProvided);
+        ~MethodNotProvided() override;
+        MethodNotProvided (MethodNotProvided const&) = default;
+        MethodNotProvided (MethodNotProvided&&) noexcept = default;
+        auto operator= (MethodNotProvided const&) -> MethodNotProvided& = default;
+        auto operator= (MethodNotProvided&&) noexcept  -> MethodNotProvided& = default;
 
       private:
         friend struct Import_C_API;
@@ -118,7 +124,11 @@ namespace mcs::core::storage::implementation
 
         [[nodiscard]] constexpr auto error() const noexcept -> Bytes const&;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (Implementation);
+        ~Implementation() override;
+        Implementation (Implementation const&) = default;
+        Implementation (Implementation&&) noexcept = default;
+        auto operator= (Implementation const&) -> Implementation& = default;
+        auto operator= (Implementation&&) noexcept  -> Implementation& = default;
 
       private:
         friend struct Import_C_API;
@@ -133,7 +143,11 @@ namespace mcs::core::storage::implementation
           ) const noexcept -> Parameter::Create const&
           ;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (Create);
+        ~Create() override;
+        Create (Create const&) = default;
+        Create (Create&&) noexcept = default;
+        auto operator= (Create const&) -> Create& = default;
+        auto operator= (Create&&) noexcept  -> Create& = default;
 
       private:
         friend struct Import_C_API;
@@ -150,7 +164,11 @@ namespace mcs::core::storage::implementation
             ) const noexcept -> Parameter::Size::Max const&
             ;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (Max);
+          ~Max() override;
+          Max (Max const&) = default;
+          Max (Max&&) noexcept = default;
+          auto operator= (Max const&) -> Max& = default;
+          auto operator= (Max&&) noexcept  -> Max& = default;
 
         private:
           friend struct Import_C_API;
@@ -165,7 +183,11 @@ namespace mcs::core::storage::implementation
             ) const noexcept -> Parameter::Size::Used const&
             ;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (Used);
+          ~Used() override;
+          Used (Used const&) = default;
+          Used (Used&&) noexcept = default;
+          auto operator= (Used const&) -> Used& = default;
+          auto operator= (Used&&) noexcept  -> Used& = default;
 
         private:
           friend struct Import_C_API;
@@ -184,7 +206,11 @@ namespace mcs::core::storage::implementation
             ;
           [[nodiscard]] constexpr auto size() const noexcept -> memory::Size;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (Create);
+          ~Create() override;
+          Create (Create const&) = default;
+          Create (Create&&) noexcept = default;
+          auto operator= (Create const&) -> Create& = default;
+          auto operator= (Create&&) noexcept  -> Create& = default;
 
         private:
           friend struct Import_C_API;
@@ -204,7 +230,11 @@ namespace mcs::core::storage::implementation
             ) const noexcept -> segment::ID
             ;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (Remove);
+          ~Remove() override;
+          Remove (Remove const&) = default;
+          Remove (Remove&&) noexcept = default;
+          auto operator= (Remove const&) -> Remove& = default;
+          auto operator= (Remove&&) noexcept  -> Remove& = default;
 
         private:
           friend struct Import_C_API;
@@ -239,7 +269,11 @@ namespace mcs::core::storage::implementation
             ) const noexcept -> memory::Range
             ;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (Read);
+          ~Read() override;
+          Read (Read const&) = default;
+          Read (Read&&) noexcept = default;
+          auto operator= (Read const&) -> Read& = default;
+          auto operator= (Read&&) noexcept  -> Read& = default;
 
         private:
           friend struct Import_C_API;
@@ -279,7 +313,11 @@ namespace mcs::core::storage::implementation
             ) const noexcept -> memory::Range
             ;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (Write);
+          ~Write() override;
+          Write (Write const&) = default;
+          Write (Write&&) noexcept = default;
+          auto operator= (Write const&) -> Write& = default;
+          auto operator= (Write&&) noexcept  -> Write& = default;
 
         private:
           friend struct Import_C_API;
@@ -315,7 +353,11 @@ namespace mcs::core::storage::implementation
             ) const noexcept -> memory::Range
             ;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (Description);
+          ~Description() override;
+          Description (Description const&) = default;
+          Description (Description&&) noexcept = default;
+          auto operator= (Description const&) -> Description& = default;
+          auto operator= (Description&&) noexcept  -> Description& = default;
 
         private:
           friend struct Import_C_API;
@@ -335,7 +377,11 @@ namespace mcs::core::storage::implementation
         constexpr auto used() const noexcept -> memory::Size;
         constexpr auto max() const noexcept -> MaxSize;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (BadAlloc);
+        ~BadAlloc() override;
+        BadAlloc (BadAlloc const&) = default;
+        BadAlloc (BadAlloc&&) noexcept = default;
+        auto operator= (BadAlloc const&) -> BadAlloc& = default;
+        auto operator= (BadAlloc&&) noexcept  -> BadAlloc& = default;
 
       private:
         friend struct Import_C_API;
@@ -392,7 +438,7 @@ namespace mcs::core::storage::implementation
         util::not_null<::mcs_core_storage const> _storage;
         util::not_null<::mcs_core_storage_instance const> _instance;
 
-        MCS_SERIALIZATION_ACCESS();
+        template<typename> friend struct serialization::Implementation;
       };
     };
 
@@ -469,43 +515,357 @@ namespace mcs::core::storage::implementation
 namespace mcs::serialization
 {
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( core::storage::implementation::Import_C_API::Chunk::Description<Access>
-      );
+    struct Implementation<core::storage::implementation::Import_C_API::Chunk::Description<Access>>
+  {
+    using Type = core::storage::implementation::Import_C_API::Chunk::Description<Access>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace fmt
 {
   template<mcs::core::chunk::is_access Access>
-    MCS_UTIL_FMT_DECLARE
-      ( mcs::core::storage::implementation::Import_C_API::Chunk::Description<Access>
-      );
+    struct formatter<mcs::core::storage::implementation::Import_C_API::Chunk::Description<Access>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Import_C_API::Chunk::Description<Access> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Import_C_API::Tag
-  );
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Import_C_API::Tag>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::File::Read
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::File::Write
-  );
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Import_C_API::Tag const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Import_C_API::Tag>
+  {
+    using Type = mcs::core::storage::implementation::Import_C_API::Tag;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Import_C_API::Tag>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Import_C_API::Tag
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max>
+  {
+    using Type = mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used>
+  {
+    using Type = mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create>
+  {
+    using Type = mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove>
+  {
+    using Type = mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description>
+  {
+    using Type = mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Import_C_API::Parameter::File::Read>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Import_C_API::Parameter::File::Read const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::File::Read>
+  {
+    using Type = mcs::core::storage::implementation::Import_C_API::Parameter::File::Read;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Import_C_API::Parameter::File::Read>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Import_C_API::Parameter::File::Read
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Import_C_API::Parameter::File::Write>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Import_C_API::Parameter::File::Write const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::File::Write>
+  {
+    using Type = mcs::core::storage::implementation::Import_C_API::Parameter::File::Write;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Import_C_API::Parameter::File::Write>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Import_C_API::Parameter::File::Write
+        ;
+  };
+}
 
 #include "detail/Import_C_API.ipp"

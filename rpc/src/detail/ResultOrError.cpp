@@ -2,8 +2,11 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/rpc/detail/ResultOrError.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
 #include <mcs/serialization/STD/string.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::rpc::detail

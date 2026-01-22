@@ -51,7 +51,11 @@ namespace mcs::core::transport::implementation::ASIO::provider
         [[nodiscard]] constexpr auto wanted() const noexcept -> Wanted;
         [[nodiscard]] constexpr auto written() const noexcept -> Written;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (CouldNotWriteAllData);
+        ~CouldNotWriteAllData() override;
+        CouldNotWriteAllData (CouldNotWriteAllData const&) = default;
+        CouldNotWriteAllData (CouldNotWriteAllData&&) noexcept = default;
+        auto operator= (CouldNotWriteAllData const&) -> CouldNotWriteAllData& = default;
+        auto operator= (CouldNotWriteAllData&&) noexcept  -> CouldNotWriteAllData& = default;
 
       private:
         template<storage::is_implementation...> friend struct Handler;
@@ -78,7 +82,11 @@ namespace mcs::core::transport::implementation::ASIO::provider
         constexpr auto wanted() const noexcept -> Wanted;
         constexpr auto read() const noexcept -> Read;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (CouldNotReadAllData);
+        ~CouldNotReadAllData() override;
+        CouldNotReadAllData (CouldNotReadAllData const&) = default;
+        CouldNotReadAllData (CouldNotReadAllData&&) noexcept = default;
+        auto operator= (CouldNotReadAllData const&) -> CouldNotReadAllData& = default;
+        auto operator= (CouldNotReadAllData&&) noexcept  -> CouldNotReadAllData& = default;
 
       private:
         template<storage::is_implementation...> friend struct Handler;

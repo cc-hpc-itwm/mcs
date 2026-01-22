@@ -22,7 +22,9 @@
 #include <mcs/util/syscall/getpid.hpp>
 #include <mcs/util/syscall/getrlimit.hpp>
 #include <mcs/util/syscall/getuid.hpp>
+#include <mcs/util/syscall/getxattr.hpp>
 #include <mcs/util/syscall/hostname.hpp>
+#include <mcs/util/syscall/ioctl.hpp>
 #include <mcs/util/syscall/lseek.hpp>
 #include <mcs/util/syscall/mlock.hpp>
 #include <mcs/util/syscall/mmap.hpp>
@@ -30,6 +32,7 @@
 #include <mcs/util/syscall/munmap.hpp>
 #include <mcs/util/syscall/pread.hpp>
 #include <mcs/util/syscall/pwrite.hpp>
+#include <mcs/util/syscall/raise.hpp>
 #include <mcs/util/syscall/read.hpp>
 #include <mcs/util/syscall/realloc.hpp>
 #include <mcs/util/syscall/sendfile.hpp>
@@ -83,6 +86,14 @@ namespace mcs::util::syscall
       if (rc == -1)
       {
         throw syscall_error (errno);
+      }
+    }
+
+    auto non_null_is_failure (int rc) -> void
+    {
+      if (rc != 0)
+      {
+        throw syscall_error (rc);
       }
     }
 
@@ -354,6 +365,17 @@ namespace mcs::util::syscall
     return never_fails (::getuid());
   }
 
+  auto getxattr ( char const* path
+                , char const* name
+                , void* value
+                , size_t size
+                ) -> ssize_t
+  {
+    return negative_one_fails_with_errno<ssize_t>
+      ( ::getxattr (path, name, value, size)
+      );
+  }
+
   auto getrlimit (int resource) -> rlimit
   try
   {
@@ -367,6 +389,28 @@ namespace mcs::util::syscall
     std::throw_with_nested
       ( Error
         { fmt::format ("syscall::getrlimit (resource = {})", resource)
+        }
+      );
+  }
+
+  auto ioctl (int fd, unsigned long request, void* arg) -> int
+  try
+  {
+    // \note on alpine linux the type for the request is "int"
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wconversion"
+    return negative_one_fails_with_errno<int> (::ioctl (fd, request, arg));
+    #pragma GCC diagnostic pop
+  }
+  catch (...)
+  {
+    std::throw_with_nested
+      ( Error
+        { fmt::format ( "syscall::ioctl (fd = {}, request = {}, arg = {})"
+                      , fd
+                      , request
+                      , arg
+                      )
         }
       );
   }
@@ -620,6 +664,18 @@ namespace mcs::util::syscall
           , offset
           )
         }
+      );
+  }
+
+  auto raise (int sig) -> void
+  try
+  {
+    return non_null_is_failure (::raise (sig));
+  }
+  catch (...)
+  {
+    std::throw_with_nested
+      ( Error {fmt::format ( "syscall::raise (sig = {})", sig)}
       );
   }
 

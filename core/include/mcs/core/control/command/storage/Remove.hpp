@@ -3,8 +3,12 @@
 
 #pragma once
 
+#include <fmt/base.h>
 #include <mcs/core/storage/ID.hpp>
-#include <mcs/util/tuplish/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
+#include <mcs/util/require_semi.hpp>
 
 namespace mcs::core::control::command::storage
 {
@@ -16,7 +20,45 @@ namespace mcs::core::control::command::storage
   };
 }
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  (mcs::core::control::command::storage::Remove);
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::control::command::storage::Remove>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::control::command::storage::Remove const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::control::command::storage::Remove>
+  {
+    using Type = mcs::core::control::command::storage::Remove;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::control::command::storage::Remove>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::control::command::storage::Remove
+        ;
+  };
+}
 
 #include "detail/Remove.ipp"

@@ -131,16 +131,23 @@ namespace mcs::core
               < Chunk
               , chunk::access::Mutable
               >
-          { storages.template chunk_description
-              < typename StorageImplementation::Storage
-              , chunk::access::Mutable
-              >
-            ( storages.read_access()
-            , storage->id()
-            , storage_implementation.parameter_chunk_description()
-            , segment.id
-            , memory::make_range (memory::make_offset (0), segment.size)
-            )
+          { storages.read_access()
+            . template invoke<typename StorageImplementation::Storage>
+              ( storage->id()
+              , [&] (auto const& _storage_implementation)
+                {
+                  return _storage_implementation
+                    . template chunk_description<chunk::access::Mutable>
+                      ( storage_implementation.parameter_chunk_description()
+                      , segment.id
+                      , memory::make_range
+                        ( memory::make_offset (0)
+                        , segment.size
+                        )
+                      )
+                    ;
+                }
+              )
           }
         };
       auto const elements {as<Element> (chunk)};
@@ -161,16 +168,23 @@ namespace mcs::core
               < Chunk
               , chunk::access::Const
               >
-          { storages.template chunk_description
-              < typename StorageImplementation::Storage
-              , chunk::access::Const
-              >
-            ( storages.read_access()
-            , storage->id()
-            , storage_implementation.parameter_chunk_description()
-            , segment.id
-            , memory::make_range (memory::make_offset (0), segment.size)
-            )
+          { storages.read_access()
+            . template invoke<typename StorageImplementation::Storage>
+              ( storage->id()
+              , [&] (auto const& _storage_implementation)
+                {
+                  return _storage_implementation
+                    . template chunk_description<chunk::access::Const>
+                      ( storage_implementation.parameter_chunk_description()
+                      , segment.id
+                      , memory::make_range
+                        ( memory::make_offset (0)
+                        , segment.size
+                        )
+                      )
+                    ;
+                }
+              )
           }
         };
       auto const elements {as<Element const> (chunk)};

@@ -6,7 +6,7 @@
 #include <mcs/core/memory/Size.hpp>
 #include <mcs/core/transport/Address.hpp>
 #include <mcs/core/transport/implementation/libfabric/libfabric/Name.hpp>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 
 namespace mcs::core::transport::implementation::libfabric::command
 {
@@ -23,7 +23,11 @@ namespace mcs::core::transport::implementation::libfabric::command
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (core::transport::implementation::libfabric::command::Get)
-    ;
+    struct Implementation<core::transport::implementation::libfabric::command::Get>
+  {
+    using Type = core::transport::implementation::libfabric::command::Get;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }

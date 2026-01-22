@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <string>
 #include <variant>
 
@@ -15,7 +15,8 @@ namespace mcs::rpc::detail
     T value;
 
     explicit Result (decltype (value));
-    MCS_SERIALIZATION_DECLARE_INTRUSIVE_CTOR_AND_SAVE (Result);
+    explicit Result (serialization::IArchive&);
+    auto save (serialization::OArchive&) const -> serialization::OArchive&;
   };
 
   template<>
@@ -28,7 +29,8 @@ namespace mcs::rpc::detail
     std::string reason;
 
     explicit Error (decltype (reason));
-    MCS_SERIALIZATION_DECLARE_INTRUSIVE_CTOR_AND_SAVE (Error);
+    explicit Error (serialization::IArchive&);
+    auto save (serialization::OArchive&) const -> serialization::OArchive&;
   };
 
   template<typename T>

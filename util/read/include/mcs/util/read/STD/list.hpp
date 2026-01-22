@@ -4,12 +4,19 @@
 #pragma once
 
 #include <list>
-#include <mcs/util/read/declare.hpp>
+#include <mcs/util/read/Concepts.hpp>
 
 namespace mcs::util::read
 {
   template<is_readable T>
-    MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION (std::list<T>);
+    struct Read<std::list<T>>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> std::list<T>
+        ;
+  };
 }
 
 #include "detail/list.ipp"

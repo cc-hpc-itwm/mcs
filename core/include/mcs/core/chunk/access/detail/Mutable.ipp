@@ -1,7 +1,6 @@
 // Copyright (C) 2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
 #include <utility>
 
 namespace mcs::core::chunk::access
@@ -14,16 +13,17 @@ namespace mcs::core::chunk::access
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (context, mcs::core::chunk::access::Mutable)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::chunk::access::Mutable>::parse (ParseContext& context)
   {
     return context.begin();
   }
 
-  MCS_UTIL_FMT_DEFINE_FORMAT
-    ( /* access */
-    , context
-    , mcs::core::chunk::access::Mutable
-    )
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::chunk::access::Mutable>::format
+      ( mcs::core::chunk::access::Mutable const& /* access */
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to (context.out(), "chunk::access::Mutable");
   }

@@ -14,6 +14,10 @@ namespace mcs::serialization::error
   {
     explicit Save() noexcept;
 
-    MCS_ERROR_COPY_MOVE_DEFAULT (Save);
+    ~Save() override;
+    Save (Save const&) = default;
+    Save (Save&&) noexcept = default;
+    auto operator= (Save const&) -> Save& = default;
+    auto operator= (Save&&) noexcept  -> Save& = default;
   };
 }

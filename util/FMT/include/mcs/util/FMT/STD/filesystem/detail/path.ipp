@@ -1,16 +1,20 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/string.hpp>
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, std::filesystem::path)
+  template<typename ParseContext>
+    constexpr auto formatter<std::filesystem::path>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (path, ctx, std::filesystem::path)
+  template<typename FormatContext>
+    constexpr auto formatter<std::filesystem::path>::format
+      ( std::filesystem::path const& path
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to (ctx.out(), "{}", mcs::util::string {path.string()});
   }

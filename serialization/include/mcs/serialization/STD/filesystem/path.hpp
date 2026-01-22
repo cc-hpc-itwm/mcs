@@ -4,12 +4,16 @@
 #pragma once
 
 #include <filesystem>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (std::filesystem::path)
-    ;
+    struct Implementation<std::filesystem::path>
+  {
+    using Type = std::filesystem::path;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }

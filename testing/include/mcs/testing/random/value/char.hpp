@@ -11,7 +11,8 @@ namespace mcs::testing::random
 {
   // produces random characters
   //
-  template<> struct value<char> : public value<std::int_least8_t>
+  template<>
+    struct value<char> : public value<std::int_least8_t>
   {
     using Base = value<std::int_least8_t>;
 

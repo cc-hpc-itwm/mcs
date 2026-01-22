@@ -13,7 +13,8 @@ namespace mcs::testing::random
 
   // produces random c identifiers
   //
-  template<> struct value<CIdent>
+  template<>
+    struct value<CIdent>
   {
     struct Length
     {

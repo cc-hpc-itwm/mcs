@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <set>
 
 namespace mcs::serialization
@@ -12,9 +12,13 @@ namespace mcs::serialization
           , is_serializable Compare
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (std::set<Key, Compare, Allocator>)
-    ;
+    struct Implementation<std::set<Key, Compare, Allocator>>
+  {
+    using Type = std::set<Key, Compare, Allocator>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/set.ipp"

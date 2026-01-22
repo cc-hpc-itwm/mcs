@@ -69,20 +69,29 @@ namespace mcs::core
 
     ASSERT_FALSE
       ( testing::random::value<memory::Size>{}()
-      > storages.template size_max<typename TestingStorage::Storage>
-        ( storages.read_access()
-        , storage->id()
-        , testing_storage.parameter_size_max()
+      > storages.read_access().template invoke<typename TestingStorage::Storage>
+        ( storage->id()
+        , [&] (auto const& storage_implementation)
+          {
+            return storage_implementation.size_max
+              ( testing_storage.parameter_size_max()
+              );
+          }
         )
       );
 
     auto size_used {memory::make_size (0)};
 
     ASSERT_EQ
-      ( storages.template size_used<typename TestingStorage::Storage>
-          ( storages.read_access()
-          , storage->id()
-          , testing_storage.parameter_size_used()
+      ( storages.read_access()
+        . template invoke<typename TestingStorage::Storage>
+          ( storage->id()
+          , [&] (auto const& storage_implementation)
+            {
+              return storage_implementation.size_used
+                ( testing_storage.parameter_size_used()
+                );
+            }
           )
       , size_used
       );
@@ -103,23 +112,34 @@ namespace mcs::core
       auto const size {random_size()};
 
       segment_ids_with_sizes.emplace_back
-        ( storages.template segment_create<typename TestingStorage::Storage>
-          ( storages.write_access()
-          , storage->id()
-          , testing_storage.parameter_segment_create()
-          , size
-          )
+        ( storages.read_write_access()
+          . template modify<typename TestingStorage::Storage>
+            ( storage->id()
+            , [&] (auto& storage_implementation)
+              {
+                return storage_implementation.segment_create
+                  ( testing_storage.parameter_segment_create()
+                  , size
+                  );
+              }
+            )
         , size
         );
 
       size_used += size;
 
+      // \todo one read_write_access for the complete loop
       ASSERT_EQ
-        ( storages.template size_used<typename TestingStorage::Storage>
-          ( storages.read_access()
-          , storage->id()
-          , testing_storage.parameter_size_used()
-          )
+        ( storages.read_access()
+          . template invoke<typename TestingStorage::Storage>
+            ( storage->id()
+            , [&] (auto const& storage_implementation)
+              {
+                return storage_implementation.size_used
+                  ( testing_storage.parameter_size_used()
+                  );
+              }
+            )
         , size_used
         );
     }
@@ -129,15 +149,21 @@ namespace mcs::core
       , testing::random::random_device()
       );
 
+    auto const read_write_access {storages.read_write_access()};
+
     for (auto [segment_id, size] : segment_ids_with_sizes)
     {
       auto const size_freed
-        { storages.template segment_remove<typename TestingStorage::Storage>
-          ( storages.write_access()
-          , storage->id()
-          , testing_storage.parameter_segment_remove()
-          , segment_id
-          )
+        { read_write_access.template modify<typename TestingStorage::Storage>
+            ( storage->id()
+            , [&] (auto& storage_implementation)
+              {
+                return storage_implementation.segment_remove
+                  ( testing_storage.parameter_segment_remove()
+                  , segment_id
+                  );
+              }
+            )
         };
 
       ASSERT_EQ (size_freed, size);
@@ -145,11 +171,16 @@ namespace mcs::core
       size_used -= size;
 
       ASSERT_EQ
-        ( storages.template size_used<typename TestingStorage::Storage>
-          ( storages.read_access()
-          , storage->id()
-          , testing_storage.parameter_size_used()
-          )
+        ( read_write_access
+          . template invoke<typename TestingStorage::Storage>
+            ( storage->id()
+            , [&] (auto const& storage_implementation)
+              {
+                return storage_implementation.size_used
+                  ( testing_storage.parameter_size_used()
+                  );
+              }
+            )
         , size_used
         );
     }
@@ -157,10 +188,15 @@ namespace mcs::core
     ASSERT_EQ (size_used, memory::make_size (0));
 
     ASSERT_EQ
-      ( storages.template size_used<typename TestingStorage::Storage>
-          ( storages.read_access()
-          , storage->id()
-          , testing_storage.parameter_size_used()
+      ( read_write_access
+        . template invoke<typename TestingStorage::Storage>
+          ( storage->id()
+          , [&] (auto const& storage_implementation)
+            {
+              return storage_implementation.size_used
+                ( testing_storage.parameter_size_used()
+                );
+            }
           )
       , size_used
       );
@@ -196,12 +232,18 @@ namespace mcs::core
       auto create_segment
         { [&]
           {
-            std::ignore = storages.segment_create<typename TestingStorage::Storage>
-              ( storages.write_access()
-              , storage->id()
-              , testing_storage.parameter_segment_create()
-              , size
-              );
+            std::ignore = storages.read_write_access()
+              . template modify<typename TestingStorage::Storage>
+                ( storage->id()
+                , [&] (auto& storage_implementation)
+                  {
+                    return storage_implementation.segment_create
+                      ( testing_storage.parameter_segment_create()
+                      , size
+                      );
+                  }
+                )
+              ;
           }
         };
 
@@ -246,22 +288,33 @@ namespace mcs::core
           )
       };
 
+    // \todo auto const read_write_access {storages.read_write_access()};
     auto const segment_id
-      { storages.segment_create<typename TestingStorage::Storage>
-        ( storages.write_access()
-        , storage->id()
-        , testing_storage.parameter_segment_create()
-        , memory::make_size (0)
-        )
+      { storages.read_write_access()
+        . template modify<typename TestingStorage::Storage>
+          ( storage->id()
+          , [&] (auto& storage_implementation)
+            {
+              return storage_implementation.segment_create
+                ( testing_storage.parameter_segment_create()
+                , memory::make_size (0)
+                );
+            }
+          )
       };
 
     ASSERT_EQ
-      ( storages.segment_remove<typename TestingStorage::Storage>
-        ( storages.write_access()
-        , storage->id()
-        , testing_storage.parameter_segment_remove()
-        , segment_id
-        )
+      ( storages.read_write_access()
+        . template modify<typename TestingStorage::Storage>
+          ( storage->id()
+          , [&] (auto& storage_implementation)
+            {
+              return storage_implementation.segment_remove
+                ( testing_storage.parameter_segment_remove()
+                , segment_id
+                );
+            }
+          )
       , memory::make_size (0)
       );
   }

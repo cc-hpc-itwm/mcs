@@ -1,15 +1,18 @@
 // Copyright (C) 2022-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
-
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, std::exception)
+  template<typename ParseContext>
+    constexpr auto formatter<std::exception>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (error, ctx, std::exception)
+  template<typename FormatContext>
+    constexpr auto formatter<std::exception>::format
+      ( std::exception const& error
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     fmt::format_to (ctx.out(), "{}", error.what());
 
@@ -29,11 +32,16 @@ namespace fmt
     return ctx.out();
   }
 
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, std::exception_ptr)
+  template<typename ParseContext>
+    constexpr auto formatter<std::exception_ptr>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (error, ctx, std::exception_ptr)
+  template<typename FormatContext>
+    constexpr auto formatter<std::exception_ptr>::format
+      ( std::exception_ptr const& error
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     try
     {

@@ -4,12 +4,20 @@
 #pragma once
 
 #include <filesystem>
-#include <mcs/util/read/declare.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 
 namespace mcs::util::read
 {
   template<>
-    MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION (std::filesystem::path);
+    struct Read<std::filesystem::path>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> std::filesystem::path
+        ;
+  };
 }
 
 #include "detail/path.ipp"

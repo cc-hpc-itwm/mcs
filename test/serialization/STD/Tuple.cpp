@@ -13,7 +13,8 @@ namespace
 {
   template<typename...> struct RandomTuple;
 
-  template<> struct RandomTuple<>
+  template<>
+    struct RandomTuple<>
   {
     constexpr auto operator()() const noexcept
     {

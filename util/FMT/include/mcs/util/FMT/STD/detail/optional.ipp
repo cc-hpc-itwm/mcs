@@ -2,18 +2,22 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
-#include <mcs/util/FMT/define.hpp>
 #include <tuple>
 
 namespace fmt
 {
   template<formattable T>
-    MCS_UTIL_FMT_DEFINE_PARSE (ctx, std::optional<T>)
+    template<typename ParseContext>
+      constexpr auto formatter<std::optional<T>>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
   template<formattable T>
-    MCS_UTIL_FMT_DEFINE_FORMAT (opt, ctx, std::optional<T>)
+    template<typename FormatContext>
+      constexpr auto formatter<std::optional<T>>::format
+        ( std::optional<T> const& opt
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out())
   {
     if (opt.has_value())
     {

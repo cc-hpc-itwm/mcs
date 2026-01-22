@@ -2,7 +2,6 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
-#include <mcs/util/FMT/define.hpp>
 #include <tuple>
 
 namespace fmt
@@ -10,10 +9,10 @@ namespace fmt
   template< mcs::core::storage::is_implementation Storage
           , mcs::core::chunk::is_access Access
           >
-    MCS_UTIL_FMT_DEFINE_PARSE
-      ( context
-      , mcs::core::storage::trace::event::chunk::Description<Storage, Access>
-      )
+    template<typename ParseContext>
+      constexpr auto formatter
+        <mcs::core::storage::trace::event::chunk::Description<Storage, Access>>
+          ::parse (ParseContext& context)
   {
     return context.begin();
   }
@@ -21,11 +20,13 @@ namespace fmt
   template< mcs::core::storage::is_implementation Storage
           , mcs::core::chunk::is_access Access
           >
-    MCS_UTIL_FMT_DEFINE_FORMAT
-      ( chunk_description
-      , context
-      , mcs::core::storage::trace::event::chunk::Description<Storage, Access>
-      )
+    template<typename FormatContext>
+      constexpr auto formatter
+        <mcs::core::storage::trace::event::chunk::Description<Storage, Access>>
+          ::format
+            ( mcs::core::storage::trace::event::chunk::Description<Storage, Access> const& chunk_description
+            , FormatContext& context
+            ) const -> decltype (context.out())
   {
     return fmt::format_to
       ( context.out()

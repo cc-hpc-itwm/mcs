@@ -6,9 +6,10 @@
 #include <asio/io_context.hpp>
 #include <asio/signal_set.hpp>
 #include <asio/thread_pool.hpp>
+#include <fmt/base.h>
 #include <mcs/Error.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/read/declare.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 
 namespace mcs::rpc
 {
@@ -35,7 +36,11 @@ namespace mcs::rpc
         struct MustBePositive : public mcs::Error
         {
         public:
-          MCS_ERROR_COPY_MOVE_DEFAULT (MustBePositive);
+          ~MustBePositive() override;
+          MustBePositive (MustBePositive const&) = default;
+          MustBePositive (MustBePositive&&) noexcept = default;
+          auto operator= (MustBePositive const&) -> MustBePositive& = default;
+          auto operator= (MustBePositive&&) noexcept  -> MustBePositive& = default;
 
         private:
           friend ScopedRunningIOContext;
@@ -73,16 +78,31 @@ namespace mcs::rpc
 
 namespace fmt
 {
-  template<> MCS_UTIL_FMT_DECLARE
-    ( mcs::rpc::ScopedRunningIOContext::NumberOfThreads
-    );
+  template<>
+    struct formatter<mcs::rpc::ScopedRunningIOContext::NumberOfThreads>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::rpc::ScopedRunningIOContext::NumberOfThreads const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace mcs::util::read
 {
   template<>
-    MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (rpc::ScopedRunningIOContext::NumberOfThreads);
+    struct Read<rpc::ScopedRunningIOContext::NumberOfThreads>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> rpc::ScopedRunningIOContext::NumberOfThreads
+        ;
+  };
 }
 
 #include "detail/ScopedRunningIOContext.ipp"

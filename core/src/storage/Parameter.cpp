@@ -3,7 +3,8 @@
 
 #include <mcs/core/storage/Parameter.hpp>
 #include <mcs/serialization/STD/vector.hpp>
-#include <mcs/util/tuplish/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::core::storage
@@ -13,7 +14,23 @@ namespace mcs::core::storage
   {}
 }
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::Parameter
-  , _blob
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::Parameter>::output
+    ( OArchive& oa
+    , mcs::core::storage::Parameter const& value
+    ) -> OArchive&
+  {
+    save (oa, value._blob);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::Parameter>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::Parameter
+  {
+    auto _blob {load<decltype (mcs::core::storage::Parameter::_blob)> (ia)};
+
+    return mcs::core::storage::Parameter {_blob};
+  }
+}

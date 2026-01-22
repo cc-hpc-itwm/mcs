@@ -62,4 +62,11 @@ namespace mcs::core::memory
 
     ASSERT_EQ (make_offset (x) + make_offset (y), make_offset (x + y));
   }
+
+  TEST_F (MCSMemoryOffset, unary_minus_works)
+  {
+    auto const x {std::invoke (RandomValue{})};
+
+    ASSERT_EQ (make_offset (x), -make_offset (-x));
+  }
 }

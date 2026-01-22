@@ -3,15 +3,19 @@
 
 #pragma once
 
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <optional>
 
 namespace mcs::serialization
 {
   template<is_serializable T>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (std::optional<T>)
-    ;
+    struct Implementation<std::optional<T>>
+  {
+    using Type = std::optional<T>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/optional.ipp"

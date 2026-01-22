@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <mcs/util/FMT/declare.hpp>
+#include <fmt/base.h>
 #include <span>
 
 namespace mcs::core::chunk::access
@@ -31,7 +31,18 @@ namespace mcs::core::chunk::access
 
 namespace fmt
 {
-  template<> MCS_UTIL_FMT_DECLARE (mcs::core::chunk::access::Const);
+  template<>
+    struct formatter<mcs::core::chunk::access::Const>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::chunk::access::Const const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/Const.ipp"

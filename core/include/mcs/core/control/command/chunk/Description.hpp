@@ -9,7 +9,7 @@
 #include <mcs/core/storage/ID.hpp>
 #include <mcs/core/storage/Parameter.hpp>
 #include <mcs/core/storage/segment/ID.hpp>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 
 namespace mcs::core::control::command::chunk
 {
@@ -34,8 +34,13 @@ namespace mcs::serialization
   template< core::chunk::is_access Access
           , core::storage::is_implementation... StorageImplementations
           >
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (core::control::command::chunk::Description<Access, StorageImplementations...>);
+    struct Implementation<core::control::command::chunk::Description<Access, StorageImplementations...>>
+  {
+    using Type = core::control::command::chunk::Description<Access, StorageImplementations...>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/Description.ipp"

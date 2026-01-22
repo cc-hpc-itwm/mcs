@@ -15,7 +15,11 @@ namespace mcs::rpc::multi_client
 
     auto errors() const noexcept -> std::list<std::exception_ptr> const&;
 
-    MCS_ERROR_COPY_MOVE_DEFAULT (Errors);
+    ~Errors() override;
+    Errors (Errors const&) = default;
+    Errors (Errors&&) noexcept = default;
+    auto operator= (Errors const&) -> Errors& = default;
+    auto operator= (Errors&&) noexcept  -> Errors& = default;
 
   private:
     std::list<std::exception_ptr> _errors;

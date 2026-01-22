@@ -8,7 +8,6 @@ target_link_libraries (mcs_util_ASIO
   PUBLIC asio
   PUBLIC fmt
   PUBLIC mcs_util
-  PUBLIC mcs_util_hash
   PUBLIC mcs_util_read
   PUBLIC mcs_util_string
   PUBLIC mcs_serialization

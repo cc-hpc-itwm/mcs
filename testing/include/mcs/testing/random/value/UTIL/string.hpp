@@ -10,7 +10,8 @@ namespace mcs::testing::random
 {
   // produces random util::strings
   //
-  template<> struct value<util::string>
+  template<>
+    struct value<util::string>
   {
     // Arguments for the random_string generator
     //

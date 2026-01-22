@@ -18,7 +18,11 @@ namespace mcs::rpc::error
   {
     explicit Completion (std::exception_ptr) noexcept;
 
-    MCS_ERROR_COPY_MOVE_DEFAULT (Completion);
+    ~Completion() override;
+    Completion (Completion const&) = default;
+    Completion (Completion&&) noexcept = default;
+    auto operator= (Completion const&) -> Completion& = default;
+    auto operator= (Completion&&) noexcept  -> Completion& = default;
 
     // Returns the concrete error received by the completion handler.
     //

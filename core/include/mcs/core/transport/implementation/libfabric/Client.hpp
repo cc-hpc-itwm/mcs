@@ -68,7 +68,11 @@ namespace mcs::core::transport::implementation::libfabric
         [[nodiscard]] constexpr auto wanted() const noexcept -> Wanted;
         [[nodiscard]] constexpr auto read() const noexcept -> Read;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (CouldNotReadAllData);
+        ~CouldNotReadAllData() override;
+        CouldNotReadAllData (CouldNotReadAllData const&) = default;
+        CouldNotReadAllData (CouldNotReadAllData&&) noexcept = default;
+        auto operator= (CouldNotReadAllData const&) -> CouldNotReadAllData& = default;
+        auto operator= (CouldNotReadAllData&&) noexcept  -> CouldNotReadAllData& = default;
 
       private:
        friend struct Client;

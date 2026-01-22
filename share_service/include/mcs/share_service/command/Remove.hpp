@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/share_service/Chunk.hpp>
 #include <mcs/share_service/SupportedStorageImplementations.hpp>
 
@@ -36,16 +36,24 @@ namespace mcs::share_service::command
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (share_service::command::Remove)
-    ;
+    struct Implementation<share_service::command::Remove>
+  {
+    using Type = share_service::command::Remove;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 
   template< share_service::is_supported_storage_implementation
               StorageImplementation
           >
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (share_service::command::remove::Parameters<StorageImplementation>)
-    ;
+    struct Implementation<share_service::command::remove::Parameters<StorageImplementation>>
+  {
+    using Type = share_service::command::remove::Parameters<StorageImplementation>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/Remove.ipp"

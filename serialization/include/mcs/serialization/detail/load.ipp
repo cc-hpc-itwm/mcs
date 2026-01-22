@@ -2,8 +2,8 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <exception>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/serialization/IArchive.hpp>
-#include <mcs/serialization/define.hpp>
 #include <mcs/serialization/error/Load.hpp>
 #include <memory>
 

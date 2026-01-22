@@ -4,12 +4,35 @@
 #pragma once
 
 #include <exception>
-#include <mcs/util/FMT/declare.hpp>
+#include <fmt/base.h>
 
 namespace fmt
 {
-  template<> MCS_UTIL_FMT_DECLARE (std::exception_ptr);
-  template<> MCS_UTIL_FMT_DECLARE (std::exception);
+  template<>
+    struct formatter<std::exception_ptr>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( std::exception_ptr const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+
+  template<>
+    struct formatter<std::exception>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( std::exception const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/exception.ipp"

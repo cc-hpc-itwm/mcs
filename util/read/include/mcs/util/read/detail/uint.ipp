@@ -2,7 +2,7 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/isdigit.hpp>
-#include <mcs/util/read/define.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/skip_whitespace.hpp>
 #include <stdexcept>
 
@@ -60,23 +60,38 @@ namespace mcs::util::read
     }
   }
 
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION (state, std::uint_least8_t)
+  template<typename Char>
+    auto Read<std::uint_least8_t>::read
+      ( State<Char>& state
+      ) -> std::uint_least8_t
   {
     return detail::uint<std::uint_least8_t> (state);
   }
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION (state, std::uint_least16_t)
+  template<typename Char>
+    auto Read<std::uint_least16_t>::read
+      ( State<Char>& state
+      ) -> std::uint_least16_t
   {
     return detail::uint<std::uint_least16_t> (state);
   }
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION (state, std::uint_least32_t)
+  template<typename Char>
+    auto Read<std::uint_least32_t>::read
+      ( State<Char>& state
+      ) -> std::uint_least32_t
   {
     return detail::uint<std::uint_least32_t> (state);
   }
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION (state, std::uint_least64_t)
+  template<typename Char>
+    auto Read<std::uint_least64_t>::read
+      ( State<Char>& state
+      ) -> std::uint_least64_t
   {
     return detail::uint<std::uint_least64_t> (state);
   }
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION (state, std::byte)
+  template<typename Char>
+    auto Read<std::byte>::read
+      ( State<Char>& state
+      ) -> std::byte
   {
     // \todo memcpy!?
     return std::byte {detail::uint<std::uint_least8_t> (state)};

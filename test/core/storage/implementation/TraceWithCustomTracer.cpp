@@ -25,8 +25,6 @@
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/testing/require_exception.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/not_null.hpp>
 #include <mcs/util/type/List.hpp>
@@ -93,7 +91,11 @@ namespace
     struct Error : mcs::Error
     {
       Error();
-      MCS_ERROR_COPY_MOVE_DEFAULT (Error);
+      ~Error() override;
+      Error (Error const&) = default;
+      Error (Error&&) noexcept = default;
+      auto operator= (Error const&) -> Error& = default;
+      auto operator= (Error&&) noexcept  -> Error& = default;
     };
 
   private:
@@ -104,7 +106,17 @@ namespace
 namespace fmt
 {
   template<>
-    MCS_UTIL_FMT_DECLARE (CustomTracerTag);
+    struct formatter<CustomTracerTag>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( CustomTracerTag const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace mcs::core
@@ -440,15 +452,16 @@ namespace
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (context, CustomTracerTag)
+  template<typename ParseContext>
+    constexpr auto formatter<CustomTracerTag>::parse (ParseContext& context)
   {
     return context.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT
-    ( /* custom_tracer_tag */
-    , context
-    , CustomTracerTag
-    )
+  template<typename FormatContext>
+    constexpr auto formatter<CustomTracerTag>::format
+      ( CustomTracerTag const& /* custom_tracer_tag */
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to (context.out(), "CustomTracer");
   }

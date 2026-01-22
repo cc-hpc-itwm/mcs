@@ -24,7 +24,11 @@ namespace mcs::util
       {
         auto path() const -> std::filesystem::path;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (PathDoesNotExist);
+        ~PathDoesNotExist() override;
+        PathDoesNotExist (PathDoesNotExist const&) = default;
+        PathDoesNotExist (PathDoesNotExist&&) noexcept = default;
+        auto operator= (PathDoesNotExist const&) -> PathDoesNotExist& = default;
+        auto operator= (PathDoesNotExist&&) noexcept  -> PathDoesNotExist& = default;
 
       private:
         friend struct ExistingPath;

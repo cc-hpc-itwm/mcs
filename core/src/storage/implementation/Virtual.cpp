@@ -8,7 +8,8 @@
 #include <mcs/core/storage/implementation/Virtual.hpp>
 #include <mcs/serialization/STD/filesystem/path.hpp>
 #include <mcs/serialization/STD/vector.hpp>
-#include <mcs/util/tuplish/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 
 namespace mcs::core::storage::implementation
 {
@@ -18,7 +19,9 @@ namespace mcs::core::storage::implementation
     , _imported_c_api
       { Import_C_API::Parameter::Create
         { std::invoke
-          ( MCS_UTIL_DLHANDLE_SYMBOL (_dlhandle, mcs_core_storage_methods)
+          ( _dlhandle.symbol<decltype (mcs_core_storage_methods)>
+              ( "mcs_core_storage_methods"
+              )
           )
         , create._parameter_create
         }
@@ -127,8 +130,25 @@ namespace mcs::core::storage::implementation
   Virtual::Error::Create::~Create() = default;
 }
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION2
-  ( mcs::core::storage::implementation::Virtual::Parameter::Create
-  , _shared_object
-  , _parameter_create
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Virtual::Parameter::Create>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Virtual::Parameter::Create const& value
+    ) -> OArchive&
+  {
+    save (oa, value._shared_object);
+    save (oa, value._parameter_create);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Virtual::Parameter::Create>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Virtual::Parameter::Create
+  {
+    auto _shared_object {load<decltype (mcs::core::storage::implementation::Virtual::Parameter::Create::_shared_object)> (ia)};
+    auto _parameter_create {load<decltype (mcs::core::storage::implementation::Virtual::Parameter::Create::_parameter_create)> (ia)};
+
+    return mcs::core::storage::implementation::Virtual::Parameter::Create {_shared_object, _parameter_create};
+  }
+}

@@ -84,9 +84,8 @@ namespace mcs::core
     testing::require_exception
       ( [&]
         {
-          std::ignore = storages.template create<Files>
-                          ( storages.write_access()
-                          , parameter_create
+          std::ignore = storages.read_write_access().template create<Files>
+                          ( parameter_create
                           )
           ;
         }

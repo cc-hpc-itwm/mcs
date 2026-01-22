@@ -12,8 +12,11 @@
 #include <mcs/rpc/Dispatcher.hpp>
 #include <mcs/rpc/Provider.hpp>
 #include <mcs/rpc/ScopedRunningIOContext.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <mcs/testing/RPC/ProtocolState.hpp>
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/value/integral.hpp>
@@ -46,21 +49,35 @@ namespace
 
 namespace mcs::serialization
 {
-  template<> MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION (Copy);
-  template<> MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION (Stream);
+  template<>
+    struct Implementation<Copy>
+  {
+    using Type = Copy;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+  template<>
+    struct Implementation<Stream>
+  {
+    using Type = Stream;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace mcs::serialization
 {
   // Difference on serialize: append versus stream
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT (oa, x, Copy)
+  auto Implementation<Copy>::output (OArchive& oa, Copy const& x) -> OArchive&
   {
     save (oa, x.xs.size());
     oa.append (std::span {x.xs});
 
     return oa;
   }
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT (oa, x, Stream)
+  auto Implementation<Stream>::output (OArchive& oa, Stream const& x) -> OArchive&
   {
     // Bytes on serialize
     auto const& xs {std::get<Bytes> (x.bytes_or_size)};
@@ -72,7 +89,7 @@ namespace mcs::serialization
 
   // Difference on deserialize: Stream does not restore the bytes,
   // instead the handler streams the data from the socket.
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT (ia, Copy)
+  auto Implementation<Copy>::input (IArchive& ia) -> Copy
   {
     auto const size {load<std::size_t> (ia)};
     auto xs {Bytes{}};
@@ -80,7 +97,7 @@ namespace mcs::serialization
     ia.extract (xs.data(), size * sizeof (int));
     return Copy {std::move (xs)};
   }
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT (ia, Stream)
+  auto Implementation<Stream>::input (IArchive& ia) -> Stream
   {
     auto const size {load<std::size_t> (ia)};
     return Stream {size};

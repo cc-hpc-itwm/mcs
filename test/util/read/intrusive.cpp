@@ -2,15 +2,13 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <compare>
+#include <fmt/format.h>
 #include <gtest/gtest.h>
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/testing/read_of_fmt_is_identity.hpp>
-#include <mcs/util/FMT/access.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/FMT/define.hpp>
-#include <mcs/util/read/declare.hpp>
-#include <mcs/util/read/define.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 #include <mcs/util/read/parse.hpp>
 #include <mcs/util/read/prefix.hpp>
 #include <mcs/util/read/uint.hpp>
@@ -23,14 +21,16 @@ namespace
       : _value {value}
     {}
 
-    MCS_UTIL_READ_DECLARE_INTRUSIVE_CTOR (UDT);
+    struct has_intrusive_ctor_from_read_State;
+    template<typename Char>
+      explicit UDT (mcs::util::read::State<Char>&);
 
     constexpr auto operator<=> (UDT const&) const noexcept = default;
 
   private:
     unsigned int _value;
 
-    MCS_UTIL_FMT_ACCESS();
+    template<typename, typename, typename> friend struct fmt::formatter;
   };
 
   template<typename Char>
@@ -45,13 +45,29 @@ namespace
 
 namespace fmt
 {
-  template<> MCS_UTIL_FMT_DECLARE (UDT);
+  template<>
+    struct formatter<UDT>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
 
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, UDT)
+    template<typename FormatContext>
+      constexpr auto format
+        ( UDT const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+
+  template<typename ParseContext>
+    constexpr auto formatter<UDT>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (x, ctx, UDT)
+  template<typename FormatContext>
+    constexpr auto formatter<UDT>::format
+      ( UDT const& x
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to (ctx.out(), "udt {}", x._value);
   }

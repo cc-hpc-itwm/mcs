@@ -6,14 +6,12 @@
 #include <compare>
 #include <concepts>
 #include <cstdint>
+#include <fmt/base.h>
+#include <functional>
 #include <mcs/core/memory/Size.hpp>
-#include <mcs/serialization/access.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/util/FMT/access.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/hash/access.hpp>
-#include <mcs/util/hash/declare.hpp>
-#include <mcs/util/read/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 #include <span>
 #include <sys/types.h>
 
@@ -34,6 +32,8 @@ namespace mcs::core::memory
     constexpr auto operator<=> (Offset const&) const noexcept = default;
 
     constexpr auto operator+= (Size const&) -> Offset&;
+
+    friend constexpr auto operator- (Offset) -> Offset;
 
     friend constexpr auto operator-
       ( Offset const&
@@ -81,9 +81,9 @@ namespace mcs::core::memory
     template<std::signed_integral I>
       [[nodiscard]] constexpr explicit Offset (I);
 
-    MCS_UTIL_FMT_ACCESS();
-    MCS_UTIL_HASH_ACCESS();
-    MCS_SERIALIZATION_ACCESS();
+    template<typename, typename, typename> friend struct fmt::formatter;
+    template<typename> friend struct std::hash;
+    template<typename> friend struct serialization::Implementation;
   };
 
   template<std::integral I>
@@ -91,6 +91,8 @@ namespace mcs::core::memory
       ( I
       ) noexcept (std::unsigned_integral<I>) -> Offset
     ;
+
+  [[nodiscard]] constexpr auto operator- (Offset) -> Offset;
 
   [[nodiscard]] constexpr auto operator-
       ( Offset const&
@@ -127,29 +129,54 @@ namespace mcs::core::memory
 namespace std
 {
   template<>
-    MCS_UTIL_HASH_DECLARE_VIA_HASH_OF_UNDERLYING_TYPE
-      ( mcs::core::memory::Offset
-      );
+    struct hash<mcs::core::memory::Offset>
+  {
+    auto operator() (mcs::core::memory::Offset) const noexcept -> size_t;
+
+  private:
+    hash<mcs::core::memory::Offset::underlying_type> _hash;
+  };
 }
 
 namespace fmt
 {
   template<>
-    MCS_UTIL_FMT_DECLARE (mcs::core::memory::Offset);
+    struct formatter<mcs::core::memory::Offset>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::memory::Offset const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( core::memory::Offset
-      );
+    struct Implementation<core::memory::Offset>
+  {
+    using Type = core::memory::Offset;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace mcs::util::read
 {
   template<>
-    MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION (core::memory::Offset);
+    struct Read<core::memory::Offset>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> core::memory::Offset
+        ;
+  };
 }
 
 #include "detail/Offset.ipp"

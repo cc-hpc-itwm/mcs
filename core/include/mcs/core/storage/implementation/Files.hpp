@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <fmt/base.h>
 #include <mcs/Error.hpp>
 #include <mcs/core/chunk/Access.hpp>
 #include <mcs/core/memory/Offset.hpp>
@@ -13,9 +14,11 @@
 #include <mcs/core/memory/Size.hpp>
 #include <mcs/core/storage/MaxSize.hpp>
 #include <mcs/core/storage/segment/ID.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/serialization/STD/filesystem/path.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/util/tuplish/declare.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
+#include <mcs/util/require_semi.hpp>
 #include <memory>
 #include <optional>
 #include <span>
@@ -95,13 +98,21 @@ namespace mcs::core::storage::implementation
       {
         auto parameter() const -> Parameter::Create;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (Create);
+        ~Create() override;
+        Create (Create const&) = default;
+        Create (Create&&) noexcept = default;
+        auto operator= (Create const&) -> Create& = default;
+        auto operator= (Create&&) noexcept  -> Create& = default;
 
         struct PrefixDoesNotExist : public mcs::Error
         {
           auto prefix() const -> Prefix;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (PrefixDoesNotExist);
+          ~PrefixDoesNotExist() override;
+          PrefixDoesNotExist (PrefixDoesNotExist const&) = default;
+          PrefixDoesNotExist (PrefixDoesNotExist&&) noexcept = default;
+          auto operator= (PrefixDoesNotExist const&) -> PrefixDoesNotExist& = default;
+          auto operator= (PrefixDoesNotExist&&) noexcept  -> PrefixDoesNotExist& = default;
 
         private:
           friend struct Files;
@@ -115,7 +126,11 @@ namespace mcs::core::storage::implementation
         {
           auto prefix() const -> Prefix;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (UnsupportedNFSMount);
+          ~UnsupportedNFSMount() override;
+          UnsupportedNFSMount (UnsupportedNFSMount const&) = default;
+          UnsupportedNFSMount (UnsupportedNFSMount&&) noexcept = default;
+          auto operator= (UnsupportedNFSMount const&) -> UnsupportedNFSMount& = default;
+          auto operator= (UnsupportedNFSMount&&) noexcept  -> UnsupportedNFSMount& = default;
 
         private:
           friend struct Files;
@@ -130,7 +145,11 @@ namespace mcs::core::storage::implementation
           auto prefix() const -> Prefix;
           auto non_segment_file() const -> std::filesystem::path;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (PrefixContainsNonSegmentFile);
+          ~PrefixContainsNonSegmentFile() override;
+          PrefixContainsNonSegmentFile (PrefixContainsNonSegmentFile const&) = default;
+          PrefixContainsNonSegmentFile (PrefixContainsNonSegmentFile&&) noexcept = default;
+          auto operator= (PrefixContainsNonSegmentFile const&) -> PrefixContainsNonSegmentFile& = default;
+          auto operator= (PrefixContainsNonSegmentFile&&) noexcept  -> PrefixContainsNonSegmentFile& = default;
 
         private:
           friend struct Files;
@@ -155,7 +174,11 @@ namespace mcs::core::storage::implementation
         constexpr auto used() const noexcept -> memory::Size;
         constexpr auto max() const noexcept -> MaxSize;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (BadAlloc);
+        ~BadAlloc() override;
+        BadAlloc (BadAlloc const&) = default;
+        BadAlloc (BadAlloc&&) noexcept = default;
+        auto operator= (BadAlloc const&) -> BadAlloc& = default;
+        auto operator= (BadAlloc&&) noexcept  -> BadAlloc& = default;
 
       private:
         friend struct Files;
@@ -180,11 +203,19 @@ namespace mcs::core::storage::implementation
         constexpr auto segment_id() const noexcept -> segment::ID;
         constexpr auto memory_range() const noexcept -> memory::Range;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (ChunkDescription);
+        ~ChunkDescription() override;
+        ChunkDescription (ChunkDescription const&) = default;
+        ChunkDescription (ChunkDescription&&) noexcept = default;
+        auto operator= (ChunkDescription const&) -> ChunkDescription& = default;
+        auto operator= (ChunkDescription&&) noexcept  -> ChunkDescription& = default;
 
         struct UnknownSegmentID : public mcs::Error
         {
-          MCS_ERROR_COPY_MOVE_DEFAULT (UnknownSegmentID);
+          ~UnknownSegmentID() override;
+          UnknownSegmentID (UnknownSegmentID const&) = default;
+          UnknownSegmentID (UnknownSegmentID&&) noexcept = default;
+          auto operator= (UnknownSegmentID const&) -> UnknownSegmentID& = default;
+          auto operator= (UnknownSegmentID&&) noexcept  -> UnknownSegmentID& = default;
 
         private:
           friend struct Files;
@@ -221,7 +252,11 @@ namespace mcs::core::storage::implementation
           auto mode() const noexcept -> char const*;
           auto error_code() const noexcept -> int;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (CouldNotOpen);
+          ~CouldNotOpen() override;
+          CouldNotOpen (CouldNotOpen const&) = default;
+          CouldNotOpen (CouldNotOpen&&) noexcept = default;
+          auto operator= (CouldNotOpen const&) -> CouldNotOpen& = default;
+          auto operator= (CouldNotOpen&&) noexcept  -> CouldNotOpen& = default;
 
         private:
           std::filesystem::path _path;
@@ -236,7 +271,11 @@ namespace mcs::core::storage::implementation
           auto path() const -> std::filesystem::path;
           auto error_code() const noexcept -> int;
 
-          MCS_ERROR_COPY_MOVE_DEFAULT (CouldNotCloseAfterTouch);
+          ~CouldNotCloseAfterTouch() override;
+          CouldNotCloseAfterTouch (CouldNotCloseAfterTouch const&) = default;
+          CouldNotCloseAfterTouch (CouldNotCloseAfterTouch&&) noexcept = default;
+          auto operator= (CouldNotCloseAfterTouch const&) -> CouldNotCloseAfterTouch& = default;
+          auto operator= (CouldNotCloseAfterTouch&&) noexcept  -> CouldNotCloseAfterTouch& = default;
 
         private:
           std::filesystem::path _path;
@@ -371,63 +410,562 @@ namespace mcs::core::storage::implementation
 namespace mcs::serialization
 {
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( core::storage::implementation::Files::Chunk::Description<Access>
-      );
+    struct Implementation<core::storage::implementation::Files::Chunk::Description<Access>>
+  {
+    using Type = core::storage::implementation::Files::Chunk::Description<Access>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace fmt
 {
   template<mcs::core::chunk::is_access Access>
-    MCS_UTIL_FMT_DECLARE
-      ( mcs::core::storage::implementation::Files::Chunk::Description<Access>
-      );
+    struct formatter<mcs::core::storage::implementation::Files::Chunk::Description<Access>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Chunk::Description<Access> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Tag
-  );
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Tag>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Prefix
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::Create
-  );
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Tag const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::Size::Max
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::Size::Used
-  );
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Tag>
+  {
+    using Type = mcs::core::storage::implementation::Files::Tag;
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::Segment::Create
-  );
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::Segment::Remove
-  );
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Tag>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Tag
+        ;
+  };
+}
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::Chunk::Description
-  );
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Prefix>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::File::Read
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Files::Parameter::File::Write
-  );
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Prefix const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Prefix>
+  {
+    using Type = mcs::core::storage::implementation::Files::Prefix;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Prefix>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Prefix
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::Create>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::Create const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::Create>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::Create;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::Create>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::Create
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::Size::Max>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::Size::Max const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::Size::Max>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::Size::Max;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::Size::Max>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::Size::Max
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::Size::Used>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::Size::Used const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::Size::Used>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::Size::Used;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::Size::Used>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::Size::Used
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Create>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::Segment::Create const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::Create>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::Segment::Create;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::Segment::Create>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::Segment::Create
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Remove>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::Segment::Remove const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::Remove>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::Segment::Remove;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::Segment::Remove>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::Segment::Remove
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::Chunk::Description>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::Chunk::Description const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::Chunk::Description>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::Chunk::Description;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::Chunk::Description>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::Chunk::Description
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::File::Read>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::File::Read const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::File::Read>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::File::Read;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::File::Read>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::File::Read
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::File::Write>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::File::Write const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::File::Write>
+  {
+    using Type = mcs::core::storage::implementation::Files::Parameter::File::Write;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::File::Write>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Files::Parameter::File::Write
+        ;
+  };
+}
 
 #include "detail/Files.ipp"

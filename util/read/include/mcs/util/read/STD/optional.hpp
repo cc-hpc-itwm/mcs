@@ -3,13 +3,20 @@
 
 #pragma once
 
-#include <mcs/util/read/declare.hpp>
+#include <mcs/util/read/Concepts.hpp>
 #include <optional>
 
 namespace mcs::util::read
 {
   template<is_readable T>
-    MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION (std::optional<T>);
+    struct Read<std::optional<T>>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> std::optional<T>
+        ;
+  };
 }
 
 #include "detail/optional.ipp"

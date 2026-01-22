@@ -14,6 +14,10 @@ namespace mcs::serialization::error
   {
     explicit Load() noexcept;
 
-    MCS_ERROR_COPY_MOVE_DEFAULT (Load);
+    ~Load() override;
+    Load (Load const&) = default;
+    Load (Load&&) noexcept = default;
+    auto operator= (Load const&) -> Load& = default;
+    auto operator= (Load&&) noexcept  -> Load& = default;
   };
 }

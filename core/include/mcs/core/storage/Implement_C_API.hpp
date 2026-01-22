@@ -35,7 +35,11 @@ namespace mcs::core::storage
       struct InstanceMustNotBeNull : mcs::Error
       {
         InstanceMustNotBeNull();
-        MCS_ERROR_COPY_MOVE_DEFAULT (InstanceMustNotBeNull);
+        ~InstanceMustNotBeNull() override;
+        InstanceMustNotBeNull (InstanceMustNotBeNull const&) = default;
+        InstanceMustNotBeNull (InstanceMustNotBeNull&&) noexcept = default;
+        auto operator= (InstanceMustNotBeNull const&) -> InstanceMustNotBeNull& = default;
+        auto operator= (InstanceMustNotBeNull&&) noexcept  -> InstanceMustNotBeNull& = default;
       };
     };
 

@@ -4,12 +4,12 @@
 #pragma once
 
 #include <compare>
+#include <fmt/base.h>
+#include <functional>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/serialization/STD/string.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/hash/access.hpp>
-#include <mcs/util/hash/declare.hpp>
-#include <mcs/util/read/declare.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 #include <string>
 #include <type_traits>
 
@@ -34,34 +34,61 @@ namespace mcs::util
   private:
     std::string _str;
 
-    MCS_UTIL_HASH_ACCESS();
+    template<typename> friend struct std::hash;
   };
 }
 
 namespace fmt
 {
-  template<> MCS_UTIL_FMT_DECLARE (mcs::util::string);
+  template<>
+    struct formatter<mcs::util::string>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::util::string const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace mcs::util::read
 {
-  template<> MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION (string);
+  template<>
+    struct Read<string>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> string
+        ;
+  };
 }
 
 namespace std
 {
-  template<> MCS_UTIL_HASH_DECLARE_VIA_HASH_OF_MEMBER
-    ( _str
-    , mcs::util::string
-    );
+  template<>
+    struct hash<mcs::util::string>
+  {
+    auto operator() (mcs::util::string const&) const noexcept -> size_t;
+
+  private:
+    hash<decltype (mcs::util::string::_str)> _hash;
+  };
 }
 
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( util::string
-      );
+    struct Implementation<util::string>
+  {
+    using Type = util::string;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/string.ipp"

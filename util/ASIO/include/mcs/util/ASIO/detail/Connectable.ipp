@@ -5,25 +5,25 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <mcs/util/FMT/STD/variant.hpp>
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/overloaded.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/STD/tuple.hpp>
 #include <mcs/util/read/STD/variant.hpp>
-#include <mcs/util/read/define.hpp>
 #include <mcs/util/read/read.hpp>
 #include <utility>
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, mcs::util::ASIO::Connectable<asio::ip::tcp>)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT
-    ( connectable
-    , ctx
-    , mcs::util::ASIO::Connectable<asio::ip::tcp>
-    )
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>>::format
+      ( mcs::util::ASIO::Connectable<asio::ip::tcp> const& connectable
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to
       ( ctx.out()
@@ -32,28 +32,30 @@ namespace fmt
       );
   }
 
-  MCS_UTIL_FMT_DEFINE_PARSE
-    ( ctx
-    , mcs::util::ASIO::Connectable<asio::ip::tcp>::Address
-    )
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>::Address>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT
-    (address, ctx, mcs::util::ASIO::Connectable<asio::ip::tcp>::Address)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>::Address>::format
+      ( mcs::util::ASIO::Connectable<asio::ip::tcp>::Address const& address
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to (ctx.out(), "Address {}", address.address_string);
   }
 
-  MCS_UTIL_FMT_DEFINE_PARSE
-    ( ctx
-    , mcs::util::ASIO::Connectable<asio::ip::tcp>::Hostname
-    )
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>::Hostname>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT
-    (hostname, ctx, mcs::util::ASIO::Connectable<asio::ip::tcp>::Hostname)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>::Hostname>::format
+      ( mcs::util::ASIO::Connectable<asio::ip::tcp>::Hostname const& hostname
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to (ctx.out(), "Hostname {}", hostname.hostname);
   }
@@ -61,8 +63,10 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    (state, util::ASIO::Connectable<asio::ip::tcp>)
+  template<typename Char>
+    auto Read<util::ASIO::Connectable<asio::ip::tcp>>::read
+      ( State<Char>& state
+      ) -> util::ASIO::Connectable<asio::ip::tcp>
   {
     prefix (state, "ip::tcp");
 
@@ -75,52 +79,54 @@ namespace mcs::util::read
 
     return std::make_from_tuple<Connectable>
       ( parse< std::tuple
-               < decltype (std::declval<Connectable>().address_or_hostname)
-               , decltype (std::declval<Connectable>().port)
+               < decltype (Connectable::address_or_hostname)
+               , decltype (Connectable::port)
                >
              > (state)
       );
   }
 
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    (state, util::ASIO::Connectable<asio::ip::tcp>::Address)
+  template<typename Char>
+    auto Read<util::ASIO::Connectable<asio::ip::tcp>::Address>::read
+      ( State<Char>& state
+      ) -> util::ASIO::Connectable<asio::ip::tcp>::Address
   {
     prefix (state, "Address");
 
     using Addr = util::ASIO::Connectable<asio::ip::tcp>::Address;
 
     return Addr
-      { parse<decltype (std::declval<Addr>().address_string)> (state)
+      { parse<decltype (Addr::address_string)> (state)
       };
   }
 
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    (state, util::ASIO::Connectable<asio::ip::tcp>::Hostname)
+  template<typename Char>
+    auto Read<util::ASIO::Connectable<asio::ip::tcp>::Hostname>::read
+      ( State<Char>& state
+      ) -> util::ASIO::Connectable<asio::ip::tcp>::Hostname
   {
     prefix (state, "Hostname");
 
     using Hostname = util::ASIO::Connectable<asio::ip::tcp>::Hostname;
 
     return Hostname
-      { parse<decltype (std::declval<Hostname>().hostname)> (state)
+      { parse<decltype (Hostname::hostname)> (state)
       };
   }
 }
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE
-    ( ctx
-    , mcs::util::ASIO::Connectable<asio::local::stream_protocol>
-    )
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::local::stream_protocol>>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT
-    ( connectable
-    , ctx
-    , mcs::util::ASIO::Connectable<asio::local::stream_protocol>
-    )
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::local::stream_protocol>>::format
+      ( mcs::util::ASIO::Connectable<asio::local::stream_protocol> const& connectable
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to
       ( ctx.out()
@@ -132,15 +138,17 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    (state, util::ASIO::Connectable<asio::local::stream_protocol>)
+  template<typename Char>
+    auto Read<util::ASIO::Connectable<asio::local::stream_protocol>>::read
+      ( State<Char>& state
+      ) -> util::ASIO::Connectable<asio::local::stream_protocol>
   {
     prefix (state, "local::stream_protocol");
 
     using Connectable = util::ASIO::Connectable<asio::local::stream_protocol>;
 
     return std::make_from_tuple<Connectable>
-      (parse<std::tuple< decltype (std::declval<Connectable>().path)
+      (parse<std::tuple< decltype (Connectable::path)
                        >
             > (state)
       );

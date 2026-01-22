@@ -2,7 +2,10 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::serialization
@@ -12,11 +15,10 @@ namespace mcs::serialization
           , is_serializable Compare
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , m
-      , std::map<Key, T, Compare, Allocator>
-      )
+    auto Implementation<std::map<Key, T, Compare, Allocator>>::output
+      ( OArchive& oa
+      , std::map<Key, T, Compare, Allocator> const& m
+      ) -> OArchive&
   {
     oa.tag<detail::tag::STD::Map> (m.size());
 
@@ -40,10 +42,9 @@ namespace mcs::serialization
           , is_serializable Compare
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , std::map<Key, T, Compare, Allocator>
-      )
+    auto Implementation<std::map<Key, T, Compare, Allocator>>::input
+      ( IArchive& ia
+      ) -> std::map<Key, T, Compare, Allocator>
   {
     auto size {ia.tag<detail::tag::STD::Map>().size};
 

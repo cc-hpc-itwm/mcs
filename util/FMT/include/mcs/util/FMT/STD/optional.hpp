@@ -3,13 +3,23 @@
 
 #pragma once
 
-#include <mcs/util/FMT/declare.hpp>
+#include <fmt/base.h>
 #include <optional>
 
 namespace fmt
 {
   template<formattable T>
-    MCS_UTIL_FMT_DECLARE (std::optional<T>);
+    struct formatter<std::optional<T>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( std::optional<T> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 #include "detail/optional.ipp"

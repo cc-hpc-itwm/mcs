@@ -7,7 +7,8 @@
 #include <mcs/block_device/meta_data/Blocks.hpp>
 #include <mcs/block_device/storage/with_range.hpp>
 #include <mcs/nonstd/scope.hpp>
-#include <mcs/util/tuplish/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <mutex>
 
 namespace mcs::block_device::meta_data
@@ -28,15 +29,11 @@ namespace mcs::block_device::meta_data
   {}
   auto Blocks::number_of_blocks() const noexcept -> block::Count
   {
-    auto const lock {std::shared_lock {_guard}};
-
     return _number_of_blocks;
   }
 
   auto Blocks::blocks() const -> std::list<block::Range>
   {
-    auto const lock {std::shared_lock {_guard}};
-
     auto ranges {std::list<block::Range>{}};
 
     for (auto const& used_storage : _used_storages)
@@ -63,8 +60,6 @@ namespace mcs::block_device::meta_data
     {
       return AddResult {.blocks={}, .unused = storage};
     }
-
-    auto const lock {std::unique_lock {_guard}};
 
     auto const increment_number_of_blocks
       { nonstd::make_scope_success
@@ -106,8 +101,6 @@ namespace mcs::block_device::meta_data
     , block::ID const block_end
     ) -> RemoveResult
   {
-    auto const lock {std::unique_lock {_guard}};
-
     auto storage {_used_storages.upper_bound (block_begin)};
 
     auto const block_intersects_storage
@@ -191,8 +184,6 @@ namespace mcs::block_device::meta_data
 
   auto Blocks::location (block::ID block_id) const -> Location
   {
-    auto const lock {std::shared_lock {_guard}};
-
     // upper_bound returns the first storage (if any) where the
     // range.end is greater than the block_id, according to the
     // UsedStorageCompare predicate. checking that block_id is not
@@ -239,19 +230,69 @@ namespace mcs::block_device::meta_data
   }
 }
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION2
-  ( mcs::block_device::meta_data::Blocks::AddResult
-  , blocks
-  , unused
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::block_device::meta_data::Blocks::AddResult>::output
+    ( OArchive& oa
+    , mcs::block_device::meta_data::Blocks::AddResult const& value
+    ) -> OArchive&
+  {
+    save (oa, value.blocks);
+    save (oa, value.unused);
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::block_device::meta_data::Blocks::RemoveResult
-  , unused
-  );
+    return oa;
+  }
+  auto Implementation<mcs::block_device::meta_data::Blocks::AddResult>::input
+    ( IArchive& ia
+    ) -> mcs::block_device::meta_data::Blocks::AddResult
+  {
+    auto blocks {load<decltype (mcs::block_device::meta_data::Blocks::AddResult::blocks)> (ia)};
+    auto unused {load<decltype (mcs::block_device::meta_data::Blocks::AddResult::unused)> (ia)};
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION2
-  ( mcs::block_device::meta_data::Blocks::Location
-  , provider
-  , address
-  );
+    return mcs::block_device::meta_data::Blocks::AddResult {blocks, unused};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::block_device::meta_data::Blocks::RemoveResult>::output
+    ( OArchive& oa
+    , mcs::block_device::meta_data::Blocks::RemoveResult const& value
+    ) -> OArchive&
+  {
+    save (oa, value.unused);
+
+    return oa;
+  }
+  auto Implementation<mcs::block_device::meta_data::Blocks::RemoveResult>::input
+    ( IArchive& ia
+    ) -> mcs::block_device::meta_data::Blocks::RemoveResult
+  {
+    auto unused {load<decltype (mcs::block_device::meta_data::Blocks::RemoveResult::unused)> (ia)};
+
+    return mcs::block_device::meta_data::Blocks::RemoveResult {unused};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::block_device::meta_data::Blocks::Location>::output
+    ( OArchive& oa
+    , mcs::block_device::meta_data::Blocks::Location const& value
+    ) -> OArchive&
+  {
+    save (oa, value.provider);
+    save (oa, value.address);
+
+    return oa;
+  }
+  auto Implementation<mcs::block_device::meta_data::Blocks::Location>::input
+    ( IArchive& ia
+    ) -> mcs::block_device::meta_data::Blocks::Location
+  {
+    auto provider {load<decltype (mcs::block_device::meta_data::Blocks::Location::provider)> (ia)};
+    auto address {load<decltype (mcs::block_device::meta_data::Blocks::Location::address)> (ia)};
+
+    return mcs::block_device::meta_data::Blocks::Location {provider, address};
+  }
+}

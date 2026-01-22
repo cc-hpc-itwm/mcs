@@ -21,9 +21,8 @@ namespace mcs::core::control::provider
         ) const -> typename command::chunk::
                      Description<Access, StorageImplementations...>::Response
   {
-    return _storages->visit
-      ( _storages->read_access()
-      , chunk_description.storage_id
+    return _storages->read_access().visit
+      ( chunk_description.storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation const& implementation
           ) -> chunk::Description<Access, StorageImplementations...>
@@ -45,9 +44,8 @@ namespace mcs::core::control::provider
       ( command::file::Read file_read
       ) const -> command::file::Read::Response
   {
-    return _storages->visit
-      ( _storages->read_access()
-      , file_read._storage_id
+    return _storages->read_access().visit
+      ( file_read._storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation const& implementation
           )
@@ -71,9 +69,8 @@ namespace mcs::core::control::provider
       ( command::file::Write file_write
       ) const -> command::file::Write::Response
   {
-    return _storages->visit
-      ( _storages->read_access()
-      , file_write._storage_id
+    return _storages->read_access().visit
+      ( file_write._storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation const& implementation
           )
@@ -97,9 +94,8 @@ namespace mcs::core::control::provider
       ( command::segment::Create segment_create
       ) -> command::segment::Create::Response
   {
-    return _storages->visit
-      ( _storages->write_access()
-      , segment_create.storage_id
+    return _storages->read_write_access().visit
+      ( segment_create.storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation& implementation
           )
@@ -120,9 +116,8 @@ namespace mcs::core::control::provider
       ( command::segment::Remove segment_remove
       ) -> command::segment::Remove::Response
   {
-    return _storages->visit
-      ( _storages->write_access()
-      , segment_remove.storage_id
+    return _storages->read_write_access().visit
+      ( segment_remove.storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation& implementation
           )
@@ -146,9 +141,8 @@ namespace mcs::core::control::provider
     return storage_create.implementation_id.run
       ( [&]<storage::is_implementation StorageImplementation>()
         {
-          return _storages->template create<StorageImplementation>
-            ( _storages->write_access()
-            , storage_create
+          return _storages->read_write_access().template create<StorageImplementation>
+            ( storage_create
               . storage_parameter
               . template as<typename StorageImplementation::Parameter::Create>()
             );
@@ -161,9 +155,8 @@ namespace mcs::core::control::provider
       ( command::storage::Remove storage_remove
       ) -> command::storage::Remove::Response
   {
-    return _storages->remove
-      ( _storages->write_access()
-      , storage_remove.storage_id
+    return _storages->read_write_access().remove
+      ( storage_remove.storage_id
       );
   }
 
@@ -172,9 +165,8 @@ namespace mcs::core::control::provider
       ( command::storage::Size size
       ) -> command::storage::Size::Response
   {
-    return _storages->visit
-      ( _storages->read_access()
-      , size.storage_id
+    return _storages->read_access().visit
+      ( size.storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation const& implementation
           )
@@ -200,9 +192,8 @@ namespace mcs::core::control::provider
       ( command::storage::size::Max size_max
       ) const -> command::storage::size::Max::Response
   {
-    return _storages->visit
-      ( _storages->read_access()
-      , size_max.storage_id
+    return _storages->read_access().visit
+      ( size_max.storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation const& implementation
           )
@@ -222,9 +213,8 @@ namespace mcs::core::control::provider
       ( command::storage::size::Used size_used
       ) const -> command::storage::size::Used::Response
   {
-    return _storages->visit
-      ( _storages->read_access()
-      , size_used.storage_id
+    return _storages->read_access().visit
+      ( size_used.storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation const& implementation
           )

@@ -12,7 +12,8 @@ namespace mcs::testing::random
 {
   // produces random bytes
   //
-  template<> struct value<std::byte> : public value<std::uint_least8_t>
+  template<>
+    struct value<std::byte> : public value<std::uint_least8_t>
   {
     using Base = value<std::uint_least8_t>;
 

@@ -8,7 +8,6 @@ target_link_libraries (mcs_util_string
   PUBLIC mcs_serialization
   PUBLIC mcs_util
   PUBLIC mcs_util_read
-  PUBLIC mcs_util_hash
 )
 
 if (MCS_INSTALL)

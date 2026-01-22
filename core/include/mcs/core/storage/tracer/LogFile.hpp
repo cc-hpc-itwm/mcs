@@ -42,7 +42,11 @@ namespace mcs::core::storage::tracer
           ) const noexcept -> std::filesystem::path const&
           ;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (CouldNotOpenFile);
+        ~CouldNotOpenFile() override;
+        CouldNotOpenFile (CouldNotOpenFile const&) = default;
+        CouldNotOpenFile (CouldNotOpenFile&&) noexcept = default;
+        auto operator= (CouldNotOpenFile const&) -> CouldNotOpenFile& = default;
+        auto operator= (CouldNotOpenFile&&) noexcept  -> CouldNotOpenFile& = default;
 
       private:
         template<is_implementation> friend struct LogFile;

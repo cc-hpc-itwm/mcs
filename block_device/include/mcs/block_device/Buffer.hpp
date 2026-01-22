@@ -86,12 +86,20 @@ namespace mcs::block_device
         struct Interrupted : public mcs::Error
         {
           Interrupted();
-          MCS_ERROR_COPY_MOVE_DEFAULT (Interrupted);
+          ~Interrupted() override;
+          Interrupted (Interrupted const&) = default;
+          Interrupted (Interrupted&&) noexcept = default;
+          auto operator= (Interrupted const&) -> Interrupted& = default;
+          auto operator= (Interrupted&&) noexcept  -> Interrupted& = default;
         };
         struct Timeout : public mcs::Error
         {
           Timeout();
-          MCS_ERROR_COPY_MOVE_DEFAULT (Timeout);
+          ~Timeout() override;
+          Timeout (Timeout const&) = default;
+          Timeout (Timeout&&) noexcept = default;
+          auto operator= (Timeout const&) -> Timeout& = default;
+          auto operator= (Timeout&&) noexcept  -> Timeout& = default;
         };
       };
     };

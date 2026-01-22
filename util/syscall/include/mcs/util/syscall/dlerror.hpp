@@ -21,7 +21,11 @@ namespace mcs::util::syscall::error
     [[nodiscard]] auto call() const noexcept -> std::string;
     [[nodiscard]] auto reason() const noexcept -> std::string;
 
-    MCS_ERROR_COPY_MOVE_DEFAULT (DLError);
+    ~DLError() override;
+    DLError (DLError const&) = default;
+    DLError (DLError&&) noexcept = default;
+    auto operator= (DLError const&) -> DLError& = default;
+    auto operator= (DLError&&) noexcept  -> DLError& = default;
 
   private:
     friend struct ::CheckDLError;

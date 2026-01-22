@@ -1,8 +1,7 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
-#include <mcs/util/read/define.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/prefix.hpp>
 #include <mcs/util/select.hpp>
 
@@ -89,11 +88,16 @@ namespace mcs::core::memory
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, mcs::core::memory::Range)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::memory::Range>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (range, ctx, mcs::core::memory::Range)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::memory::Range>::format
+      ( mcs::core::memory::Range const& range
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to (ctx.out(), "[{}..{})", range._begin, range._end);
   }
@@ -101,7 +105,10 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION (state, core::memory::Range)
+  template<typename Char>
+    auto Read<core::memory::Range>::read
+      ( State<Char>& state
+      ) -> core::memory::Range
   {
     prefix (state, "[");
     auto begin {parse<core::memory::Offset> (state)};

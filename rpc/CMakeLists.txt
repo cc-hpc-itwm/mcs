@@ -11,7 +11,6 @@ target_link_libraries (mcs_rpc
   PUBLIC mcs_nonstd_scope
   PUBLIC mcs_serialization
   PUBLIC mcs_util
-  PUBLIC mcs_util_hash
   PUBLIC mcs_util_read
   PUBLIC mcs_util_ASIO
   PUBLIC mcs_util_FMT

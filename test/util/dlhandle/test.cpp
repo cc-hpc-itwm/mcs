@@ -88,9 +88,9 @@ namespace mcs::util
   {
     auto const dlhandle {DLHandle {MCS_TEST_UTIL_DLHANDLE_LIBRARY}};
 
-    auto value (MCS_UTIL_DLHANDLE_SYMBOL (dlhandle, dltest_value));
-    auto const set (MCS_UTIL_DLHANDLE_SYMBOL (dlhandle, dltest_set));
-    auto const get (MCS_UTIL_DLHANDLE_SYMBOL (dlhandle, dltest_get));
+    auto value (dlhandle.symbol<decltype (dltest_value)> ("dltest_value"));
+    auto const set (dlhandle.symbol<decltype (dltest_set)> ("dltest_set"));
+    auto const get (dlhandle.symbol<decltype (dltest_get)> ("dltest_get"));
 
     ASSERT_EQ (*value, -1);
 
@@ -108,13 +108,13 @@ namespace mcs::util
   {
     auto const dlhandle0 {DLHandle {MCS_TEST_UTIL_DLHANDLE_LIBRARY}};
 
-    auto value (MCS_UTIL_DLHANDLE_SYMBOL (dlhandle0, dltest_value));
+    auto value (dlhandle0.symbol<decltype (dltest_value)> ("dltest_value"));
     auto const x {testing::random::value<int>{}()};
 
     {
       auto const dlhandle1 {DLHandle {MCS_TEST_UTIL_DLHANDLE_LIBRARY}};
 
-      std::invoke (MCS_UTIL_DLHANDLE_SYMBOL (dlhandle1, dltest_set), x);
+      std::invoke (dlhandle1.symbol<decltype (dltest_set)> ("dltest_set"), x);
       ASSERT_EQ (*value, x);
     }
 

@@ -13,7 +13,6 @@
 #include <mcs/serialization/IArchive.hpp>
 #include <mcs/serialization/OArchive.hpp>
 #include <mcs/serialization/STD/filesystem/path.hpp>
-#include <mcs/serialization/define.hpp>
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
 #include <mcs/util/Copy.hpp>
@@ -160,26 +159,91 @@ namespace mcs::core::storage::implementation
     ;
 }
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Files::Prefix
-  , value
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Files::Prefix>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Files::Prefix const& value
+    ) -> OArchive&
+  {
+    save (oa, value.value);
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION2
-  ( mcs::core::storage::implementation::Files::Parameter::Create
-  , prefix
-  , max_size
-  );
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Files::Prefix>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Files::Prefix
+  {
+    auto value {load<decltype (mcs::core::storage::implementation::Files::Prefix::value)> (ia)};
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Files::Parameter::Segment::Create
-  , persistency
-  );
+    return mcs::core::storage::implementation::Files::Prefix {value};
+  }
+}
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Files::Parameter::Segment::Remove
-  , force_removal
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Files::Parameter::Create>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Files::Parameter::Create const& value
+    ) -> OArchive&
+  {
+    save (oa, value.prefix);
+    save (oa, value.max_size);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Files::Parameter::Create>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Files::Parameter::Create
+  {
+    auto prefix {load<decltype (mcs::core::storage::implementation::Files::Parameter::Create::prefix)> (ia)};
+    auto max_size {load<decltype (mcs::core::storage::implementation::Files::Parameter::Create::max_size)> (ia)};
+
+    return mcs::core::storage::implementation::Files::Parameter::Create {prefix, max_size};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::Create>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Files::Parameter::Segment::Create const& value
+    ) -> OArchive&
+  {
+    save (oa, value.persistency);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::Create>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Files::Parameter::Segment::Create
+  {
+    auto persistency {load<decltype (mcs::core::storage::implementation::Files::Parameter::Segment::Create::persistency)> (ia)};
+
+    return mcs::core::storage::implementation::Files::Parameter::Segment::Create {persistency};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::Remove>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Files::Parameter::Segment::Remove const& value
+    ) -> OArchive&
+  {
+    save (oa, value.force_removal);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::Remove>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Files::Parameter::Segment::Remove
+  {
+    auto force_removal {load<decltype (mcs::core::storage::implementation::Files::Parameter::Segment::Remove::force_removal)> (ia)};
+
+    return mcs::core::storage::implementation::Files::Parameter::Segment::Remove {force_removal};
+  }
+}
 
 namespace mcs::core::storage::implementation
 {

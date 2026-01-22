@@ -82,20 +82,24 @@ namespace
               < mcs::core::Chunk
               , mcs::core::chunk::access::Mutable
               >
-            { storages
-              . template chunk_description
-                  < Storage
-                  , mcs::core::chunk::access::Mutable
-                  >
-                ( storages.read_access()
-                , storage->id()
-                , typename Storage::Parameter::Chunk::Description{}
-                , segment->id()
-                , mcs::core::memory::make_range
-                    ( mcs::core::memory::make_offset (0)
-                    , size
-                    )
-                )
+            { storages.read_access().template invoke<Storage>
+              ( storage->id()
+              , [&] (auto const& storage_implementation)
+                {
+                  return storage_implementation
+                    . template chunk_description
+                        < mcs::core::chunk::access::Mutable
+                        >
+                      ( typename Storage::Parameter::Chunk::Description{}
+                      , segment->id()
+                      , mcs::core::memory::make_range
+                          ( mcs::core::memory::make_offset (0)
+                          , size
+                          )
+                      )
+                    ;
+                }
+              )
             }
         };
       auto elements {mcs::core::as<Element> (chunk)};

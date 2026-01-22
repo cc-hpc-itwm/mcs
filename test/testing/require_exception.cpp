@@ -10,14 +10,16 @@
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/testing/require_exception.hpp>
 #include <mcs/util/FMT/STD/exception.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/FMT/define.hpp>
 
 namespace
 {
   struct CustomError : public mcs::Error
   {
-    MCS_ERROR_COPY_MOVE_DEFAULT (CustomError);
+    ~CustomError() override;
+    CustomError (CustomError const&) = default;
+    CustomError (CustomError&&) noexcept = default;
+    auto operator= (CustomError const&) -> CustomError& = default;
+    auto operator= (CustomError&&) noexcept  -> CustomError& = default;
     CustomError (int value = 0)
       : mcs::Error {fmt::format ("CustomError {}", value)}
       , _value {value}
@@ -28,7 +30,11 @@ namespace
 
   struct AnotherCustomError : public mcs::Error
   {
-    MCS_ERROR_COPY_MOVE_DEFAULT (AnotherCustomError);
+    ~AnotherCustomError() override;
+    AnotherCustomError (AnotherCustomError const&) = default;
+    AnotherCustomError (AnotherCustomError&&) noexcept = default;
+    auto operator= (AnotherCustomError const&) -> AnotherCustomError& = default;
+    auto operator= (AnotherCustomError&&) noexcept  -> AnotherCustomError& = default;
     AnotherCustomError (int value = 0)
       : mcs::Error {fmt::format ("AnotherCustomError {}", value)}
       , _value {value}
@@ -39,7 +45,11 @@ namespace
 
   struct OneMoreCustomError : public mcs::Error
   {
-    MCS_ERROR_COPY_MOVE_DEFAULT (OneMoreCustomError);
+    ~OneMoreCustomError() override;
+    OneMoreCustomError (OneMoreCustomError const&) = default;
+    OneMoreCustomError (OneMoreCustomError&&) noexcept = default;
+    auto operator= (OneMoreCustomError const&) -> OneMoreCustomError& = default;
+    auto operator= (OneMoreCustomError&&) noexcept  -> OneMoreCustomError& = default;
     OneMoreCustomError (int value = 0)
       : mcs::Error {fmt::format ("OneMoreCustomError {}", value)}
       , _value {value}
@@ -51,18 +61,56 @@ namespace
 
 namespace fmt
 {
-  template<> MCS_UTIL_FMT_DECLARE (::CustomError);
-  template<> MCS_UTIL_FMT_DECLARE (::AnotherCustomError);
-  template<> MCS_UTIL_FMT_DECLARE (::OneMoreCustomError);
+  template<>
+    struct formatter<::CustomError>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( ::CustomError const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+  template<>
+    struct formatter<::AnotherCustomError>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( ::AnotherCustomError const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+  template<>
+    struct formatter<::OneMoreCustomError>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( ::OneMoreCustomError const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (context, ::CustomError)
+  template<typename ParseContext>
+    constexpr auto formatter<::CustomError>::parse (ParseContext& context)
   {
     return context.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (custom_error, context, ::CustomError)
+  template<typename FormatContext>
+    constexpr auto formatter<::CustomError>::format
+      ( ::CustomError const& custom_error
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
       ( context.out()
@@ -83,11 +131,16 @@ namespace fmt
       );
   }
 
-  MCS_UTIL_FMT_DEFINE_PARSE (context, ::AnotherCustomError)
+  template<typename ParseContext>
+    constexpr auto formatter<::AnotherCustomError>::parse (ParseContext& context)
   {
     return context.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (custom_error, context, ::AnotherCustomError)
+  template<typename FormatContext>
+    constexpr auto formatter<::AnotherCustomError>::format
+      ( ::AnotherCustomError const& custom_error
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
       ( context.out()
@@ -108,11 +161,16 @@ namespace fmt
       );
   }
 
-  MCS_UTIL_FMT_DEFINE_PARSE (context, ::OneMoreCustomError)
+  template<typename ParseContext>
+    constexpr auto formatter<::OneMoreCustomError>::parse (ParseContext& context)
   {
     return context.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (custom_error, context, ::OneMoreCustomError)
+  template<typename FormatContext>
+    constexpr auto formatter<::OneMoreCustomError>::format
+      ( ::OneMoreCustomError const& custom_error
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
       ( context.out()

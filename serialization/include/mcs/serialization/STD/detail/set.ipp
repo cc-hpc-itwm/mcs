@@ -2,7 +2,10 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::serialization
@@ -11,11 +14,10 @@ namespace mcs::serialization
           , is_serializable Compare
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , xs
-      , std::set<Key, Compare, Allocator>
-      )
+    auto Implementation<std::set<Key, Compare, Allocator>>::output
+      ( OArchive& oa
+      , std::set<Key, Compare, Allocator> const& xs
+      ) -> OArchive&
   {
     oa.tag<detail::tag::STD::Set> (xs.size());
 
@@ -37,10 +39,9 @@ namespace mcs::serialization
           , is_serializable Compare
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , std::set<Key, Compare, Allocator>
-      )
+    auto Implementation<std::set<Key, Compare, Allocator>>::input
+      ( IArchive& ia
+      ) -> std::set<Key, Compare, Allocator>
   {
     auto size {ia.tag<detail::tag::STD::Set>().size};
 

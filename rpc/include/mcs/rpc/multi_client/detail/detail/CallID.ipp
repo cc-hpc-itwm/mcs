@@ -1,8 +1,6 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
-
 namespace mcs::rpc::multi_client::detail
 {
   constexpr auto CallID::operator++() noexcept -> CallID&
@@ -15,11 +13,17 @@ namespace mcs::rpc::multi_client::detail
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, mcs::rpc::multi_client::detail::CallID)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::rpc::multi_client::detail::CallID>::parse
+      (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (id, ctx, mcs::rpc::multi_client::detail::CallID)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::rpc::multi_client::detail::CallID>::format
+      ( mcs::rpc::multi_client::detail::CallID const& id
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to (ctx.out(), "ci_{}", id._value);
   }

@@ -38,15 +38,18 @@ namespace mcs::testing::core::storage::implementation
   template<typename TestingStorage>
     struct SharedObject;
 
-  template<> struct SharedObject<Files>
+  template<>
+    struct SharedObject<Files>
   {
     static auto path() -> std::filesystem::path;
   };
-  template<> struct SharedObject<Heap>
+  template<>
+    struct SharedObject<Heap>
   {
     static auto path() -> std::filesystem::path;
   };
-  template<> struct SharedObject<SHMEM>
+  template<>
+    struct SharedObject<SHMEM>
   {
     static auto path() -> std::filesystem::path;
   };

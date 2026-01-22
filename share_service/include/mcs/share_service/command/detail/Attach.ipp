@@ -1,34 +1,35 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::serialization
 {
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , share_service::command::Attach<Access>
-      )
+    auto Implementation<share_service::command::Attach<Access>>::input
+      ( IArchive& ia
+      ) -> share_service::command::Attach<Access>
   {
     using Attach = share_service::command::Attach<Access>;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, chunk, Attach);
-    MCS_SERIALIZATION_LOAD_FIELD (ia, parameters, Attach);
+    auto chunk {load<decltype (Attach::chunk)> (ia)};
+    auto parameters {load<decltype (Attach::parameters)> (ia)};
 
     return Attach {chunk, parameters};
   }
 
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , attach
-      , share_service::command::Attach<Access>
-      )
+    auto Implementation<share_service::command::Attach<Access>>::output
+      ( OArchive& oa
+      , share_service::command::Attach<Access> const& attach
+      ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, attach, chunk);
-    MCS_SERIALIZATION_SAVE_FIELD (oa, attach, parameters);
+    save (oa, attach.chunk);
+    save (oa, attach.parameters);
 
     return oa;
   }
@@ -39,16 +40,15 @@ namespace mcs::serialization
   template< share_service::is_supported_storage_implementation
               StorageImplementation
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , share_service::command::attach::Parameters<StorageImplementation>
-      )
+    auto Implementation<share_service::command::attach::Parameters<StorageImplementation>>::input
+      ( IArchive& ia
+      ) -> share_service::command::attach::Parameters<StorageImplementation>
   {
     using Parameters =
       share_service::command::attach::Parameters<StorageImplementation>
       ;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, chunk_description, Parameters);
+    auto chunk_description {load<decltype (Parameters::chunk_description)> (ia)};
 
     return Parameters {chunk_description};
   }
@@ -56,13 +56,12 @@ namespace mcs::serialization
   template< share_service::is_supported_storage_implementation
               StorageImplementation
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , parameters
-      , share_service::command::attach::Parameters<StorageImplementation>
-      )
+    auto Implementation<share_service::command::attach::Parameters<StorageImplementation>>::output
+      ( OArchive& oa
+      , share_service::command::attach::Parameters<StorageImplementation> const& parameters
+      ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, parameters, chunk_description);
+    save (oa, parameters.chunk_description);
 
     return oa;
   }

@@ -5,10 +5,8 @@
 
 #include <compare>
 #include <cstdint>
-#include <mcs/util/FMT/access.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/hash/access.hpp>
-#include <mcs/util/hash/declare.hpp>
+#include <fmt/base.h>
+#include <functional>
 
 namespace mcs::rpc::multi_client::detail
 {
@@ -25,20 +23,40 @@ namespace mcs::rpc::multi_client::detail
 
     underlying_type _value {0u};
 
-    MCS_UTIL_FMT_ACCESS();
-    MCS_UTIL_HASH_ACCESS();
+    template<typename, typename, typename> friend struct fmt::formatter;
+    template<typename> friend struct std::hash;
   };
 }
 
 namespace fmt
 {
-  template<> MCS_UTIL_FMT_DECLARE (mcs::rpc::multi_client::detail::CallID);
+  template<>
+    struct formatter<mcs::rpc::multi_client::detail::CallID>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::rpc::multi_client::detail::CallID const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace std
 {
-  template<> MCS_UTIL_HASH_DECLARE_VIA_HASH_OF_UNDERLYING_TYPE
-    (mcs::rpc::multi_client::detail::CallID);
+  template<>
+    struct hash<mcs::rpc::multi_client::detail::CallID>
+  {
+    auto operator()
+      ( mcs::rpc::multi_client::detail::CallID
+      ) const noexcept -> size_t
+      ;
+
+  private:
+    hash<mcs::rpc::multi_client::detail::CallID::underlying_type> _hash;
+  };
 }
 
 #include "detail/CallID.ipp"

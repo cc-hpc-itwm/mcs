@@ -23,7 +23,11 @@ namespace mcs::util
       constexpr auto numerator() const noexcept -> T;
       constexpr auto denominator() const noexcept -> T;
 
-      MCS_ERROR_COPY_MOVE_DEFAULT (Error);
+      ~Error() override;
+      Error (Error const&) = default;
+      Error (Error&&) noexcept = default;
+      auto operator= (Error const&) -> Error& = default;
+      auto operator= (Error&&) noexcept  -> Error& = default;
 
     private:
       T _numerator;
@@ -34,14 +38,22 @@ namespace mcs::util
     {
       DivisionByZero();
 
-      MCS_ERROR_COPY_MOVE_DEFAULT (DivisionByZero);
+      ~DivisionByZero() override;
+      DivisionByZero (DivisionByZero const&) = default;
+      DivisionByZero (DivisionByZero&&) noexcept = default;
+      auto operator= (DivisionByZero const&) -> DivisionByZero& = default;
+      auto operator= (DivisionByZero&&) noexcept  -> DivisionByZero& = default;
     };
 
     struct OverflowInIntermediateValue : public mcs::Error
     {
       OverflowInIntermediateValue();
 
-      MCS_ERROR_COPY_MOVE_DEFAULT (OverflowInIntermediateValue);
+      ~OverflowInIntermediateValue() override;
+      OverflowInIntermediateValue (OverflowInIntermediateValue const&) = default;
+      OverflowInIntermediateValue (OverflowInIntermediateValue&&) noexcept = default;
+      auto operator= (OverflowInIntermediateValue const&) -> OverflowInIntermediateValue& = default;
+      auto operator= (OverflowInIntermediateValue&&) noexcept  -> OverflowInIntermediateValue& = default;
     };
   };
 }

@@ -1,8 +1,10 @@
 // Copyright (C) 2022-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/serialization/define.hpp>
-#include <mcs/util/hash/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <mcs/util/string.hpp>
 #include <utility>
 
@@ -16,20 +18,28 @@ namespace mcs::util
 
 namespace std
 {
-  MCS_UTIL_HASH_DEFINE_VIA_HASH_OF_MEMBER (_str, mcs::util::string);
+  auto hash<mcs::util::string>::operator()
+    ( mcs::util::string const& x
+    ) const noexcept -> size_t
+  {
+    return std::invoke (_hash, x._str);
+  }
 }
 
 namespace mcs::serialization
 {
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-    (oa, string, util::string)
+  auto Implementation<util::string>::output
+    ( OArchive& oa
+    , util::string const& string
+    ) -> OArchive&
   {
     save (oa, static_cast<std::string> (string));
 
     return oa;
   }
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-    (ia, util::string)
+  auto Implementation<util::string>::input
+    ( IArchive& ia
+    ) -> util::string
   {
     auto string {load<std::string> (ia)};
 

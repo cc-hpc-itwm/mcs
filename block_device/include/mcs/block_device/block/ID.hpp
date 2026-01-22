@@ -5,9 +5,12 @@
 
 #include <concepts>
 #include <cstdint>
+#include <fmt/base.h>
 #include <mcs/block_device/block/Count.hpp>
-#include <mcs/util/tuplish/access.hpp>
-#include <mcs/util/tuplish/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
+#include <mcs/util/require_semi.hpp>
 
 namespace mcs::block_device::block
 {
@@ -39,7 +42,9 @@ namespace mcs::block_device::block
   private:
     underlying_type _value {0u};
 
-    MCS_UTIL_TUPLISH_ACCESS();
+    template<typename, typename, typename> friend struct fmt::formatter;
+    template<typename> friend struct serialization::Implementation;
+    template<typename> friend struct util::read::Read;
   };
 
   template<std::integral I>
@@ -60,6 +65,45 @@ namespace mcs::block_device::block
     ;
 }
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION (mcs::block_device::block::ID);
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::block_device::block::ID>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::block_device::block::ID const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::block_device::block::ID>
+  {
+    using Type = mcs::block_device::block::ID;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::block_device::block::ID>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::block_device::block::ID
+        ;
+  };
+}
 
 #include "detail/ID.ipp"

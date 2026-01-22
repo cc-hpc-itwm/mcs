@@ -2,7 +2,10 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::serialization
@@ -13,11 +16,10 @@ namespace mcs::serialization
           , is_serializable KeyEqual
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , m
-      , std::unordered_map<Key, T, Hash, KeyEqual, Allocator>
-      )
+    auto Implementation<std::unordered_map<Key, T, Hash, KeyEqual, Allocator>>::output
+      ( OArchive& oa
+      , std::unordered_map<Key, T, Hash, KeyEqual, Allocator> const& m
+      ) -> OArchive&
   {
     oa.tag<detail::tag::STD::UnorderedMap> (m.size(), m.bucket_count());
 
@@ -43,10 +45,9 @@ namespace mcs::serialization
           , is_serializable KeyEqual
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , std::unordered_map<Key, T, Hash, KeyEqual, Allocator>
-      )
+    auto Implementation<std::unordered_map<Key, T, Hash, KeyEqual, Allocator>>::input
+      ( IArchive& ia
+      ) -> std::unordered_map<Key, T, Hash, KeyEqual, Allocator>
   {
     auto [size, bucket_count] {ia.tag<detail::tag::STD::UnorderedMap>()};
 

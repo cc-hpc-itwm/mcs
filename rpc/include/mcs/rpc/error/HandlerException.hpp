@@ -18,6 +18,10 @@ namespace mcs::rpc::error
   {
     explicit HandlerError (std::string) noexcept;
 
-    MCS_ERROR_COPY_MOVE_DEFAULT (HandlerError);
+    ~HandlerError() override;
+    HandlerError (HandlerError const&) = default;
+    HandlerError (HandlerError&&) noexcept = default;
+    auto operator= (HandlerError const&) -> HandlerError& = default;
+    auto operator= (HandlerError&&) noexcept  -> HandlerError& = default;
   };
 }

@@ -4,12 +4,13 @@
 #pragma once
 
 #include <cstdint>
+#include <fmt/base.h>
 #include <mcs/core/storage/Concepts.hpp>
 #include <mcs/core/storage/ID.hpp>
 #include <mcs/core/storage/Parameter.hpp>
-#include <mcs/serialization/declare.hpp>
-#include <mcs/util/FMT/declare.hpp>
-#include <mcs/util/read/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
 #include <mcs/util/type/ID.hpp>
 
 namespace mcs::core::control::command::storage
@@ -35,25 +36,42 @@ namespace mcs::core::control::command::storage
 namespace fmt
 {
   template<mcs::core::storage::is_implementation... StorageImplementations>
-    MCS_UTIL_FMT_DECLARE
-      ( mcs::core::control::command::storage::Create<StorageImplementations...>
-      );
+    struct formatter<mcs::core::control::command::storage::Create<StorageImplementations...>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::control::command::storage::Create<StorageImplementations...> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 namespace mcs::serialization
 {
   template<core::storage::is_implementation... StorageImplementations>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( core::control::command::storage::Create<StorageImplementations...>
-      );
+    struct Implementation<core::control::command::storage::Create<StorageImplementations...>>
+  {
+    using Type = core::control::command::storage::Create<StorageImplementations...>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace mcs::util::read
 {
   template<core::storage::is_implementation... StorageImplementations>
-    MCS_UTIL_READ_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( core::control::command::storage::Create<StorageImplementations...>
-      );
+    struct Read<core::control::command::storage::Create<StorageImplementations...>>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> core::control::command::storage::Create<StorageImplementations...>
+        ;
+  };
 }
 
 #include "detail/Create.ipp"

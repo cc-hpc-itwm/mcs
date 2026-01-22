@@ -2,8 +2,8 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/read/InBrackets.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/Symbol.hpp>
-#include <mcs/util/read/define.hpp>
 
 namespace mcs::util::read
 {
@@ -75,7 +75,10 @@ namespace mcs::util::read
   }
 
   template<is_readable... Ts>
-    MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION (state, std::tuple<Ts...>)
+    template<typename Char>
+      auto Read<std::tuple<Ts...>>::read
+        ( State<Char>& state
+        ) -> std::tuple<Ts...>
   {
     return in_brackets
       ( symbol ("(")

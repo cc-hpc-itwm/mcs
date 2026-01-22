@@ -4,7 +4,7 @@
 #pragma once
 
 #include <mcs/rpc/Dispatcher.hpp>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <vector>
 
 namespace mcs::rpc::ping
@@ -28,7 +28,13 @@ namespace mcs::rpc::ping
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION (rpc::ping::Ping);
+    struct Implementation<rpc::ping::Ping>
+  {
+    using Type = rpc::ping::Ping;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace mcs::rpc::ping

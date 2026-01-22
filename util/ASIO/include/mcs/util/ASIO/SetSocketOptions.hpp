@@ -11,7 +11,8 @@ namespace mcs::util::ASIO
 {
   template<is_protocol Protocol> struct SetSocketOptions;
 
-  template<> struct SetSocketOptions<asio::local::stream_protocol>
+  template<>
+    struct SetSocketOptions<asio::local::stream_protocol>
   {
     constexpr auto operator()
       ( asio::local::stream_protocol::socket&
@@ -19,7 +20,8 @@ namespace mcs::util::ASIO
       ;
   };
 
-  template<> struct SetSocketOptions<asio::ip::tcp>
+  template<>
+    struct SetSocketOptions<asio::ip::tcp>
   {
     auto operator()
       ( asio::ip::tcp::socket&

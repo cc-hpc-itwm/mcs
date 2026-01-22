@@ -9,3 +9,5 @@ option (MCS_TEST "build tests and the internal testing utilities" OFF)
 option (MCS_INSTALL "install the MCS" ON)
 
 option (MCS_TRANSPORT_LIBFABRIC "support libfabric for data transport" OFF)
+
+option (MCS_FUSE "compile with fuse3" OFF)

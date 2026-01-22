@@ -2,10 +2,14 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
-#include <mcs/serialization/define.hpp>
-#include <mcs/util/FMT/define.hpp>
-#include <mcs/util/tuplish/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/prefix.hpp>
 #include <mcs/util/type/List.hpp>
+#include <tuple>
 #include <utility>
 
 namespace mcs::core::control::command::storage
@@ -28,20 +32,18 @@ namespace mcs::core::control::command::storage
 namespace fmt
 {
   template<mcs::core::storage::is_implementation... StorageImplementations>
-    MCS_UTIL_FMT_DEFINE_PARSE
-      ( context
-      , mcs::core::control::command::storage::Create<StorageImplementations...>
-      )
+    template<typename ParseContext>
+      constexpr auto formatter<mcs::core::control::command::storage::Create<StorageImplementations...>>::parse (ParseContext& context)
   {
     return context.begin();
   }
 
   template<mcs::core::storage::is_implementation... StorageImplementations>
-    MCS_UTIL_FMT_DEFINE_FORMAT
-      ( create
-      , context
-      , mcs::core::control::command::storage::Create<StorageImplementations...>
-      )
+    template<typename FormatContext>
+      constexpr auto formatter<mcs::core::control::command::storage::Create<StorageImplementations...>>::format
+        ( mcs::core::control::command::storage::Create<StorageImplementations...> const& create
+        , FormatContext& context
+        ) const -> decltype (context.out())
   {
     return fmt::format_to
       ( context.out()
@@ -54,20 +56,20 @@ namespace fmt
 namespace mcs::util::read
 {
   template<core::storage::is_implementation... StorageImplementations>
-    MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-      ( state
-      , core::control::command::storage::Create<StorageImplementations...>
-      )
+    template<typename Char>
+      auto Read<core::control::command::storage::Create<StorageImplementations...>>::read
+        ( State<Char>& state
+        ) -> core::control::command::storage::Create<StorageImplementations...>
   {
     namespace command = core::control::command;
     using Create = command::storage::Create<StorageImplementations...>;
 
     return std::make_from_tuple<Create>
-      ( parse<std::tuple< decltype (std::declval<Create>().implementation_id)
-                        , decltype (std::declval<Create>().storage_parameter)
-                        >
-             >
-          (state)
+      ( parse< std::tuple
+               < decltype (Create::implementation_id)
+               , decltype (Create::storage_parameter)
+               >
+             > (state)
       );
   }
 }
@@ -75,29 +77,27 @@ namespace mcs::util::read
 namespace mcs::serialization
 {
   template<core::storage::is_implementation... StorageImplementations>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , create
-      , core::control::command::storage::Create<StorageImplementations...>
-      )
+    auto Implementation<core::control::command::storage::Create<StorageImplementations...>>::output
+      ( OArchive& oa
+      , core::control::command::storage::Create<StorageImplementations...> const& create
+      ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, create, implementation_id);
-    MCS_SERIALIZATION_SAVE_FIELD (oa, create, storage_parameter);
+    save (oa, create.implementation_id);
+    save (oa, create.storage_parameter);
 
     return oa;
   }
 
   template<core::storage::is_implementation... StorageImplementations>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , core::control::command::storage::Create<StorageImplementations...>
-      )
+    auto Implementation<core::control::command::storage::Create<StorageImplementations...>>::input
+      ( IArchive& ia
+      ) -> core::control::command::storage::Create<StorageImplementations...>
   {
     namespace command = core::control::command;
     using Create = command::storage::Create<StorageImplementations...>;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, implementation_id, Create);
-    MCS_SERIALIZATION_LOAD_FIELD (ia, storage_parameter, Create);
+    auto implementation_id {load<decltype (Create::implementation_id)> (ia)};
+    auto storage_parameter {load<decltype (Create::storage_parameter)> (ia)};
 
     return Create {implementation_id, storage_parameter};
   }

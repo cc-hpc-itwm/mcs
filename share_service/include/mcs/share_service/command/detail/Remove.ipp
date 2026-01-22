@@ -1,7 +1,10 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::serialization
@@ -9,16 +12,15 @@ namespace mcs::serialization
   template< share_service::is_supported_storage_implementation
               StorageImplementation
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , share_service::command::remove::Parameters<StorageImplementation>
-      )
+    auto Implementation<share_service::command::remove::Parameters<StorageImplementation>>::input
+      ( IArchive& ia
+      ) -> share_service::command::remove::Parameters<StorageImplementation>
   {
     using Parameters =
       share_service::command::remove::Parameters<StorageImplementation>
       ;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, segment_remove, Parameters);
+    auto segment_remove {load<decltype (Parameters::segment_remove)> (ia)};
 
     return Parameters {segment_remove};
   }
@@ -26,13 +28,12 @@ namespace mcs::serialization
   template< share_service::is_supported_storage_implementation
               StorageImplementation
           >
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , parameters
-      , share_service::command::remove::Parameters<StorageImplementation>
-      )
+    auto Implementation<share_service::command::remove::Parameters<StorageImplementation>>::output
+      ( OArchive& oa
+      , share_service::command::remove::Parameters<StorageImplementation> const& parameters
+      ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, parameters, segment_remove);
+    save (oa, parameters.segment_remove);
 
     return oa;
   }

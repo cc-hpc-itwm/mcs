@@ -16,6 +16,10 @@ namespace mcs::rpc::error
   public:
     HandshakeFailed() noexcept;
 
-    MCS_ERROR_COPY_MOVE_DEFAULT (HandshakeFailed);
+    ~HandshakeFailed() override;
+    HandshakeFailed (HandshakeFailed const&) = default;
+    HandshakeFailed (HandshakeFailed&&) noexcept = default;
+    auto operator= (HandshakeFailed const&) -> HandshakeFailed& = default;
+    auto operator= (HandshakeFailed&&) noexcept  -> HandshakeFailed& = default;
   };
 }

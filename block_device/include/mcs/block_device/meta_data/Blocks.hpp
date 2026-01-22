@@ -12,13 +12,12 @@
 #include <mcs/block_device/block/Size.hpp>
 #include <mcs/core/memory/Offset.hpp>
 #include <mcs/core/transport/Address.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/serialization/STD/list.hpp>
 #include <mcs/serialization/STD/optional.hpp>
-#include <mcs/serialization/declare.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
 #include <optional>
 #include <set>
-#include <shared_mutex>
 #include <type_traits>
 
 namespace mcs::block_device::meta_data
@@ -121,7 +120,11 @@ namespace mcs::block_device::meta_data
       {
         constexpr auto block_id() const noexcept;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (BlockNotInAnyStorage);
+        ~BlockNotInAnyStorage() override;
+        BlockNotInAnyStorage (BlockNotInAnyStorage const&) = default;
+        BlockNotInAnyStorage (BlockNotInAnyStorage&&) noexcept = default;
+        auto operator= (BlockNotInAnyStorage const&) -> BlockNotInAnyStorage& = default;
+        auto operator= (BlockNotInAnyStorage&&) noexcept  -> BlockNotInAnyStorage& = default;
 
       private:
         friend struct Blocks;
@@ -156,7 +159,6 @@ namespace mcs::block_device::meta_data
         ) const noexcept -> bool
         ;
     };
-    mutable std::shared_mutex _guard{};
     block::Count _number_of_blocks {block::make_count (0)};
     block::ID _next_block_id {block::make_id (0)};
     // \note on the data structure choice: iterator stability after
@@ -178,12 +180,30 @@ namespace mcs::block_device::meta_data
 
 namespace mcs::serialization
 {
-  template<> MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-    (block_device::meta_data::Blocks::AddResult);
-  template<> MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-    (block_device::meta_data::Blocks::RemoveResult);
-  template<> MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-    (block_device::meta_data::Blocks::Location);
+  template<>
+    struct Implementation<block_device::meta_data::Blocks::AddResult>
+  {
+    using Type = block_device::meta_data::Blocks::AddResult;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+  template<>
+    struct Implementation<block_device::meta_data::Blocks::RemoveResult>
+  {
+    using Type = block_device::meta_data::Blocks::RemoveResult;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+  template<>
+    struct Implementation<block_device::meta_data::Blocks::Location>
+  {
+    using Type = block_device::meta_data::Blocks::Location;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/Blocks.ipp"

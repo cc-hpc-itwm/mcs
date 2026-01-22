@@ -1,14 +1,52 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/tuplish/define.hpp>
+#include <fmt/ranges.h>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/prefix.hpp>
+#include <tuple>
 
-MCS_UTIL_TUPLISH_DEFINE_FMT_READ2
-  ( "mcs::block_device::block::Range "
-  , mcs::block_device::block::Range
-  , _begin
-  , _end
-  );
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::block_device::block::Range>::parse (ParseContext& ctx)
+  {
+    return ctx.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::block_device::block::Range>::format
+      ( mcs::block_device::block::Range const& value
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
+  {
+    return fmt::format_to
+      ( ctx.out()
+      , "{}{}"
+      , "mcs::block_device::block::Range "
+      , std::make_tuple (value._begin, value._end)
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::block_device::block::Range>::read
+      ( State<Char>& state
+      ) -> mcs::block_device::block::Range
+  {
+    prefix (state, "mcs::block_device::block::Range ");
+
+    using Range = mcs::block_device::block::Range;
+    return std::make_from_tuple<Range>
+      ( parse< std::tuple
+               < decltype (Range::_begin)
+               , decltype (Range::_end)
+               >
+             > (state)
+      );
+  }
+}
 
 namespace mcs::block_device::block
 {

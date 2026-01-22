@@ -3,8 +3,8 @@
 
 #pragma once
 
+#include <fmt/base.h>
 #include <mcs/serialization/Concepts.hpp>
-#include <mcs/util/FMT/declare.hpp>
 
 namespace mcs::core::storage::tracer::record
 {
@@ -14,7 +14,17 @@ namespace mcs::core::storage::tracer::record
 namespace fmt
 {
   template<>
-    MCS_UTIL_FMT_DECLARE (mcs::core::storage::tracer::record::Tag);
+    struct formatter<mcs::core::storage::tracer::record::Tag>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::tracer::record::Tag const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
 static_assert

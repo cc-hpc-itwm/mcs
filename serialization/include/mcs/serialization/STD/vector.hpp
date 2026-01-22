@@ -3,15 +3,19 @@
 
 #pragma once
 
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <vector>
 
 namespace mcs::serialization
 {
   template<is_serializable T, is_serializable Allocator>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (std::vector<T, Allocator>)
-    ;
+    struct Implementation<std::vector<T, Allocator>>
+  {
+    using Type = std::vector<T, Allocator>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/vector.ipp"

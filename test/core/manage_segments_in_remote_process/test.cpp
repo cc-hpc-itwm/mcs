@@ -171,10 +171,15 @@ namespace mcs::core
         {testing::random::value<std::size_t> {2 << 20, 5 << 20}};
 
       auto const max_size
-        { storages.template size_max<typename TestingStorage::Storage>
-            ( storages.read_access()
-            , storage_id
-            , testing_storage.get().parameter_size_max()
+        { storages.read_access()
+          . template invoke<typename TestingStorage::Storage>
+            ( storage_id
+            , [&] (auto const& storage_implementation)
+              {
+                return storage_implementation.size_max
+                  ( testing_storage.get().parameter_size_max()
+                  );
+              }
             )
         };
 
@@ -211,10 +216,15 @@ namespace mcs::core
 
         ASSERT_EQ
           ( size_used + size
-          , storages.template size_used<typename TestingStorage::Storage>
-              ( storages.read_access()
-              , storage_id
-              , testing_storage.get().parameter_size_used()
+          , storages.read_access()
+            . template invoke<typename TestingStorage::Storage>
+              ( storage_id
+              , [&] (auto const& storage_implementation)
+                {
+                  return storage_implementation.size_used
+                    ( testing_storage.get().parameter_size_used()
+                    );
+                }
               )
           );
       }
@@ -250,10 +260,15 @@ namespace mcs::core
       {
         ASSERT_EQ
           ( memory::make_size (0)
-          , storages.template size_used<typename TestingStorage::Storage>
-              ( storages.read_access()
-              , storage_id
-              , testing_storage.get().parameter_size_used()
+          , storages.read_access()
+            . template invoke<typename TestingStorage::Storage>
+              ( storage_id
+              , [&] (auto const& storage_implementation)
+                {
+                  return storage_implementation.size_used
+                    ( testing_storage.get().parameter_size_used()
+                    );
+                }
               )
           );
 

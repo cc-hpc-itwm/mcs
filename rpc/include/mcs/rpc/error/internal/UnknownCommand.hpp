@@ -11,6 +11,10 @@ namespace mcs::rpc::error::internal
   {
     UnknownCommand() noexcept;
 
-    MCS_ERROR_COPY_MOVE_DEFAULT (UnknownCommand);
+    ~UnknownCommand() override;
+    UnknownCommand (UnknownCommand const&) = default;
+    UnknownCommand (UnknownCommand&&) noexcept = default;
+    auto operator= (UnknownCommand const&) -> UnknownCommand& = default;
+    auto operator= (UnknownCommand&&) noexcept  -> UnknownCommand& = default;
   };
 }

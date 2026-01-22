@@ -1,7 +1,7 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-function (mcs_test_rpc name)
+function (mcs_test_rpc_executable name)
   add_executable (mcs_test_rpc_${name}
     ${name}.cpp
   )
@@ -12,7 +12,18 @@ function (mcs_test_rpc name)
     PRIVATE mcs_testing_RPC
     ${ARGN}
   )
+endfunction()
+
+function (mcs_test_rpc name)
+  mcs_test_rpc_executable (${name} ${ARGN})
   gtest_discover_tests (mcs_test_rpc_${name})
+endfunction()
+
+function (mcs_test_rpc_performance name)
+  mcs_test_rpc_executable (${name} ${ARGN})
+  gtest_discover_tests (mcs_test_rpc_${name}
+    PROPERTIES LABELS "performance"
+  )
 endfunction()
 
 mcs_test_rpc (Concepts)
@@ -28,7 +39,7 @@ mcs_test_rpc (many PRIVATE mcs_util_syscall)
 mcs_test_rpc (many_concurrent_requests)
 mcs_test_rpc (messing_up_functions_with_the_same_signature_causes_an_error_during_handeshake)
 mcs_test_rpc (multi_client)
-mcs_test_rpc (multi_threaded_server)
+mcs_test_rpc_performance (multi_threaded_server)
 mcs_test_rpc (streaming_client)
 mcs_test_rpc (streaming_handler)
 

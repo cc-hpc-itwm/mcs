@@ -5,10 +5,13 @@
 
 #include <concepts>
 #include <cstdint>
+#include <fmt/base.h>
 #include <mcs/block_device/block/Size.hpp>
 #include <mcs/core/memory/Size.hpp>
-#include <mcs/util/tuplish/access.hpp>
-#include <mcs/util/tuplish/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
+#include <mcs/util/require_semi.hpp>
 
 namespace mcs::block_device::block
 {
@@ -54,7 +57,9 @@ namespace mcs::block_device::block
 
     underlying_type _value {0u};
 
-    MCS_UTIL_TUPLISH_ACCESS();
+    template<typename, typename, typename> friend struct fmt::formatter;
+    template<typename> friend struct serialization::Implementation;
+    template<typename> friend struct util::read::Read;
   };
 
   template<std::integral I>
@@ -85,6 +90,45 @@ namespace mcs::block_device::block
     ;
 }
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION (mcs::block_device::block::Count);
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::block_device::block::Count>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::block_device::block::Count const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::block_device::block::Count>
+  {
+    using Type = mcs::block_device::block::Count;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::block_device::block::Count>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::block_device::block::Count
+        ;
+  };
+}
 
 #include "detail/Count.ipp"

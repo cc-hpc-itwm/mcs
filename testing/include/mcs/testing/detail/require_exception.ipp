@@ -14,7 +14,8 @@ namespace mcs::testing
   {
     template<typename...> struct Nested;
 
-    template<> struct Nested<>
+    template<>
+      struct Nested<>
     {
       auto operator() (std::exception_ptr error) const noexcept -> void
       {

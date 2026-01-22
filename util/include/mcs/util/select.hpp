@@ -19,7 +19,11 @@ namespace mcs::util
         constexpr auto count() const noexcept -> std::size_t;
         constexpr auto size() const noexcept -> std::size_t;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT_IMPL (OutOfRange);
+        ~OutOfRange() override;
+        OutOfRange (OutOfRange const&) = default;
+        OutOfRange (OutOfRange&&) noexcept = default;
+        auto operator= (OutOfRange const&) -> OutOfRange& = default;
+        auto operator= (OutOfRange&&) noexcept  -> OutOfRange& = default;
       private:
         friend struct Select;
 

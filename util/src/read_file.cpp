@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iterator>
 #include <mcs/util/FMT/STD/filesystem/path.hpp>
+#include <mcs/util/read_file.hpp>
 #include <stdexcept>
 #include <string>
 

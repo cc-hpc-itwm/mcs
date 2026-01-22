@@ -3,7 +3,6 @@
 
 #include <cassert>
 #include <cstddef>
-#include <fmt/format.h>
 #include <mcs/Error.hpp>
 #include <mcs/core/transport/implementation/libfabric/libfabric/Interface.hpp>
 #include <mcs/core/transport/implementation/libfabric/transporter/rdm/Interface.hpp>

@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# Copyright (C) 2025 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+
+set -euo pipefail
+
+TESTING_BASH_DIRECTORY="@TESTING_BASH_DIRECTORY@"
+
+MCS_TEST_FUSE_BIN_STORAGE_FS="@MCS_TEST_FUSE_BIN_STORAGE_FS@"
+MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER="@MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER@"
+MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER="@MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER@"
+
+source "${TESTING_BASH_DIRECTORY}/cleanup"
+source "${TESTING_BASH_DIRECTORY}/TMP_DIRECTORY"
+
+#######################################################################
+
+MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX="test_demo_$$"
+MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT="${TMP_DIRECTORY}/mountpoint"
+
+mkdir -p "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}"
+
+#######################################################################
+# Start the FUSE filesystem with SHMEM backend
+#######################################################################
+
+"${MCS_TEST_FUSE_BIN_STORAGE_FS}"                                            \
+    "SHMEM (Prefix \"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}\", Unlimited)"  \
+    'SHMEM::Size::Max()'                                                     \
+    'SHMEM::Size::Used()'                                                    \
+    'SHMEM::Segment::Create (SHMEM::Segment::AccessMode (384), Nothing)'     \
+    'SHMEM::Segment::Remove()'                                               \
+    'SHMEM::Chunk::Description()'                                            \
+    "mcs_test_demo_$$"                                                       \
+    -o auto_unmount                                                          \
+    -f                                                                       \
+    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}" &
+
+MCS_TEST_FUSE_BIN_STORAGE_DEMO_FS_PID=$!
+on_exit+=("kill ${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FS_PID} 2>/dev/null || true")
+on_exit+=("fusermount -u ${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT} 2>/dev/null || true")
+
+# Wait for the filesystem to be ready
+source "${TESTING_BASH_DIRECTORY}/wait"
+wait 50 mountpoint -q "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}"
+
+#######################################################################
+# Test: Write data with producer and verify with consumer
+#######################################################################
+
+MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE="${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}/test_data"
+MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE=$((1024 * 1024))  # 1 MiB
+
+# Run producer
+"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER}"      \
+    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"      \
+    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE}"      \
+    > "${TMP_DIRECTORY}/producer.out"
+
+# Verify producer output
+grep -q "SUCCESS: Wrote ${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE} bytes to" "${TMP_DIRECTORY}/producer.out" || {
+    echo "Producer output does not contain expected success message:"
+    cat "${TMP_DIRECTORY}/producer.out"
+    exit 1
+}
+
+# Run consumer
+"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER}"             \
+    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}"           \
+    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"             \
+    > "${TMP_DIRECTORY}/consumer.out"
+
+# Verify consumer output
+grep -q "SUCCESS: Verified ${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE} bytes of" "${TMP_DIRECTORY}/consumer.out" || {
+    echo "Consumer output does not contain expected success message:"
+    cat "${TMP_DIRECTORY}/consumer.out"
+    exit 1
+}
+
+#######################################################################
+# Test: Verify with different chunk sizes
+#######################################################################
+
+for chunk_size in 512 4096 65536
+do
+  MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE="${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}/test_chunk_${chunk_size}"
+
+  "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER}"      \
+      "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"      \
+      "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE}"      \
+      "${chunk_size}"                               \
+      > "${TMP_DIRECTORY}/producer_${chunk_size}.out"
+
+  "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER}"      \
+      "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}"    \
+      "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"      \
+      > "${TMP_DIRECTORY}/consumer_${chunk_size}.out"
+
+  grep -q "SUCCESS: Verified ${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE} bytes of" "${TMP_DIRECTORY}/consumer_${chunk_size}.out" || {
+      echo "Consumer (chunk_size=${chunk_size}) output does not contain expected success message:"
+      cat "${TMP_DIRECTORY}/consumer_${chunk_size}.out"
+      exit 1
+  }
+done
+
+#######################################################################
+# Test: Empty file
+#######################################################################
+
+MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE="${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}/test_empty"
+
+"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER}"      \
+    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"      \
+    0                                             \
+    > "${TMP_DIRECTORY}/producer_empty.out"
+
+"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER}"      \
+    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}"    \
+    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"      \
+    > "${TMP_DIRECTORY}/consumer_empty.out"
+
+grep -q "SUCCESS: Verified 0 bytes of" "${TMP_DIRECTORY}/consumer_empty.out" || {
+    echo "Consumer (empty file) output does not contain expected success message:"
+    cat "${TMP_DIRECTORY}/consumer_empty.out"
+    exit 1
+}
+
+echo "All tests passed."

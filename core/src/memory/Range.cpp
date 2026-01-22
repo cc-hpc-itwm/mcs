@@ -3,7 +3,8 @@
 
 #include <fmt/format.h>
 #include <mcs/core/memory/Range.hpp>
-#include <mcs/util/tuplish/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 
 namespace mcs::core::memory
 {
@@ -25,8 +26,25 @@ namespace mcs::core::memory
     ;
 }
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION2
-  ( mcs::core::memory::Range
-  , _begin
-  , _end
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::memory::Range>::output
+    ( OArchive& oa
+    , mcs::core::memory::Range const& value
+    ) -> OArchive&
+  {
+    save (oa, value._begin);
+    save (oa, value._end);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::memory::Range>::input
+    ( IArchive& ia
+    ) -> mcs::core::memory::Range
+  {
+    auto _begin {load<decltype (mcs::core::memory::Range::_begin)> (ia)};
+    auto _end {load<decltype (mcs::core::memory::Range::_end)> (ia)};
+
+    return mcs::core::memory::Range {_begin, _end};
+  }
+}

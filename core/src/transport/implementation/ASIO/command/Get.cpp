@@ -3,7 +3,10 @@
 
 #include <fmt/format.h>
 #include <mcs/core/transport/implementation/ASIO/command/Get.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 
 namespace mcs::core::transport::implementation::ASIO::command
 {
@@ -27,28 +30,26 @@ namespace mcs::core::transport::implementation::ASIO::command
 
 namespace mcs::serialization
 {
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-    ( oa
-    , get
-    , core::transport::implementation::ASIO::command::Get
-    )
+  auto Implementation<core::transport::implementation::ASIO::command::Get>::output
+    ( OArchive& oa
+    , core::transport::implementation::ASIO::command::Get const& get
+    ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, get, source);
-    MCS_SERIALIZATION_SAVE_FIELD (oa, get, size);
+    save (oa, get.source);
+    save (oa, get.size);
 
     return oa;
   }
 
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-    ( ia
-    , core::transport::implementation::ASIO::command::Get
-    )
+  auto Implementation<core::transport::implementation::ASIO::command::Get>::input
+    ( IArchive& ia
+    ) -> core::transport::implementation::ASIO::command::Get
   {
     namespace ASIO = core::transport::implementation::ASIO;
     using Get = ASIO::command::Get;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, source, Get);
-    MCS_SERIALIZATION_LOAD_FIELD (ia, size, Get);
+    auto source {load<decltype (Get::source)> (ia)};
+    auto size {load<decltype (Get::size)> (ia)};
 
     return Get {source, size, nullptr};
   }

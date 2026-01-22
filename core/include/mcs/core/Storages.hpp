@@ -3,138 +3,109 @@
 
 #pragma once
 
-#include <filesystem>
-#include <mcs/core/chunk/Description.hpp>
-#include <mcs/core/memory/Offset.hpp>
-#include <mcs/core/memory/Range.hpp>
-#include <mcs/core/memory/Size.hpp>
 #include <mcs/core/storage/Concepts.hpp>
 #include <mcs/core/storage/ID.hpp>
-#include <mcs/core/storage/MaxSize.hpp>
-#include <mcs/core/storage/Parameter.hpp>
-#include <mcs/core/storage/segment/ID.hpp>
 #include <mcs/util/HeterogeneousMap.hpp>
 
 namespace mcs::core
 {
-  template<typename StorageImplementations> struct Storages;
-
-  template<storage::is_implementation... StorageImplementations>
-    struct Storages<util::type::List<StorageImplementations...>>
-      : public util::HeterogeneousMap<storage::ID, StorageImplementations...>
-  {
-    using Base = util::HeterogeneousMap<storage::ID, StorageImplementations...>;
-
-    using Base::create;
-    using Base::remove;
-    using Base::read_access;
-    using Base::write_access;
-
-    using ImplementationID = typename Base::Values::ID;
-
-    template<storage::is_implementation StorageImplementation>
-      requires ( util::HeterogeneousMap<storage::ID, StorageImplementations...>
-                   ::Values::template contains<StorageImplementation>()
-               )
-      [[nodiscard]] static constexpr auto implementation_id
-        (
-        ) noexcept -> ImplementationID
-      ;
-
-    // Typed interface:
-    // Pre: The storage at id has the type StorageImplementation.
-    //
-    template<storage::is_implementation StorageImplementation>
-      requires ( util::type::List<StorageImplementations...>
-                   ::template contains<StorageImplementation>()
-               )
-      [[nodiscard]] auto size_max
-        ( typename Base::ReadAccess const&
-        , storage::ID
-        , typename StorageImplementation::Parameter::Size::Max
-        ) const -> storage::MaxSize
-        ;
-
-    template<storage::is_implementation StorageImplementation>
-      requires ( util::type::List<StorageImplementations...>
-                   ::template contains<StorageImplementation>()
-               )
-      [[nodiscard]] auto size_used
-        ( typename Base::ReadAccess const&
-        , storage::ID
-        , typename StorageImplementation::Parameter::Size::Used
-        ) const -> memory::Size
-        ;
-
-    template<storage::is_implementation StorageImplementation>
-      requires ( util::type::List<StorageImplementations...>
-                   ::template contains<StorageImplementation>()
-               )
-      [[nodiscard]] auto segment_create
-        ( typename Base::WriteAccess const&
-        , storage::ID
-        , typename StorageImplementation::Parameter::Segment::Create
-        , memory::Size
-        ) -> storage::segment::ID
-        ;
-
-    template<storage::is_implementation StorageImplementation>
-      requires ( util::type::List<StorageImplementations...>
-                   ::template contains<StorageImplementation>()
-               )
-      auto segment_remove
-        ( typename Base::WriteAccess const&
-        , storage::ID
-        , typename StorageImplementation::Parameter::Segment::Remove
-        , storage::segment::ID
-        ) -> memory::Size
-        ;
-
-    template< storage::is_implementation StorageImplementation
-            , chunk::is_access Access
-            >
-      requires ( util::type::List<StorageImplementations...>
-                   ::template contains<StorageImplementation>()
-               )
-      [[nodiscard]] auto chunk_description
-        ( typename Base::ReadAccess const&
-        , storage::ID
-        , typename StorageImplementation::Parameter::Chunk::Description
-        , storage::segment::ID
-        , memory::Range
-        ) const -> chunk::Description<Access, StorageImplementations...>
-        ;
-
-    template<storage::is_implementation StorageImplementation>
-      requires ( util::type::List<StorageImplementations...>
-                   ::template contains<StorageImplementation>()
-               )
-      auto file_read
-        ( typename Base::ReadAccess const&
-        , storage::ID
-        , typename StorageImplementation::Parameter::File::Read
-        , storage::segment::ID
-        , memory::Offset
-        , std::filesystem::path
-        , memory::Range
-        ) const -> memory::Size
-        ;
-
-    template<storage::is_implementation StorageImplementation>
-      requires ( util::type::List<StorageImplementations...>
-                   ::template contains<StorageImplementation>()
-               )
-      auto file_write
-        ( typename Base::ReadAccess const&
-        , storage::ID
-        , typename StorageImplementation::Parameter::File::Write
-        , storage::segment::ID
-        , memory::Offset
-        , std::filesystem::path
-        , memory::Range
-        ) const -> memory::Size
-        ;
-  };
+  // Heterogeneous container for storages.
+  //
+  // EXAMPLE:
+  //
+  //    using SupportedStorageImplementations = util::type::List<A, B, ...>;
+  //
+  //    auto storages {Storages<SupportedStorageImplementations>{}};
+  //
+  //    {
+  //      // use some help from UniqueStorage
+  //      auto const storage
+  //        { make_unique_storage<A>
+  //          ( std::addressof (storages)
+  //          , A::Parameter::Create {...}
+  //          )
+  //        };
+  //
+  //      // keep the access token for more than one operation
+  //      {
+  //        auto const read_access {storages.read_access()};
+  //
+  //        // typed access providing the (known) type
+  //        read_access.template invoke<A>
+  //          ( storage->id()
+  //          , [&] (auto const& storage_implementation)
+  //            {
+  //              return storage_implementation.size_max
+  //                ( A::Parameter::Size::Max{}
+  //                );
+  //            }
+  //          );
+  //
+  //        // untyped access
+  //        read_access.visit
+  //          ( storage->id()
+  //          , [&]<storage::is_implementation StorageImplemenation>
+  //              ( StorageImplementation const& storage_implementation
+  //              )
+  //            {
+  //              static_assert (std::is_same_v<A, StorageImplementation>);
+  //              ...
+  //            }
+  //          );
+  //       } // give up the access token
+  //     } // destroy the storage and remove from storages
+  //
+  // EXAMPLE:
+  //
+  //    auto storages {Storages<SupportedStorageImplementations>{}};
+  //
+  //    // create a storage of type B manually, ad-hoc access token
+  //    auto const storage_id
+  //      { storages.read_write_access().template create<B>
+  //        ( B::Parameter::Create {...}
+  //        )
+  //      };
+  //
+  //    // create and remove a segment in the storage, re-use access token
+  //    {
+  //      auto const read_write_access {storages.read_write_access()};
+  //
+  //      auto const segment_id
+  //        { read_write_access.visit
+  //            ( storage_id
+  //            , [&]<storage::is_implementation StorageImplementation>
+  //                ( auto& storage_implementation
+  //                )
+  //              {
+  //                return storage_implementation.segment_create
+  //                  ( B::Parameter::Segment::Create {...}
+  //                  , size
+  //                  );
+  //              }
+  //            )
+  //        };
+  //
+  //       read_write_access.visit
+  //         ( storage_id
+  //         , [&]<storage::is_implementation StorageImplementation>
+  //             ( auto& storage_implementation
+  //             )
+  //           {
+  //             return storage_implementation.segment_remove
+  //               ( B::Parameter::Segment::Remove {...}
+  //               , segment_id
+  //               );
+  //           }
+  //        );
+  //    }
+  //
+  //    // remove the storage manually, ad-hoc access token
+  //    storages.read_write_access().remove
+  //      ( storage_id
+  //      );
+  //
+  template<typename StorageImplementations>
+    using Storages
+      = util::HeterogeneousMap<storage::ID, StorageImplementations>
+    ;
 }
-
-#include "detail/Storages.ipp"

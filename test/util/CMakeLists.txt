@@ -1,7 +1,7 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-function (mcs_test_util name)
+function (mcs_test_util_executable name)
   add_executable (mcs_test_util_${name}
     ${name}.cpp
   )
@@ -11,11 +11,23 @@ function (mcs_test_util name)
     PRIVATE mcs_util
     ${ARGN}
   )
+endfunction()
+
+function (mcs_test_util name)
+  mcs_test_util_executable (${name} ${ARGN})
   gtest_discover_tests (mcs_test_util_${name})
+endfunction()
+
+function (mcs_performance_test_util name)
+  mcs_test_util_executable (${name} ${ARGN})
+  gtest_discover_tests (mcs_test_util_${name}
+    PROPERTIES LABELS "MCSUtil_Performance"
+  )
 endfunction()
 
 mcs_test_util (Buffer)
 mcs_test_util (HeterogeneousMap PRIVATE mcs_util_HeterogeneousMap)
+mcs_test_util (Lock PRIVATE mcs_util_lock)
 mcs_test_util (MapWithHitMissCallbacks)
 mcs_test_util (RangesIterator)
 mcs_test_util (TaggedRange)
@@ -28,6 +40,8 @@ mcs_test_util (member_AUTO)
 mcs_test_util (not_null)
 mcs_test_util (select)
 mcs_test_util (true_once)
+
+mcs_performance_test_util (LockPerformance PRIVATE mcs_util_lock)
 
 add_subdirectory (ASIO)
 add_subdirectory (FMT)

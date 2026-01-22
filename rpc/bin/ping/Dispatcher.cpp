@@ -2,7 +2,8 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include "Dispatcher.hpp"
-#include <mcs/util/tuplish/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::rpc::ping
@@ -20,7 +21,23 @@ namespace mcs::rpc::ping
   }
 }
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::rpc::ping::Ping
-  , data
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::rpc::ping::Ping>::output
+    ( OArchive& oa
+    , mcs::rpc::ping::Ping const& value
+    ) -> OArchive&
+  {
+    save (oa, value.data);
+
+    return oa;
+  }
+  auto Implementation<mcs::rpc::ping::Ping>::input
+    ( IArchive& ia
+    ) -> mcs::rpc::ping::Ping
+  {
+    auto data {load<decltype (mcs::rpc::ping::Ping::data)> (ia)};
+
+    return mcs::rpc::ping::Ping {data};
+  }
+}

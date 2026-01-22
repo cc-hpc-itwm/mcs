@@ -8,8 +8,11 @@
 #include <mcs/core/storage/c_api.h>
 #include <mcs/core/storage/implementation/Import_C_API.hpp>
 #include <mcs/nonstd/scope.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
 #include <mcs/serialization/STD/vector.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/execute_and_die_on_exception.hpp>
 #include <memory>
@@ -593,34 +596,146 @@ namespace mcs::core::storage::implementation
   Import_C_API::Error::BadAlloc::~BadAlloc() = default;
 }
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max
-  , _parameter_size_max
-  );
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used
-  , _parameter_size_used
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max const& value
+    ) -> OArchive&
+  {
+    save (oa, value._parameter_size_max);
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create
-  , _parameter_segment_create
-  );
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove
-  , _parameter_segment_remove
-  );
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max
+  {
+    auto _parameter_size_max {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max::_parameter_size_max)> (ia)};
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description
-  , _parameter_chunk_description
-  );
+    return mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max {_parameter_size_max};
+  }
+}
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used const& value
+    ) -> OArchive&
+  {
+    save (oa, value._parameter_size_used);
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::File::Read
-  , _parameter_file_read
-  );
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::implementation::Import_C_API::Parameter::File::Write
-  , _parameter_file_write
-  );
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used
+  {
+    auto _parameter_size_used {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used::_parameter_size_used)> (ia)};
+
+    return mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used {_parameter_size_used};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create const& value
+    ) -> OArchive&
+  {
+    save (oa, value._parameter_segment_create);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create
+  {
+    auto _parameter_segment_create {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create::_parameter_segment_create)> (ia)};
+
+    return mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create {_parameter_segment_create};
+  }
+}
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove const& value
+    ) -> OArchive&
+  {
+    save (oa, value._parameter_segment_remove);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove
+  {
+    auto _parameter_segment_remove {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove::_parameter_segment_remove)> (ia)};
+
+    return mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove {_parameter_segment_remove};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description const& value
+    ) -> OArchive&
+  {
+    save (oa, value._parameter_chunk_description);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description
+  {
+    auto _parameter_chunk_description {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description::_parameter_chunk_description)> (ia)};
+
+    return mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description {_parameter_chunk_description};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::File::Read>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Import_C_API::Parameter::File::Read const& value
+    ) -> OArchive&
+  {
+    save (oa, value._parameter_file_read);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::File::Read>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Import_C_API::Parameter::File::Read
+  {
+    auto _parameter_file_read {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::File::Read::_parameter_file_read)> (ia)};
+
+    return mcs::core::storage::implementation::Import_C_API::Parameter::File::Read {_parameter_file_read};
+  }
+}
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::File::Write>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Import_C_API::Parameter::File::Write const& value
+    ) -> OArchive&
+  {
+    save (oa, value._parameter_file_write);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Import_C_API::Parameter::File::Write>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Import_C_API::Parameter::File::Write
+  {
+    auto _parameter_file_write {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::File::Write::_parameter_file_write)> (ia)};
+
+    return mcs::core::storage::implementation::Import_C_API::Parameter::File::Write {_parameter_file_write};
+  }
+}

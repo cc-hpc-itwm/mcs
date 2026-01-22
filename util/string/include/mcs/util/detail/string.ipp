@@ -2,9 +2,8 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/format.h>
-#include <mcs/util/FMT/define.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/Symbol.hpp>
-#include <mcs/util/read/define.hpp>
 #include <mcs/util/read/skip_whitespace.hpp>
 #include <stdexcept>
 #include <utility>
@@ -20,11 +19,16 @@ namespace mcs::util
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, mcs::util::string)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::util::string>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (str, ctx, mcs::util::string)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::util::string>::format
+      ( mcs::util::string const& str
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     fmt::format_to (ctx.out(), "\"");
 
@@ -44,7 +48,10 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION (state, string)
+  template<typename Char>
+    auto Read<string>::read
+      ( State<Char>& state
+      ) -> string
   {
     skip_whitespace (state);
 

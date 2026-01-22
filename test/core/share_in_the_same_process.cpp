@@ -121,16 +121,23 @@ namespace mcs::core
             < Chunk
             , chunk::access::Mutable
             >
-          { storages.template chunk_description
-              < typename TestingStorage::Storage
-              , chunk::access::Mutable
-              >
-            ( storages.read_access()
-            , storage->id()
-            , parameter_chunk_description
-            , segment->id()
-            , memory::make_range (memory::make_offset (0), number_of_bytes)
-            )
+          { storages.read_access()
+            . template invoke<typename TestingStorage::Storage>
+              ( storage->id()
+              , [&] (auto const& storage_implementation)
+                {
+                  return storage_implementation
+                    . template chunk_description<chunk::access::Mutable>
+                      ( parameter_chunk_description
+                      , segment->id()
+                      , mcs::core::memory::make_range
+                        ( mcs::core::memory::make_offset (0)
+                        , number_of_bytes
+                        )
+                      )
+                    ;
+                }
+              )
           }
         };
       auto const ints {as<int> (chunk)};

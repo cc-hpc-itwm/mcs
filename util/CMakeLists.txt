@@ -19,12 +19,11 @@ add_subdirectory (src)
 
 add_subdirectory (ASIO)
 add_subdirectory (FMT)
-add_subdirectory (hash)
+add_subdirectory (lock)
 add_subdirectory (heterogeneous_map)
 add_subdirectory (read)
 add_subdirectory (string)
 add_subdirectory (syscall)
-add_subdirectory (tuplish)
 add_subdirectory (type)
 
 # \todo further split "mcs_util" into multiple independent targets

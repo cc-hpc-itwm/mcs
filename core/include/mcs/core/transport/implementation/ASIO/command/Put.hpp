@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <mcs/core/memory/Size.hpp>
 #include <mcs/core/transport/Address.hpp>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <variant>
 
 namespace mcs::core::transport::implementation::ASIO::command
@@ -27,7 +27,11 @@ namespace mcs::core::transport::implementation::ASIO::command
 namespace mcs::serialization
 {
   template<>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (core::transport::implementation::ASIO::command::Put)
-    ;
+    struct Implementation<core::transport::implementation::ASIO::command::Put>
+  {
+    using Type = core::transport::implementation::ASIO::command::Put;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }

@@ -1,168 +1,258 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
 
 #include <mcs/Error.hpp>
 #include <mcs/config.hpp>
+#include <mcs/util/Lock.hpp>
+#include <mcs/util/heterogeneous_map/Concepts.hpp>
+#include <mcs/util/lock/queue/Fast.hpp>
+#include <mcs/util/not_null.hpp>
 #include <mcs/util/type/List.hpp>
 #include <mutex>
-#include <shared_mutex>
 #include <type_traits>
 #include <unordered_map>
 #include <variant>
 
 namespace mcs::util
 {
-  // HeterogeneousMap is a thread safe mapping from ID to objects of
-  // multiple possible types, meant to be used as base for compile
-  // time polymorphic containers. Clients are responsible to remember
-  // the type that is assigned with a certain id or else they will
-  // face dynamic type errors.
+  // Map from Key to objects of multiple possible types, meant to be
+  // used as base for compile time polymorphic containers. If clients
+  // are using the typed interface, then the clients are responsible
+  // to use the type that is assigned with a certain key or else they
+  // will face dynamic type errors.
   //
-  template<typename ID, typename... Ts>
-    struct HeterogeneousMap
+  template<heterogeneous_map::is_key Key, typename Types>
+    struct UnsynchronizedHeterogeneousMap;
+
+  template<heterogeneous_map::is_key Key, typename... Ts>
+    struct UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>>
+      : public type::List<Ts...>
   {
     using Values = type::List<Ts...>;
 
-    // Extract read or write access token. There might be multiple
-    // concurrent read access tokens but only a single write access
-    // token.
-    //
-    struct ReadAccess
-    {
-      std::shared_lock<std::shared_mutex> _lock;
-    };
-    struct WriteAccess
-    {
-      std::unique_lock<std::shared_mutex> _lock;
-    };
-
-    [[nodiscard]] auto read_access() const -> ReadAccess;
-    [[nodiscard]] auto write_access() const -> WriteAccess;
-
     // Create an object of T from the constructor arguments args...
-    // Returns: The ID of the new object.
-    // Post: visit (..., id, fun) will call fun with the created value.
+    // Returns: The Key of the new object.
     //
     // EXAMPLE:
     //   struct A { explicit A (long); };
     //   struct B{};
-    //   auto hmap {HeterogenousMap<int, A, B>{}};
-    //   auto id_a {hmap.create<A> (hmap.write_access(), 42L)};
-    //   auto id_b {hmap.create<B> (hmap.write_access())};
+    //   auto ab_map {UnsynchronizedHeterogeneousMap<int, A, B>{}};
+    //   auto key_a {ab_map.template create<A> (42L)};
+    //   auto key_b {ab_map.template create<B>()};
     //
     template<typename T, typename... Args>
-      requires (   (std::is_same_v<T, Ts> || ...)
-                && std::is_constructible_v<T, Args...>
+      requires (  (std::is_same_v<T, Ts> || ...)
+               && std::is_constructible_v<T, Args...>
                )
-      [[nodiscard]] auto create (WriteAccess const&, Args&&...) -> ID;
+      [[nodiscard]] auto create (Args&&...) -> Key;
 
-    // Remove the object with the given id.
-    // Post: visit (..., id, ...) will throw Error::UnknownID
+    // Remove the object with the given key.
+    //
+    auto remove (Key key) -> void;
+
+    // Direct access to the variant of objects with the given key.
     //
     // EXAMPLE:
-    //   {
-    //     auto const write_access {hmap.write_access()};
-    //     std::ranges::for_each
-    //       ( ids
-    //       , [&] (auto id)
-    //         {
-    //           hmap.remove (write_access, id);
-    //         }
-    //       );
+    //   std::visit
+    //     ( util::overloaded
+    //       { [] (A const&) const { fmt::print ("A\n"); }
+    //       , [] (B const&) const { fmt::print ("B\n"); }
+    //       }
+    //     , ab_map.at (key)
+    //     );
     //
-    auto remove (WriteAccess const&, ID) -> void;
+    [[nodiscard]] auto at (Key) const -> std::variant<Ts...> const&;
+    [[nodiscard]] auto at (Key) -> std::variant<Ts...>&;
 
-    // Direct access to the elements with a certain id.
-    //
-    // EXAMPLE:
-    //   auto hmap {HeterogenousMap<int, std::string>{}};
-    //   auto const id {hmap.create<int> (hmap.write_access(), 42)};
-    //   ASSERT_EQ (std::get<int> (hmap.at (id)), 42);
-    //
-    [[nodiscard]] auto at
-      ( ReadAccess const&
-      , ID
-      ) const -> std::variant<Ts...> const&
-      ;
-    [[nodiscard]] auto at
-      ( WriteAccess const&
-      , ID
-      ) -> std::variant<Ts...>&
-      ;
-
-    // Searches for the element with the given id and calls the
-    // continuation with the associated value as parameter.
-    // Throws Error::UnknownID if the id has no associated value.
-    // Returns: std::invoke (fun, value_associated_with_id, args...)
+    // Untyped direct access to an element with a certain key.
     //
     // EXAMPLE
-    //   auto hmap {HeterogenousMap<int, int, std::string>{}};
-    //   auto const id {hmap.create<int> (hmap.write_access(), 42)};
+    //   auto hmap {UnsynchronizedHeterogeneousMap<int, int, std::string>{}};
+    //   auto const key {hmap.template create<int> (42)};
     //   hmap.visit
-    //     ( hmap.read_access()
-    //     , id
+    //     ( key
     //     , [] (auto const& x)
     //       {
-    //         ASSERT_EQ (typeid (x), typeid (int));
+    //         ASSERT_EQ (typekey (x), typekey (int));
     //         ASSERT_TRUE (EqualTo{}, x, 42);
     //       }
     //     );
     //
     template<typename Fun>
-      [[nodiscard]] auto visit
-        ( ReadAccess const&
-        , ID
-        , Fun&&
-        ) const;
+      requires (std::invocable<Fun, Ts const&> && ...)
+      auto visit (Key, Fun&&) const;
     template<typename Fun>
-      [[nodiscard]] auto visit
-        ( WriteAccess const&
-        , ID
-        , Fun&&
-        );
+      requires (std::invocable<Fun, Ts&> && ...)
+      auto visit (Key, Fun&&);
+
+    // Typed direct access to an element with a certain key. If the
+    // type does not match, then an exception is thrown.
+    //
+    // EXAMPLE
+    //   auto hmap {UnsynchronizedHeterogeneousMap<int, int, std::string>{}};
+    //   auto const key {hmap.template create<int> (42)};
+    //   hmap.template invoke<int>
+    //     ( key
+    //     , [] (int x)
+    //       {
+    //         ASSERT_EQ (typekey (x), typekey (int));
+    //         ASSERT_TRUE (EqualTo{}, x, 42);
+    //       }
+    //     );
+    //
+    template<typename T, typename Fun>
+      requires (  (std::is_same_v<T, Ts> || ...)
+               && std::invocable<Fun, T const&>
+               )
+      auto invoke (Key, Fun&&) const;
+
+    template<typename T, typename Fun>
+      requires (  (std::is_same_v<T, Ts> || ...)
+               && std::invocable<Fun, T&>
+               )
+      auto modify (Key, Fun&&);
 
     struct Error
     {
-      struct UnknownID : public mcs::Error
+      struct UnknownKey : public mcs::Error
       {
-        auto id() const -> ID;
+        auto key() const -> Key;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (UnknownID);
+        ~UnknownKey() override;
+        UnknownKey (UnknownKey const&) = default;
+        UnknownKey (UnknownKey&&) noexcept = default;
+        auto operator= (UnknownKey const&) -> UnknownKey& = default;
+        auto operator= (UnknownKey&&) noexcept  -> UnknownKey& = default;
 
       private:
-        friend struct HeterogeneousMap;
+        friend struct UnsynchronizedHeterogeneousMap;
 
-        explicit UnknownID (ID);
+        explicit UnknownKey (Key);
 
-        ID _id;
-      };
-
-      struct AccessTokenDoesNotBelongToThis : public mcs::Error
-      {
-        MCS_ERROR_COPY_MOVE_DEFAULT (AccessTokenDoesNotBelongToThis);
-
-      private:
-        friend struct HeterogeneousMap;
-
-        AccessTokenDoesNotBelongToThis();
+        Key _key;
       };
     };
 
   private:
-    mutable std::shared_mutex _guard;
-#if not defined (MCS_CONFIG_GCC_WORKAROUND_BROKEN_DEFAULT_CONSTRUCTOR_LINKAGE)
-    ID _next_id{};
-#else
-    ID _next_id;
-#endif
-    std::unordered_map<ID, std::variant<Ts...>> _element_by_id;
+    Key _next_key{};
+    std::unordered_map<Key, std::variant<Ts...>> _element_by_key;
+  };
 
-    template<typename AccessToken>
-      auto assert_access_token_belong_to_this
-        ( AccessToken const&
-        ) const -> void;
+  // Thread safe version of UnsynchronizedHeterogeneousMap.
+  //
+  // Concurrency management works via construction of objects that
+  // offer read access or read&write access. Many read access objects
+  // can exists at the same time. Only a single read&write access
+  // object can exists at the same time. Read access and read&write
+  // access can not exists at the same time.
+  //
+  template<heterogeneous_map::is_key Key, typename Types>
+    struct HeterogeneousMap;
+
+  template<heterogeneous_map::is_key Key, typename... Ts>
+    struct HeterogeneousMap<Key, util::type::List<Ts...>>
+      : private UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>>
+  {
+    using Base = UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>>;
+
+    using Base::Base;
+    using typename Base::Values;
+    using typename Base::ID;
+    using Base::id;
+    using typename Base::Error;
+
+    template<lock::is_mode Mode>
+      struct Locked : private Lock<Mode, lock::queue::Fast>
+    {
+      // some inline function definitions to make clang accept
+
+      template<typename Fun>
+        requires (std::invocable<Fun, Ts const&> && ...)
+        auto visit (Key key, Fun&& fun) const
+      {
+        return _base->template visit<Fun> (key, std::forward<Fun> (fun));
+      }
+
+      template<typename T, typename Fun>
+        requires (  (std::is_same_v<T, Ts> || ...)
+                 && std::invocable<Fun, T const&>
+                 )
+        auto invoke (Key key, Fun&& fun) const
+      {
+        return _base->template invoke<T, Fun> (key, std::forward<Fun> (fun));
+      }
+
+    private:
+      friend struct HeterogeneousMap;
+      UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>> const* _base;
+      template<typename... LockArgs>
+        Locked
+          ( UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>> const*
+          , LockArgs&&...
+          );
+    };
+    using ReadAccess = Locked<lock::mode::Shared>;
+
+    struct ReadWriteAccess : public Locked<lock::mode::Unique>
+    {
+      // some inline function definitions to make clang accept
+
+      using Locked<lock::mode::Unique>::visit;
+      using Locked<lock::mode::Unique>::invoke;
+
+      template<typename T, typename... Args>
+        requires (  (std::is_same_v<T, Ts> || ...)
+                 && std::is_constructible_v<T, Args...>
+                 )
+        [[nodiscard]] auto create (Args&&... args) const -> Key
+      {
+        return _base->template create<T> (std::forward<Args> (args)...);
+      }
+
+      auto remove (Key key) const -> void;
+
+      template<typename Fun>
+        requires (std::invocable<Fun, Ts&> && ...)
+        auto visit (Key key, Fun&& fun) const
+      {
+        return _base->template visit<Fun> (key, std::forward<Fun> (fun));
+      }
+
+      template<typename T, typename Fun>
+        requires (  (std::is_same_v<T, Ts> || ...)
+                 && std::invocable<Fun, T&>
+                 )
+        auto modify (Key key, Fun&& fun) const
+      {
+        return _base->template modify<T, Fun> (key, std::forward<Fun> (fun));
+      }
+
+    private:
+      friend struct HeterogeneousMap;
+      UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>>* _base;
+      template<typename... LockArgs>
+        ReadWriteAccess
+          ( UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>>*
+          , LockArgs&&...
+          );
+    };
+
+    // Only a single ReadWriteAccess can exist at the same
+    // time. ReadAccess and ReadWriteAccess can not exist at the same
+    // time. To acquire a ReadWriteAccess has priority over acquiring
+    // ReadAccess: ReadWriteAccess access will be granted after all
+    // current ReadAccesses have been released and before ReadAccesses
+    // accesses are granted that are requested after the request for
+    // ReadWriteAccess access has been granted. Sequences of
+    // ReadWriteAccess delay ReadAccess indefinitely long.
+    //
+    [[nodiscard]] auto read_access() const -> ReadAccess;
+    [[nodiscard]] auto read_write_access() -> ReadWriteAccess;
+
+  private:
+    lock::SharedMutex<lock::queue::Fast> _guard;
   };
 }
 

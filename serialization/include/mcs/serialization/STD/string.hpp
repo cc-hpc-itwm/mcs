@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <string>
 
 namespace mcs::serialization
@@ -12,9 +12,13 @@ namespace mcs::serialization
           , class Traits
           , is_serializable Allocator
           >
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      (std::basic_string<CharT, Traits, Allocator>)
-    ;
+    struct Implementation<std::basic_string<CharT, Traits, Allocator>>
+  {
+    using Type = std::basic_string<CharT, Traits, Allocator>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 #include "detail/string.ipp"

@@ -1,16 +1,18 @@
 // Copyright (C) 2022-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 
 namespace mcs::serialization
 {
   template<is_serializable T>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , opt
-      , std::optional<T>
-      )
+    auto Implementation<std::optional<T>>::output
+      ( OArchive& oa
+      , std::optional<T> const& opt
+      ) -> OArchive&
   {
     oa.tag<detail::tag::STD::Optional> (opt.has_value());
 
@@ -23,10 +25,9 @@ namespace mcs::serialization
   }
 
   template<is_serializable T>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , std::optional<T>
-      )
+    auto Implementation<std::optional<T>>::input
+      ( IArchive& ia
+      ) -> std::optional<T>
   {
     auto has_value {ia.tag<detail::tag::STD::Optional>().has_value};
 

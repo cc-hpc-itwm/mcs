@@ -1,9 +1,8 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/overloaded.hpp>
-#include <mcs/util/read/define.hpp>
+#include <mcs/util/read/Read.hpp>
 
 namespace mcs::core::storage
 {
@@ -122,11 +121,16 @@ namespace mcs::core::storage
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE (ctx, mcs::core::storage::MaxSize)
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::MaxSize>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT (max_size, ctx, mcs::core::storage::MaxSize)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::MaxSize>::format
+      ( mcs::core::storage::MaxSize const& max_size
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return std::visit
       ( mcs::util::overloaded
@@ -146,10 +150,10 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    ( state
-    , core::storage::MaxSize
-    )
+  template<typename Char>
+    auto Read<core::storage::MaxSize>::read
+      ( State<Char>& state
+      ) -> core::storage::MaxSize
   {
     if (maybe_prefix (state, "Unlimited"))
     {

@@ -2,18 +2,36 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/storage/segment/ID.hpp>
-#include <mcs/util/hash/define.hpp>
-#include <mcs/util/tuplish/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 
-MCS_UTIL_TUPLISH_DEFINE_SERIALIZATION1
-  ( mcs::core::storage::segment::ID
-  , _value
-  );
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::segment::ID>::output
+    ( OArchive& oa
+    , mcs::core::storage::segment::ID const& value
+    ) -> OArchive&
+  {
+    save (oa, value._value);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::segment::ID>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::segment::ID
+  {
+    auto _value {load<decltype (mcs::core::storage::segment::ID::_value)> (ia)};
+
+    return mcs::core::storage::segment::ID {_value};
+  }
+}
 
 namespace std
 {
-  MCS_UTIL_HASH_DEFINE_VIA_HASH_OF_UNDERLYING_TYPE
-    ( _value
-    , mcs::core::storage::segment::ID
-    );
+  auto hash<mcs::core::storage::segment::ID>::operator()
+    ( mcs::core::storage::segment::ID x
+    ) const noexcept -> size_t
+  {
+    return std::invoke (_hash, x._value);
+  }
 }

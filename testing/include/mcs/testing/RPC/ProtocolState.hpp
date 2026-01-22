@@ -14,7 +14,8 @@ namespace mcs::testing::RPC
 {
   template<typename> struct ProtocolState;
 
-  template<> struct ProtocolState<asio::ip::tcp>
+  template<>
+    struct ProtocolState<asio::ip::tcp>
   {
     ProtocolState()
       : ProtocolState {configured_ip_version(), {}}
@@ -43,7 +44,8 @@ namespace mcs::testing::RPC
     asio::ip::tcp::endpoint _endpoint;
   };
 
-  template<> struct ProtocolState<asio::local::stream_protocol>
+  template<>
+    struct ProtocolState<asio::local::stream_protocol>
   {
     ProtocolState()
       : _temp {"TESTING-RPC-PROTOCOLSTATE"}

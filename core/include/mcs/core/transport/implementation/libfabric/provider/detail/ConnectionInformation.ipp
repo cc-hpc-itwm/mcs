@@ -1,9 +1,8 @@
 // Copyright (C) 2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/overloaded.hpp>
-#include <mcs/util/read/define.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <tuple>
 #include <utility>
 
@@ -47,21 +46,24 @@ namespace mcs::core::transport::implementation::libfabric::provider
 namespace fmt
 {
   template<mcs::util::ASIO::is_protocol Protocol>
-    MCS_UTIL_FMT_DEFINE_PARSE
-      ( ctx
-      , mcs::core::transport::implementation::libfabric::provider
-        ::ConnectionInformation<Protocol>
-      )
+    template<typename ParseContext>
+      constexpr auto formatter
+        < mcs::core::transport::implementation::libfabric::provider
+          ::ConnectionInformation<Protocol>
+        >::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
   template<mcs::util::ASIO::is_protocol Protocol>
-    MCS_UTIL_FMT_DEFINE_FORMAT
-      ( connection_information
-      , ctx
-      , mcs::core::transport::implementation::libfabric::provider
-        ::ConnectionInformation<Protocol>
-      )
+    template<typename FormatContext>
+      constexpr auto formatter
+        < mcs::core::transport::implementation::libfabric::provider
+          ::ConnectionInformation<Protocol>
+        >::format
+          ( mcs::core::transport::implementation::libfabric::provider
+              ::ConnectionInformation<Protocol> const& connection_information
+          , FormatContext& ctx
+          ) const -> decltype (ctx.out())
   {
     return fmt::format_to
       ( ctx.out()
@@ -75,11 +77,12 @@ namespace fmt
 namespace mcs::util::read
 {
   template<util::ASIO::is_protocol Protocol>
-    MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-      ( state
-      , core::transport::implementation::libfabric::provider
-        ::ConnectionInformation<Protocol>
-      )
+    template<typename Char>
+      auto Read<core::transport::implementation::libfabric::provider
+        ::ConnectionInformation<Protocol>>::read
+        ( State<Char>& state
+        ) -> core::transport::implementation::libfabric::provider
+          ::ConnectionInformation<Protocol>
   {
     prefix (state, "ConnectionInformation");
 
@@ -90,8 +93,8 @@ namespace mcs::util::read
 
     return std::make_from_tuple<ConnectionInformation>
       ( parse< std::tuple
-               < decltype (std::declval<ConnectionInformation>().control)
-               , decltype (std::declval<ConnectionInformation>().transport)
+               < decltype (ConnectionInformation::control)
+               , decltype (ConnectionInformation::transport)
                >
              > (state)
       );

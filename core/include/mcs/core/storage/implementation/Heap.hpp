@@ -4,17 +4,18 @@
 #pragma once
 
 #include <cstdint>
+#include <fmt/base.h>
 #include <mcs/Error.hpp>
 #include <mcs/core/chunk/Access.hpp>
 #include <mcs/core/memory/Range.hpp>
 #include <mcs/core/memory/Size.hpp>
 #include <mcs/core/storage/MaxSize.hpp>
 #include <mcs/core/storage/segment/ID.hpp>
-#include <mcs/serialization/access.hpp>
-#include <mcs/serialization/declare.hpp>
+#include <mcs/serialization/Concepts.hpp>
 #include <mcs/util/Buffer.hpp>
-#include <mcs/util/FMT/access.hpp>
-#include <mcs/util/tuplish/declare.hpp>
+#include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/State.hpp>
+#include <mcs/util/require_semi.hpp>
 #include <memory>
 #include <optional>
 #include <span>
@@ -71,7 +72,11 @@ namespace mcs::core::storage::implementation
         constexpr auto used() const noexcept -> memory::Size;
         constexpr auto max() const noexcept -> MaxSize;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (BadAlloc);
+        ~BadAlloc() override;
+        BadAlloc (BadAlloc const&) = default;
+        BadAlloc (BadAlloc&&) noexcept = default;
+        auto operator= (BadAlloc const&) -> BadAlloc& = default;
+        auto operator= (BadAlloc&&) noexcept  -> BadAlloc& = default;
 
       private:
         friend struct Heap;
@@ -96,11 +101,19 @@ namespace mcs::core::storage::implementation
         constexpr auto segment_id() const noexcept -> segment::ID;
         constexpr auto memory_range() const noexcept -> memory::Range;
 
-        MCS_ERROR_COPY_MOVE_DEFAULT (ChunkDescription);
+        ~ChunkDescription() override;
+        ChunkDescription (ChunkDescription const&) = default;
+        ChunkDescription (ChunkDescription&&) noexcept = default;
+        auto operator= (ChunkDescription const&) -> ChunkDescription& = default;
+        auto operator= (ChunkDescription&&) noexcept  -> ChunkDescription& = default;
 
         struct UnknownSegmentID : public mcs::Error
         {
-          MCS_ERROR_COPY_MOVE_DEFAULT (UnknownSegmentID);
+          ~UnknownSegmentID() override;
+          UnknownSegmentID (UnknownSegmentID const&) = default;
+          UnknownSegmentID (UnknownSegmentID&&) noexcept = default;
+          auto operator= (UnknownSegmentID const&) -> UnknownSegmentID& = default;
+          auto operator= (UnknownSegmentID&&) noexcept  -> UnknownSegmentID& = default;
 
         private:
           friend struct Heap;
@@ -151,8 +164,8 @@ namespace mcs::core::storage::implementation
         std::size_t _size;
         memory::Range _range;
 
-        MCS_SERIALIZATION_ACCESS();
-        MCS_UTIL_FMT_ACCESS();
+        template<typename> friend struct serialization::Implementation;
+        template<typename, typename, typename> friend struct fmt::formatter;
 
         template<chunk::is_access Access_>
           friend constexpr auto operator==
@@ -229,54 +242,439 @@ namespace mcs::core::storage::implementation
 namespace mcs::serialization
 {
   template<core::chunk::is_access Access>
-    MCS_SERIALIZATION_DECLARE_NONINTRUSIVE_IMPLEMENTATION
-      ( core::storage::implementation::Heap::Chunk::Description<Access>
-      );
+    struct Implementation<core::storage::implementation::Heap::Chunk::Description<Access>>
+  {
+    using Type = core::storage::implementation::Heap::Chunk::Description<Access>;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
 }
 
 namespace fmt
 {
   template<mcs::core::chunk::is_access Access>
-    MCS_UTIL_FMT_DECLARE
-      ( mcs::core::storage::implementation::Heap::Chunk::Description<Access>
-      );
+    struct formatter<mcs::core::storage::implementation::Heap::Chunk::Description<Access>>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Chunk::Description<Access> const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
 }
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Heap::Tag
-  );
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Heap::Tag>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Heap::Parameter::Create
-  );
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Tag const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Heap::Parameter::Size::Max
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Heap::Parameter::Size::Used
-  );
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Heap::Tag>
+  {
+    using Type = mcs::core::storage::implementation::Heap::Tag;
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Heap::Parameter::Segment::Create
-  );
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Heap::Parameter::Segment::Remove
-  );
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Heap::Tag>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Heap::Tag
+        ;
+  };
+}
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Heap::Parameter::Chunk::Description
-  );
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Heap::Parameter::Create>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
 
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Heap::Parameter::File::Read
-  );
-MCS_UTIL_TUPLISH_DECLARE_FMT_READ_SERIALIZATION
-  ( mcs::core::storage::implementation::Heap::Parameter::File::Write
-  );
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Parameter::Create const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Heap::Parameter::Create>
+  {
+    using Type = mcs::core::storage::implementation::Heap::Parameter::Create;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Heap::Parameter::Create>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Heap::Parameter::Create
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Max>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Parameter::Size::Max const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Heap::Parameter::Size::Max>
+  {
+    using Type = mcs::core::storage::implementation::Heap::Parameter::Size::Max;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Heap::Parameter::Size::Max>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Heap::Parameter::Size::Max
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Used>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Parameter::Size::Used const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Heap::Parameter::Size::Used>
+  {
+    using Type = mcs::core::storage::implementation::Heap::Parameter::Size::Used;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Heap::Parameter::Size::Used>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Heap::Parameter::Size::Used
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed>
+  {
+    using Type = mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Parameter::Segment::Create const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>
+  {
+    using Type = mcs::core::storage::implementation::Heap::Parameter::Segment::Create;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Heap::Parameter::Segment::Create
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Remove>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Parameter::Segment::Remove const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Heap::Parameter::Segment::Remove>
+  {
+    using Type = mcs::core::storage::implementation::Heap::Parameter::Segment::Remove;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Heap::Parameter::Segment::Remove>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Heap::Parameter::Segment::Remove
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Heap::Parameter::Chunk::Description>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Parameter::Chunk::Description const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Heap::Parameter::Chunk::Description>
+  {
+    using Type = mcs::core::storage::implementation::Heap::Parameter::Chunk::Description;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Heap::Parameter::Chunk::Description>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Heap::Parameter::Chunk::Description
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Heap::Parameter::File::Read>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Parameter::File::Read const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Heap::Parameter::File::Read>
+  {
+    using Type = mcs::core::storage::implementation::Heap::Parameter::File::Read;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Heap::Parameter::File::Read>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Heap::Parameter::File::Read
+        ;
+  };
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::core::storage::implementation::Heap::Parameter::File::Write>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Heap::Parameter::File::Write const&
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Heap::Parameter::File::Write>
+  {
+    using Type = mcs::core::storage::implementation::Heap::Parameter::File::Write;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Heap::Parameter::File::Write>
+  {
+    template<typename Char>
+      static auto read
+        ( State<Char>&
+        ) -> mcs::core::storage::implementation::Heap::Parameter::File::Write
+        ;
+  };
+}
 
 #include "detail/Heap.ipp"

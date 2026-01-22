@@ -12,7 +12,8 @@ namespace mcs::testing::random
 {
   // produces random strings
   //
-  template<> struct value<std::string>
+  template<>
+    struct value<std::string>
   {
     struct Length
     {

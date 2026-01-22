@@ -18,9 +18,8 @@ namespace mcs::core
       , typename StorageImplementation::Parameter::Create parameter_create
       )
     : _id
-      { storages->template create<StorageImplementation>
-          ( storages->write_access()
-          , parameter_create
+      { storages->read_write_access().template create<StorageImplementation>
+          ( parameter_create
           )
       }
   {}
@@ -49,7 +48,7 @@ namespace mcs::core
       ) const noexcept -> ImplementationID
   {
     return Storages<util::type::List<StorageImplementations...>>
-      ::template implementation_id<StorageImplementation>()
+      ::template id<StorageImplementation>()
       ;
   }
 }
@@ -82,7 +81,7 @@ namespace mcs::core::storage
       ( "mcs::core::storage::Deleter"
       , [&]
         {
-          _storages->remove (_storages->write_access(), storage->id());
+          _storages->read_write_access().remove (storage->id());
 
           std::default_delete
             < Storage<StorageImplementation, StorageImplementations...>

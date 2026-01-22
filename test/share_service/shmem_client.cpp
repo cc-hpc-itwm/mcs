@@ -82,7 +82,8 @@ namespace mcs::share_service
     };
 
     template<rpc::is_protocol Protocol> struct ClientState;
-    template<> struct ClientState<asio::local::stream_protocol>
+    template<>
+      struct ClientState<asio::local::stream_protocol>
     {
       ClientState
         ( RunningProvider<asio::local::stream_protocol> const& running_provider
@@ -93,7 +94,8 @@ namespace mcs::share_service
       std::string _endpoint_path;
       char const* socket {_endpoint_path.c_str()};
     };
-    template<> struct ClientState<asio::ip::tcp>
+    template<>
+      struct ClientState<asio::ip::tcp>
     {
       ClientState
         ( RunningProvider<asio::ip::tcp> const& running_provider
@@ -245,6 +247,6 @@ namespace mcs::share_service
     auto const res {client.remove (chunk)};
     ASSERT_FALSE (res.ok());
     ASSERT_STREQ
-      (res.error(), "rpc::error::HandlerError: Unknown id 'bi_0'");
+      (res.error(), "rpc::error::HandlerError: Unknown key 'bi_0'");
   }
 }

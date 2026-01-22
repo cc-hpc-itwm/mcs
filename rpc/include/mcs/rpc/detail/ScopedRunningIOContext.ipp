@@ -2,9 +2,8 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/post.hpp>
-#include <mcs/util/FMT/define.hpp>
 #include <mcs/util/cast.hpp>
-#include <mcs/util/read/define.hpp>
+#include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/prefix.hpp>
 #include <mcs/util/read/uint.hpp>
 #include <utility>
@@ -54,15 +53,17 @@ namespace mcs::rpc
 
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE
-    ( ctx
-    , mcs::rpc::ScopedRunningIOContext::NumberOfThreads
-    )
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::rpc::ScopedRunningIOContext::NumberOfThreads>::parse
+      (ParseContext& ctx)
   {
     return ctx.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT
-    (number_of_threads, ctx, mcs::rpc::ScopedRunningIOContext::NumberOfThreads)
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::rpc::ScopedRunningIOContext::NumberOfThreads>::format
+      ( mcs::rpc::ScopedRunningIOContext::NumberOfThreads const& number_of_threads
+      , FormatContext& ctx
+      ) const -> decltype (ctx.out())
   {
     return fmt::format_to
       ( ctx.out()
@@ -74,8 +75,10 @@ namespace fmt
 
 namespace mcs::util::read
 {
-  MCS_UTIL_READ_DEFINE_NONINTRUSIVE_IMPLEMENTATION
-    (state, rpc::ScopedRunningIOContext::NumberOfThreads)
+  template<typename Char>
+    auto Read<rpc::ScopedRunningIOContext::NumberOfThreads>::read
+      ( State<Char>& state
+      ) -> rpc::ScopedRunningIOContext::NumberOfThreads
   {
     prefix (state, "ScopedRunningIOContext::NumberOfThreads");
 

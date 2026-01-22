@@ -80,7 +80,8 @@ namespace
 
 namespace mcs::testing::random
 {
-  template<> struct value<UserDefined>
+  template<>
+    struct value<UserDefined>
   {
     value<int> _value{};
 
@@ -93,7 +94,8 @@ namespace mcs::testing::random
 
 namespace std
 {
-  template<> struct hash<UserDefined>
+  template<>
+    struct hash<UserDefined>
   {
     auto operator()
       ( UserDefined const& x

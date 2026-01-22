@@ -2,17 +2,19 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <type_traits>
 
 namespace mcs::serialization
 {
   template<is_serializable T, is_serializable Allocator>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-      ( oa
-      , xs
-      , std::vector<T, Allocator>
-      )
+    auto Implementation<std::vector<T, Allocator>>::output
+      ( OArchive& oa
+      , std::vector<T, Allocator> const& xs
+      ) -> OArchive&
   {
     oa.tag<detail::tag::STD::Vector> (xs.size());
 
@@ -37,10 +39,9 @@ namespace mcs::serialization
   }
 
   template<is_serializable T, is_serializable Allocator>
-    MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-      ( ia
-      , std::vector<T, Allocator>
-      )
+    auto Implementation<std::vector<T, Allocator>>::input
+      ( IArchive& ia
+      ) -> std::vector<T, Allocator>
   {
     auto size {ia.tag<detail::tag::STD::Vector>().size};
 

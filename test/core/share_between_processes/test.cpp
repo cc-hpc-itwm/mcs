@@ -109,17 +109,24 @@ namespace mcs::core
             < Chunk
             , chunk::access::Mutable
             >
-        { storages.template chunk_description
-            < typename TestingStorage::Storage
-            , chunk::access::Mutable
-            >
-          ( storages.read_access()
-          , storage->id()
-          , parameter_chunk_description
-          , segment->id()
-          , memory::make_range (memory::make_offset (0), number_of_bytes)
-          )
-        }
+         { storages.read_access()
+           . template invoke<typename TestingStorage::Storage>
+             ( storage->id()
+             , [&] (auto const& storage_implementation)
+               {
+                 return storage_implementation
+                   . template chunk_description<chunk::access::Mutable>
+                     ( parameter_chunk_description
+                     , segment->id()
+                     , mcs::core::memory::make_range
+                       ( mcs::core::memory::make_offset (0)
+                       , number_of_bytes
+                       )
+                     )
+                   ;
+               }
+             )
+         }
       };
     auto const ints {as<int> (chunk)};
     std::ranges::copy (elements, std::begin (ints));
@@ -245,10 +252,15 @@ namespace mcs::core
     //
     ASSERT_EQ
       ( number_of_bytes
-      , storages.template size_used<typename TestingStorage::Storage>
-          ( storages.read_access()
-          , storage->id()
-          , testing_storage.parameter_size_used()
+      , storages.read_access()
+        . template invoke<typename TestingStorage::Storage>
+          ( storage->id()
+          , [&] (auto const& storage_implementation)
+            {
+              return storage_implementation.size_used
+                ( testing_storage.parameter_size_used()
+                );
+            }
           )
       );
 
@@ -260,16 +272,23 @@ namespace mcs::core
           < Chunk
           , chunk::access::Mutable
           >
-        { storages.template chunk_description
-            < typename TestingStorage::Storage
-            , chunk::access::Mutable
-            >
-          ( storages.read_access()
-          , storage->id()
-          , parameter_chunk_description
-          , segment_id
-          , memory::make_range (memory::make_offset (0), number_of_bytes)
-          )
+        { storages.read_access()
+          . template invoke<typename TestingStorage::Storage>
+            ( storage->id()
+            , [&] (auto const& storage_implementation)
+              {
+                return storage_implementation
+                  . template chunk_description<chunk::access::Mutable>
+                    ( parameter_chunk_description
+                    , segment_id
+                    , mcs::core::memory::make_range
+                      ( mcs::core::memory::make_offset (0)
+                      , number_of_bytes
+                      )
+                    )
+                  ;
+              }
+            )
         }
       };
     auto const ints {as<int> (chunk)};
@@ -313,22 +332,32 @@ namespace mcs::core
     //
     ASSERT_EQ
       ( number_of_bytes
-      , storages.template segment_remove<typename TestingStorage::Storage>
-        ( storages.write_access()
-        , storage->id()
-        , testing_storage.parameter_segment_remove
-            ( typename ParameterSegment::ForceRemoval{}
+      , storages.read_write_access()
+        . template modify<typename TestingStorage::Storage>
+            ( storage->id()
+            , [&] (auto& storage_implementation)
+              {
+                return storage_implementation.segment_remove
+                  ( testing_storage.parameter_segment_remove
+                    ( typename ParameterSegment::ForceRemoval{}
+                    )
+                  , segment_id
+                  );
+              }
             )
-        , segment_id
-        )
       );
 
     ASSERT_EQ
       ( memory::make_size (0)
-      , storages.template size_used<typename TestingStorage::Storage>
-          ( storages.read_access()
-          , storage->id()
-          , testing_storage.parameter_size_used()
+      , storages.read_access()
+        . template invoke<typename TestingStorage::Storage>
+          ( storage->id()
+          , [&] (auto const& storage_implementation)
+            {
+              return storage_implementation.size_used
+                ( testing_storage.parameter_size_used()
+                );
+            }
           )
       );
   }

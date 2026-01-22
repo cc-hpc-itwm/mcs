@@ -9,7 +9,8 @@
 
 namespace mcs::testing::random
 {
-  template<> struct value<core::storage::MaxSize>
+  template<>
+    struct value<core::storage::MaxSize>
   {
     auto operator()() -> core::storage::MaxSize;
 

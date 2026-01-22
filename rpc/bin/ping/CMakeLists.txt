@@ -8,7 +8,6 @@ target_link_libraries (mcs_rpc_bin_ping_Dispatcher
   PRIVATE mcs_config
   PUBLIC mcs_serialization
   PUBLIC mcs_rpc
-  PRIVATE mcs_util_tuplish
 )
 
 add_executable (mcs_rpc_bin_ping_server

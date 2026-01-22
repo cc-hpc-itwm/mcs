@@ -1,22 +1,19 @@
 // Copyright (C) 2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
-
 namespace fmt
 {
-  MCS_UTIL_FMT_DEFINE_PARSE
-    ( context
-    , mcs::core::storage::tracer::log_file::Tag
-    )
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::tracer::log_file::Tag>::parse
+      (ParseContext& context)
   {
     return context.begin();
   }
-  MCS_UTIL_FMT_DEFINE_FORMAT
-    ( tag
-    , context
-    , mcs::core::storage::tracer::log_file::Tag
-    )
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::tracer::log_file::Tag>::format
+      ( mcs::core::storage::tracer::log_file::Tag const& tag
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     std::ignore = tag;
 

@@ -4,13 +4,13 @@
 #pragma once
 
 #include <concepts>
-#include <mcs/serialization/detail/IArchive.fwd.hpp>
-#include <mcs/serialization/detail/Implementation.fwd.hpp>
-#include <mcs/serialization/detail/OArchive.fwd.hpp>
-#include <type_traits>
+#include <mcs/serialization/Implementation.hpp>
 
 namespace mcs::serialization
 {
+  struct IArchive;
+  struct OArchive;
+
   template<typename T>
     concept is_empty =
          std::is_default_constructible_v<T>

@@ -1,17 +1,20 @@
 // Copyright (C) 2023-2025 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/define.hpp>
-
 namespace fmt
 {
   template<formattable... Ts>
-    MCS_UTIL_FMT_DEFINE_PARSE (ctx, std::variant<Ts...>)
+    template<typename ParseContext>
+      constexpr auto formatter<std::variant<Ts...>>::parse (ParseContext& ctx)
   {
     return ctx.begin();
   }
   template<formattable... Ts>
-    MCS_UTIL_FMT_DEFINE_FORMAT (variant, ctx, std::variant<Ts...>)
+    template<typename FormatContext>
+      constexpr auto formatter<std::variant<Ts...>>::format
+        ( std::variant<Ts...> const& variant
+        , FormatContext& ctx
+        ) const -> decltype (ctx.out())
   {
     return std::visit
       ( [&] (auto const& value)

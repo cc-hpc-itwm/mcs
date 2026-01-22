@@ -248,15 +248,19 @@ namespace mcs::core
         < Chunk
         , chunk::access::Mutable
         > _chunk
-          { _storages->template chunk_description
-              < TracedStorageImplementation
-              , chunk::access::Mutable
-              >
-              ( _storages->read_access()
-              , _storage->id()
-              , _testing_storage.parameter_chunk_description()
-              , _segment->id()
-              , _range
+          { _storages->read_access()
+            . template invoke<TracedStorageImplementation>
+              ( _storage->id()
+              , [&] (auto const& storage_implementation)
+                {
+                  return storage_implementation
+                    . template chunk_description<chunk::access::Mutable>
+                      ( _testing_storage.parameter_chunk_description()
+                      , _segment->id()
+                      , _range
+                      )
+                    ;
+                }
               )
           };
     };

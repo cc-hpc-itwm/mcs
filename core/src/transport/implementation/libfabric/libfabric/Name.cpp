@@ -2,8 +2,11 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/transport/implementation/libfabric/libfabric/Name.hpp>
+#include <mcs/serialization/IArchive.hpp>
+#include <mcs/serialization/OArchive.hpp>
 #include <mcs/serialization/STD/vector.hpp>
-#include <mcs/serialization/define.hpp>
+#include <mcs/serialization/load.hpp>
+#include <mcs/serialization/save.hpp>
 #include <utility>
 
 namespace mcs::core::transport::implementation::libfabric::libfabric
@@ -24,21 +27,24 @@ namespace mcs::core::transport::implementation::libfabric::libfabric
 
 namespace mcs::serialization
 {
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_OUTPUT
-    (oa, name, core::transport::implementation::libfabric::libfabric::Name)
+  auto Implementation<core::transport::implementation::libfabric::libfabric::Name>::output
+    ( OArchive& oa
+    , core::transport::implementation::libfabric::libfabric::Name const& name
+    ) -> OArchive&
   {
-    MCS_SERIALIZATION_SAVE_FIELD (oa, name, _value);
+    save (oa, name._value);
 
     return oa;
   }
-  MCS_SERIALIZATION_DEFINE_NONINTRUSIVE_IMPLEMENTATION_INPUT
-    (ia, core::transport::implementation::libfabric::libfabric::Name)
+  auto Implementation<core::transport::implementation::libfabric::libfabric::Name>::input
+    ( IArchive& ia
+    ) -> core::transport::implementation::libfabric::libfabric::Name
   {
     using Name
       = core::transport::implementation::libfabric::libfabric::Name
       ;
 
-    MCS_SERIALIZATION_LOAD_FIELD (ia, _value, Name);
+    auto _value {load<decltype (Name::_value)> (ia)};
 
     return Name {std::move (_value)};
   }
