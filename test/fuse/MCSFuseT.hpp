@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -182,17 +182,7 @@ namespace mcs::fuse
           )
         );
 
-      MCS_UTIL_MEMBER_AUTO
-        ( _async_session_run
-        , std::async
-          ( std::launch::async
-          , [] (auto* session)
-            {
-              return session->run();
-            }
-          , _session.get()
-          )
-        );
+      MCS_UTIL_MEMBER_AUTO (_session_result, _session->result());
 
       MCSFuseT() = default;
       MCSFuseT (MCSFuseT const&) = delete;
@@ -201,17 +191,17 @@ namespace mcs::fuse
       auto operator= (MCSFuseT&&) -> MCSFuseT& = delete;
       ~MCSFuseT() override
       {
-        // Destruction order differs from creation order: The session
-        // must be stopped in order to exit the async loop but the
-        // async loop can only be started with the session already
-        // constructed.
+        // ~Session signals fuse_session_exit and joins the loop
+        // thread it owns before destroying its members, so by the
+        // time reset() returns the loop has fully unwound and the
+        // shared future is ready.
         //
         auto const shutdown
           { [&]
             {
               _session.reset();
 
-              ASSERT_EQ (_async_session_run.get(), 0);
+              ASSERT_EQ (_session_result.get(), 0);
             }
           };
 

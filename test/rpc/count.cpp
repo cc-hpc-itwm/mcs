@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -81,7 +81,7 @@ namespace
     struct SynchronizedInc { using Response = int; };
     auto operator() (SynchronizedInc) const -> int
     {
-      auto const lock {std::lock_guard {_counter->_guard}};
+      auto const lock {std::scoped_lock {_counter->_guard}};
       auto const old {_counter->value};
       sleep();
       return _counter->value = old + 1;

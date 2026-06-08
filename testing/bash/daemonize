@@ -6,5 +6,5 @@
 source ${TESTING_BASH_DIRECTORY:?}/wait
 
 wait 50 test -s ${DAEMON_PATH}/PID
-on_exit+=("wait 50 ! -s ${DAEMON_PATH}/PID")
+on_exit+=("wait 50 test ! -s ${DAEMON_PATH}/PID")
 on_exit+=("kill $(cat ${DAEMON_PATH}/PID)")

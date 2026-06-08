@@ -1,17 +1,21 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <exception>
 #include <fmt/format.h>
+#include <functional>
 #include <mcs/serialization/Concepts.hpp>
 #include <mcs/serialization/IArchive.hpp>
 #include <mcs/serialization/OArchive.hpp>
+#include <mcs/serialization/STD/set.hpp>
+#include <mcs/serialization/STD/vector.hpp>
 #include <mcs/serialization/error/AdditionalBytes.hpp>
 #include <mcs/serialization/error/Load.hpp>
 #include <mcs/serialization/error/Save.hpp>
 #include <mcs/serialization/load_from.hpp>
 #include <mcs/serialization/save.hpp>
 #include <mcs/testing/random/Test.hpp>
+#include <mcs/testing/random/value/STD/vector.hpp>
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/testing/require_exception.hpp>
 #include <stdexcept>
@@ -123,6 +127,66 @@ namespace mcs::serialization
                          " {} bytes left in archive after load has returned."
                         , additional_bytes
                         )
+          )
+      );
+  }
+
+  TEST (Serialization, throws_when_load_from_finds_not_enough_bytes)
+  {
+    auto const xs {testing::random::value<int>{}()};
+    auto const oa {serialization::OArchive {xs}};
+    auto bytes {oa.bytes()};
+    ASSERT_GT (bytes.size(), 0);
+
+    auto const wanted {bytes.size()};
+
+    using RandomSize = testing::random::value<std::size_t>;
+    bytes.resize
+      ( std::invoke (RandomSize {RandomSize::Max {bytes.size() - 1}})
+      );
+
+    testing::require_exception
+      ( [&]
+        {
+          std::ignore = serialization::load_from<int> (bytes);
+        }
+      , testing::assert_type_and_what<error::Load>
+          ( "serialization::error::Load"
+          )
+      , testing::Assert<error::NotEnoughBytes>
+          { [&] (auto const& caught)
+            {
+              ASSERT_EQ (caught.wanted(), wanted);
+              ASSERT_EQ (caught.provided(), bytes.size());
+              ASSERT_STREQ
+                ( caught.what()
+                , fmt::format ( "serialization::error::NotEnoughBytes:"
+                                " {} bytes wanted but archive has only {} left."
+                              , caught.wanted()
+                              , caught.provided()
+                              ).c_str()
+                );
+            }
+          }
+      );
+  }
+
+  TEST (Serialization, throws_when_load_the_wrong_archive_tag)
+  {
+    auto const xs {testing::random::value<std::vector<int>>{}()};
+    auto const bytes {serialization::OArchive {xs}.bytes()};
+    auto ia {IArchive {bytes}};
+
+    testing::require_exception
+      ( [&]
+        {
+          std::ignore = serialization::load<std::set<int>> (ia);
+        }
+      , testing::assert_type_and_what<error::Load>
+          ( "serialization::error::Load"
+          )
+      , testing::assert_type_and_what<error::WrongTag>
+          ( "serialization::error::WrongTag"
           )
       );
   }

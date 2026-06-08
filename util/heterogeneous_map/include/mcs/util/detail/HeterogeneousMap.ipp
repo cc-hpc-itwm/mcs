@@ -150,37 +150,33 @@ namespace mcs::util
 namespace mcs::util
 {
   template<heterogeneous_map::is_key Key, typename... Ts>
-    template<lock::is_mode Mode>
-      template<typename... LockArgs>
-        HeterogeneousMap<Key, util::type::List<Ts...>>::Locked<Mode>::Locked
-          ( UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>> const* base
-          , LockArgs&&... lock_args
-          )
-            : Lock<Mode, lock::queue::Fast>
-              { std::forward<LockArgs> (lock_args)...
-              }
-            , _base {base}
+    template<concurrency::is_lock Lock>
+      HeterogeneousMap<Key, util::type::List<Ts...>>::Locked<Lock>::Locked
+        ( Base const* base
+        , Mutex* mutex
+        )
+        : _scoped_lock {*mutex}
+        , _const_base {base}
+  {}
+
+  template<heterogeneous_map::is_key Key, typename... Ts>
+    HeterogeneousMap<Key, util::type::List<Ts...>>::ReadWriteAccess::ReadWriteAccess
+      ( Base* base
+      , Mutex* mutex
+      )
+      : Locked<std::unique_lock<Mutex>> {base, mutex}
+      , _mutable_base {base}
   {}
 }
 
 namespace mcs::util
 {
   template<heterogeneous_map::is_key Key, typename... Ts>
-    template<typename... LockArgs>
-      HeterogeneousMap<Key, util::type::List<Ts...>>::ReadWriteAccess::ReadWriteAccess
-        ( UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>>* base
-        , LockArgs&&... lock_args
-        )
-          : Locked<lock::mode::Unique> {base, std::forward<LockArgs> (lock_args)...}
-          , _base {base}
-  {}
-
-  template<heterogeneous_map::is_key Key, typename... Ts>
     auto HeterogeneousMap<Key, util::type::List<Ts...>>::ReadWriteAccess::remove
       ( Key key
       ) const -> void
   {
-    return _base->remove (key);
+    return _mutable_base->remove (key);
   }
 }
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 add_library (mcs_util)
@@ -19,7 +19,7 @@ add_subdirectory (src)
 
 add_subdirectory (ASIO)
 add_subdirectory (FMT)
-add_subdirectory (lock)
+add_subdirectory (concurrency)
 add_subdirectory (heterogeneous_map)
 add_subdirectory (read)
 add_subdirectory (string)

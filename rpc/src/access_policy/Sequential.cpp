@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/format.h>
@@ -13,7 +13,7 @@ namespace mcs::rpc::access_policy
     ) noexcept -> detail::CallID
   {
     _lock_send
-      = std::make_unique<std::lock_guard<decltype (_guard_send)>> (_guard_send)
+      = std::make_unique<std::scoped_lock<decltype (_guard_send)>> (_guard_send)
       ;
 
     _completion = std::make_unique<detail::Completion> (std::move (completion));

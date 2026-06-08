@@ -1,9 +1,10 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <cstring>
-#include <fmt/format.h>
 #include <mcs/serialization/detail/Tag.hpp>
+#include <mcs/serialization/error/NotEnoughBytes.hpp>
+#include <mcs/serialization/error/WrongTag.hpp>
 #include <stdexcept>
 #include <utility>
 
@@ -22,8 +23,7 @@ namespace mcs::serialization
 
     if (!std::holds_alternative<TagType> (tag))
     {
-      //! \todo specific exception for wrong tag type
-      throw std::runtime_error {"IArchive::tag: Wrong tag type"};
+      throw error::WrongTag{};
     }
 
     return std::get<TagType> (tag);
@@ -34,14 +34,7 @@ namespace mcs::serialization
   {
     if (size > _buffer.size())
     {
-      //! \todo specific exception
-      throw std::out_of_range
-        { fmt::format
-          ( "IArchive::extract: Out of range: {} > {}"
-          , size
-          , _buffer.size()
-          )
-        };
+      throw error::NotEnoughBytes {size, _buffer.size()};
     }
 
     std::memcpy (to, _buffer.data(), size);

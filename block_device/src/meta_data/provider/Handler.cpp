@@ -2,6 +2,8 @@
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/block_device/meta_data/provider/Handler.hpp>
+#include <mutex>
+#include <shared_mutex>
 
 namespace mcs::block_device::meta_data::provider
 {
@@ -20,28 +22,28 @@ namespace mcs::block_device::meta_data::provider
     ( command::NumberOfBlocks
     ) const -> command::NumberOfBlocks::Response
   {
-    auto const lock {util::shared_lock (_guard)};
+    auto const lock {std::shared_lock (_guard)};
 
     return _blocks->number_of_blocks();
   }
 
   auto Handler::operator() (command::Blocks) const -> command::Blocks::Response
   {
-    auto const lock {util::shared_lock (_guard)};
+    auto const lock {std::shared_lock (_guard)};
 
     return _blocks->blocks();
   }
 
   auto Handler::operator() (command::Add add) -> command::Add::Response
   {
-    auto const lock {util::unique_lock (_guard)};
+    auto const lock {std::unique_lock (_guard)};
 
     return _blocks->add (add.storage);
   }
 
   auto Handler::operator() (command::Remove remove) -> command::Remove::Response
   {
-    auto const lock {util::unique_lock (_guard)};
+    auto const lock {std::unique_lock (_guard)};
 
     return _blocks->remove (remove.range);
   }
@@ -50,7 +52,7 @@ namespace mcs::block_device::meta_data::provider
     ( command::Location location
     ) const -> command::Location::Response
   {
-    auto const lock {util::shared_lock (_guard)};
+    auto const lock {std::shared_lock (_guard)};
 
     return _blocks->location (location.id);
   }

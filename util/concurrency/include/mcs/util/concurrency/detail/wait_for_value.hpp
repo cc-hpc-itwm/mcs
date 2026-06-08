@@ -5,7 +5,7 @@
 
 #include <concepts>
 
-namespace mcs::util::lock::detail
+namespace mcs::util::concurrency::detail
 {
   template<typename Atomic>
     concept is_awaitable_atomic = requires
@@ -26,7 +26,7 @@ namespace mcs::util::lock::detail
   // EXAMPLE:
   //
   //     auto a {std::atomic<int> {0}};
-  //     // spwan some asynchronous operation on a
+  //     // spawn some asynchronous operation on a
   //     wait_for_value (a, 5);
   //
   template<is_awaitable_atomic Atomic>

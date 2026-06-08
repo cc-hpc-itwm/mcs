@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 add_subdirectory (bin)
@@ -15,7 +15,7 @@ target_link_libraries (mcs_block_device
   PUBLIC mcs_serialization
   PUBLIC mcs_util
   PUBLIC mcs_util_ASIO
-  PUBLIC mcs_util_lock
+  PUBLIC mcs_util_concurrency
 )
 
 if (MCS_INSTALL)

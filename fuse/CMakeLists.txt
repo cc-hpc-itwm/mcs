@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Fraunhofer ITWM
+# Copyright (C) 2025-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 add_library (mcs_fuse)
@@ -12,7 +12,7 @@ target_link_libraries (mcs_fuse
   PUBLIC mcs_serialization
   PUBLIC mcs_util
   PUBLIC mcs_util_FMT
-  PUBLIC mcs_util_lock
+  PUBLIC mcs_util_concurrency
   PUBLIC mcs_util_syscall
 )
 

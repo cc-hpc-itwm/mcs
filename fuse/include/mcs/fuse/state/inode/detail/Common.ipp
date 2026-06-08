@@ -52,7 +52,11 @@ namespace mcs::fuse::state::inode
     , uint64_t count
     ) noexcept -> uint64_t
   {
-    return _nlookup -= count;
+    // Clamp against underflow: the kernel may issue more forgets
+    // than we counted lookups (e.g. when entries are evicted after
+    // a rename that displaced an inode the kernel still tracks).
+    //
+    return _nlookup -= std::min (count, _nlookup);
   }
 
   constexpr auto Common::inc_nlink

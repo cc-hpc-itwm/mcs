@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 target_sources (mcs_testing
@@ -10,7 +10,6 @@ target_sources (mcs_testing
   PRIVATE random/seed.cpp
   PRIVATE random/value/CIdent.cpp
   PRIVATE random/value/bool.cpp
-  PRIVATE random/value/STD/string.cpp
   PRIVATE random/value/UTIL/string.cpp
 )
 

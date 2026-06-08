@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <exception>
@@ -14,10 +14,10 @@ namespace mcs::rpc::access_policy
     ) noexcept -> detail::CallID
   {
     _lock_send
-      = std::make_unique<std::lock_guard<decltype (_guard_send)>> (_guard_send)
+      = std::make_unique<std::scoped_lock<decltype (_guard_send)>> (_guard_send)
       ;
 
-    auto const lock {std::lock_guard {_guard_completions}};
+    auto const lock {std::scoped_lock {_guard_completions}};
 
     _completions.emplace (_call_id, std::move (completion));
 
@@ -26,7 +26,7 @@ namespace mcs::rpc::access_policy
 
   auto Concurrent::completion (detail::CallID call_id) -> detail::Completion
   {
-    auto const lock {std::lock_guard {_guard_completions}};
+    auto const lock {std::scoped_lock {_guard_completions}};
 
     auto pos {_completions.find (call_id)};
 
@@ -44,7 +44,7 @@ namespace mcs::rpc::access_policy
 
   auto Concurrent::error (std::exception_ptr rpc_error) noexcept -> void
   {
-    auto const lock {std::lock_guard {_guard_completions}};
+    auto const lock {std::scoped_lock {_guard_completions}};
 
     for (auto& completion : _completions)
     {
@@ -62,8 +62,8 @@ namespace mcs::rpc::access_policy
 
   auto Concurrent::read_lock
     (
-    ) noexcept -> std::unique_ptr<std::lock_guard<std::mutex>>
+    ) noexcept -> std::unique_ptr<std::scoped_lock<std::mutex>>
   {
-    return std::make_unique<std::lock_guard<std::mutex>> (_guard_read);
+    return std::make_unique<std::scoped_lock<std::mutex>> (_guard_read);
   }
 }

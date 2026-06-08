@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -21,11 +21,11 @@ namespace mcs::rpc::access_policy
 
     auto sent() noexcept -> void;
     [[nodiscard]] auto read_lock() noexcept
-      -> std::unique_ptr<std::lock_guard<std::mutex>>;
+      -> std::unique_ptr<std::scoped_lock<std::mutex>>;
 
   private:
     std::mutex _guard_send;
-    std::unique_ptr<std::lock_guard<decltype (_guard_send)>> _lock_send;
+    std::unique_ptr<std::scoped_lock<decltype (_guard_send)>> _lock_send;
     detail::CallID _call_id{};
 
     std::mutex _guard_completions;

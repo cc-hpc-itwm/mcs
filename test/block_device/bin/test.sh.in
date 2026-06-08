@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 
@@ -163,7 +163,10 @@ start_storage_provider                                                \
 MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG="tcp-SHMEM.${MCS_TEST_BLOCK_DEVICE_UNIQUE_ID}"
 MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT="ip::tcp()"
 MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX="mcs_test_block_device_bin_storage_provider.${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"
-find /dev/shm/ 2>/dev/null -name "*${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX}*" -delete
+find /dev/shm/ 2>/dev/null                                            \
+     -name "*${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX}*" \
+     -maxdepth 1                                                      \
+     -delete
 
 start_storage_provider                                                \
   "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"                 \
@@ -209,7 +212,10 @@ start_storage_provider                                                \
 MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG="local-stream-SHMEM.${MCS_TEST_BLOCK_DEVICE_UNIQUE_ID}"
 MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_ENDPOINT="local::stream_protocol(\"${TMP_DIRECTORY}/${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}.EP\")"
 MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX="mcs_test_block_device_bin_storage_provider.${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"
-find /dev/shm/ 2>/dev/null -name "*${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX}*" -delete
+find /dev/shm/ 2>/dev/null                                            \
+     -name "*${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PREFIX}*" \
+     -maxdepth 1                                                      \
+     -delete
 
 start_storage_provider                                                \
   "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_TAG}"                 \

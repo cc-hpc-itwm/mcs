@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -754,7 +754,7 @@ namespace mcs::rpc
           _sum = result;
         }
 
-        auto const lock {std::lock_guard {*_guard}};
+        auto const lock {std::scoped_lock {*_guard}};
         if (*_number_of_parallel_calls == 0u)
         {
           throw std::logic_error {"call completed and no calls ongoing"};
@@ -763,7 +763,7 @@ namespace mcs::rpc
       }
       auto error (unsigned int, std::exception_ptr)
       {
-        auto const lock {std::lock_guard {*_guard}};
+        auto const lock {std::scoped_lock {*_guard}};
         if (*_number_of_parallel_calls == 0u)
         {
           throw std::logic_error {"call completed and no calls ongoing"};
@@ -782,7 +782,7 @@ namespace mcs::rpc
       { [&] (auto const& tag)
         {
           {
-            auto const lock {std::lock_guard {guard}};
+            auto const lock {std::scoped_lock {guard}};
             ++number_of_parallel_calls;
             max_number_of_parallel_calls = std::max
               ( max_number_of_parallel_calls

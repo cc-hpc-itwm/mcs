@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -12,13 +12,18 @@ namespace mcs::testing::random
 {
   // produces random strings
   //
-  template<>
-    struct value<std::string>
+  template< class CharT
+          , class Traits
+          , class Allocator
+          >
+    struct value<std::basic_string<CharT, Traits, Allocator>>
   {
+    using Type = std::basic_string<CharT, Traits, Allocator>;
+
     struct Length
     {
-      std::string::size_type min {0};
-      std::string::size_type max {1 << 20};
+      typename Type::size_type min {0};
+      typename Type::size_type max {1 << 20};
     };
 
     value() = default;
@@ -33,11 +38,11 @@ namespace mcs::testing::random
     template<typename... Args> explicit value (Args&&...);
     template<typename... Args> explicit value (Length, Args&&...);
 
-    auto operator()() -> std::string;
+    auto operator()() -> Type;
 
   private:
     Length _length;
-    value<char> _random_char;
+    value<CharT> _random_char;
   };
 }
 

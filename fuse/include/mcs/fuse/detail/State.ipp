@@ -28,12 +28,12 @@ namespace mcs::fuse
   template<is_content Content>
     auto State<Content>::_read_access() -> state::access::Read
   {
-    return state::access::Read {std::addressof (_guard)};
+    return state::access::Read {_guard};
   }
   template<is_content Content>
     auto State<Content>::_write_access() -> state::access::Write
   {
-    return state::access::Write {std::addressof (_guard)};
+    return state::access::Write {_guard};
   }
 }
 
@@ -314,16 +314,30 @@ namespace mcs::fuse
       , parent
       , [&] (auto directory)
         {
-          return directory->with_file_entry
+          return directory->visit_entry
             ( write_access
-            , request
             , name
+            , [&] (auto)
+              {
+                return reply::error (request, EISDIR);
+              }
             , [&] (auto file)
               {
                 file->inode()->dec_nlink (write_access);
                 directory->remove_entry (write_access, file);
 
                 return reply::error (request, 0);
+              }
+            , [&] (auto symlink)
+              {
+                symlink->inode()->dec_nlink (write_access);
+                directory->remove_entry (write_access, symlink);
+
+                return reply::error (request, 0);
+              }
+            , [&]
+              {
+                return reply::error (request, ENOENT);
               }
             );
         }
@@ -359,6 +373,11 @@ namespace mcs::fuse
                   return reply::error (request, ENOTEMPTY);
                 }
 
+                // Bring the removed directory's nlink to 0: one
+                // decrement for the parent's named reference, one for
+                // the directory's own "." self-reference.
+                //
+                entry->inode()->dec_nlink (write_access);
                 entry->inode()->dec_nlink (write_access);
                 directory->remove_entry (write_access, entry);
 
@@ -494,6 +513,28 @@ namespace mcs::fuse
           if (flags & RENAME_NOREPLACE)
           {
             return EEXIST;
+          }
+
+          // For non-exchange replacement the target inode is
+          // displaced and loses its directory entry. For files and
+          // symlinks that means nlink 1 -> 0. For a directory that
+          // means nlink 2 -> 0 (the parent's named reference and the
+          // directory's own "." self-reference both go away,
+          // analogous to rmdir).
+          //
+          if (! (flags & RENAME_EXCHANGE))
+          {
+            target_inode->dec_nlink (write_access);
+
+            if constexpr
+              ( std::is_same_v
+                  < std::remove_pointer_t<decltype (target_inode)>
+                  , state::Inode<Content, state::inode::kind::Directory>
+                  >
+              )
+            {
+              target_inode->dec_nlink (write_access);
+            }
           }
 
           target_directory->remove_entry
@@ -1546,7 +1587,21 @@ namespace mcs::fuse
         {
           auto inode {*inode_pos};
 
-          if (std::cmp_equal (0, inode->dec_lookup (write_access, nlookup)))
+          // An inode may only be destroyed when the kernel no longer
+          // caches it (nlookup == 0) AND no directory entry still
+          // refers to it (st_nlink == 0). Otherwise the parent
+          // directory's name map would dangle: the kernel can send
+          // FORGET on cache pressure while the entry is still live in
+          // the server's namespace, and a subsequent LOOKUP would
+          // dereference a freed pointer.
+          //
+          auto const remaining_lookups
+            { inode->dec_lookup (write_access, nlookup)
+            };
+
+          if (  std::cmp_equal (0, remaining_lookups)
+             && std::cmp_equal (0, inode->stat (write_access).st_nlink)
+             )
           {
             container.erase (inode_pos);
 

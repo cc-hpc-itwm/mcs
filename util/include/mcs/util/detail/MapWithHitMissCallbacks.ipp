@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <tuple>
@@ -105,7 +105,7 @@ namespace mcs::util
         , Args&&... args
         ) -> Value
     {
-      auto const lock {std::lock_guard {_guard}};
+      auto const lock {std::scoped_lock {_guard}};
 
       return _map.at_or_construct
         ( std::move (key)
@@ -129,7 +129,7 @@ namespace mcs::util
         , Args&&... args
         ) -> Value
     {
-      auto const lock {std::lock_guard {_guard}};
+      auto const lock {std::scoped_lock {_guard}};
 
       return _map.at_or_create
         ( std::move (key)

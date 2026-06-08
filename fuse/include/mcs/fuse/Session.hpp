@@ -1,9 +1,10 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
 
 #include <functional>
+#include <future>
 #include <mcs/fuse/Content.hpp>
 #include <mcs/fuse/State.hpp>
 #include <mcs/fuse/detail/managed_not_null_resource.hpp>
@@ -14,6 +15,7 @@
 #include <mcs/util/member_AUTO.hpp>
 #include <mcs/util/not_null.hpp>
 #include <memory>
+#include <thread>
 #include <variant>
 
 namespace mcs::fuse
@@ -21,13 +23,18 @@ namespace mcs::fuse
   template<is_content Content>
     struct Session
   {
+    // Starts the FUSE event loop on a thread owned by this Session.
+    //
     [[nodiscard]] Session ( util::not_null<::fuse_args>
                           , util::not_null<typename Content::State>
                           , session::Options
                           )
       ;
 
-    [[nodiscard]] auto run() const -> int;
+    // The returned future becomes ready when the loop
+    // returns. Multiple calls return the same shared future.
+    //
+    [[nodiscard]] auto result() const -> std::shared_future<int>;
 
     Session (Session const&) = delete;
     Session (Session&&) = delete;
@@ -82,6 +89,30 @@ namespace mcs::fuse
       );
     //
     // NOLINTEND  (modernize-avoid-bind)
+
+    // Keep _loop last: reverse destruction joins _thread before any
+    // of the members above (state, operations, session, signal
+    // handlers, mount) are destroyed.
+    //
+    struct Loop
+    {
+      Loop (session::Options const&, ::fuse_session*);
+
+      Loop (Loop const&) = delete;
+      Loop (Loop&&) = delete;
+      auto operator= (Loop const&) -> Loop& = delete;
+      auto operator= (Loop&&) -> Loop& = delete;
+      ~Loop();
+
+      [[nodiscard]] auto result() const -> std::shared_future<int>;
+
+    private:
+      Loop (std::packaged_task<int()>);
+
+      std::shared_future<int> _result{};
+      std::jthread _thread{};
+    };
+    Loop _loop {_options, _session.get()};
   };
 }
 

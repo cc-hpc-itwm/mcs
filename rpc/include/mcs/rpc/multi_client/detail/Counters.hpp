@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -44,7 +44,7 @@ namespace mcs::rpc::multi_client::detail
     CallIDs _calls_started;
     CallIDs _calls_completed;
 
-    using Guarded = std::lock_guard<decltype (_guard)>;
+    using Guarded = std::scoped_lock<decltype (_guard)>;
     auto start (Guarded const&, CallID) -> void;
     auto complete (Guarded const&, CallID) -> void;
 

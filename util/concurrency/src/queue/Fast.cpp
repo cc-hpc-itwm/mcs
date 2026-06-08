@@ -1,9 +1,9 @@
 // Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/lock/queue/Fast.hpp>
+#include <mcs/util/concurrency/queue/Fast.hpp>
 
-namespace mcs::util::lock::queue
+namespace mcs::util::concurrency::queue
 {
   auto Fast::wait_to_be_served() -> void
   {

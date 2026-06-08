@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <mcs/util/lock/Concepts.hpp>
+#include <mcs/util/concurrency/Concepts.hpp>
 #include <mutex>
 
-namespace mcs::util::lock::queue
+namespace mcs::util::concurrency::queue
 {
   // The Fast queue does not guarantee to serve in strict FIFO
   // order. The Fast queue is "as fast" as the std::mutex

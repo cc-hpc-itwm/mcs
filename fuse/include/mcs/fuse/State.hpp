@@ -14,8 +14,8 @@
 #include <mcs/fuse/state/inode/Directory.hpp>
 #include <mcs/fuse/state/inode/File.hpp>
 #include <mcs/fuse/state/inode/Symlink.hpp>
-#include <mcs/util/Lock.hpp>
-#include <mcs/util/lock/queue/Fast.hpp>
+#include <mcs/util/concurrency/SharedMutex.hpp>
+#include <mcs/util/concurrency/queue/Fast.hpp>
 #include <mcs/util/not_null.hpp>
 #include <mcs/util/syscall/getgid.hpp>
 #include <mcs/util/syscall/getuid.hpp>
@@ -318,7 +318,10 @@ namespace mcs::fuse
     ~State() = default;
 
   private:
-    util::lock::SharedMutex<util::lock::queue::Fast> _guard;
+    using Mutex
+      = util::concurrency::SharedMutex<util::concurrency::queue::Fast>
+      ;
+    mutable Mutex _guard;
     util::not_null<typename Content::State> _content_state;
 
     [[nodiscard]] auto _read_access() -> state::access::Read;

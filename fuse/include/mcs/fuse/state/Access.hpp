@@ -4,13 +4,18 @@
 #pragma once
 
 #include <concepts>
-#include <mcs/util/Lock.hpp>
-#include <mcs/util/lock/queue/Fast.hpp>
+#include <mcs/util/concurrency/SharedMutex.hpp>
+#include <mcs/util/concurrency/queue/Fast.hpp>
+#include <mutex>
+#include <shared_mutex>
 
 namespace mcs::fuse::state::access
 {
-  using Read = util::Lock<util::lock::mode::Shared, util::lock::queue::Fast>;
-  using Write = util::Lock<util::lock::mode::Unique, util::lock::queue::Fast>;
+  using Mutex
+    = util::concurrency::SharedMutex<util::concurrency::queue::Fast>
+    ;
+  using Read = std::shared_lock<Mutex>;
+  using Write = std::unique_lock<Mutex>;
 }
 
 namespace mcs::fuse::state

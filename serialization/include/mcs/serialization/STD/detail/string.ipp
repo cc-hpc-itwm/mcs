@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/serialization/IArchive.hpp>
@@ -43,7 +43,7 @@ namespace mcs::serialization
            };
     s.resize (size);
 
-    ia.extract (s.data(), size);
+    ia.extract (s.data(), size * sizeof (CharT));
 
     return s;
   }

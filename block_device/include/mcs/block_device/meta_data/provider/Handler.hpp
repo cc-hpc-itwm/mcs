@@ -10,8 +10,8 @@
 #include <mcs/block_device/meta_data/command/Location.hpp>
 #include <mcs/block_device/meta_data/command/NumberOfBlocks.hpp>
 #include <mcs/block_device/meta_data/command/Remove.hpp>
-#include <mcs/util/Lock.hpp>
-#include <mcs/util/lock/queue/Fast.hpp>
+#include <mcs/util/concurrency/SharedMutex.hpp>
+#include <mcs/util/concurrency/queue/Fast.hpp>
 #include <mcs/util/not_null.hpp>
 
 namespace mcs::block_device::meta_data::provider
@@ -30,7 +30,10 @@ namespace mcs::block_device::meta_data::provider
     auto operator() (command::Location) const -> command::Location::Response;
 
   private:
-    util::lock::SharedMutex<util::lock::queue::Fast> _guard;
+    using Mutex
+      = util::concurrency::SharedMutex<util::concurrency::queue::Fast>
+      ;
+    mutable Mutex _guard;
     util::not_null<Blocks> _blocks;
   };
 }

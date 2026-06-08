@@ -8,9 +8,9 @@
 #include <future>
 #include <gtest/gtest.h>
 #include <iterator>
-#include <mcs/util/Lock.hpp>
-#include <mcs/util/lock/queue/FIFO.hpp>
-#include <mcs/util/lock/queue/Fast.hpp>
+#include <mcs/util/concurrency/SharedMutex.hpp>
+#include <mcs/util/concurrency/queue/FIFO.hpp>
+#include <mcs/util/concurrency/queue/Fast.hpp>
 #include <mcs/util/timed.hpp>
 #include <memory>
 #include <mutex>
@@ -31,11 +31,11 @@ namespace mcs::util
 
       static auto unique_lock (Guard& guard)
       {
-        return std::lock_guard {guard};
+        return std::scoped_lock {guard};
       }
       static auto shared_lock (Guard& guard)
       {
-        return std::lock_guard {guard};
+        return std::scoped_lock {guard};
       }
     };
 
@@ -58,36 +58,36 @@ namespace mcs::util
     struct LockGuardFIFO
     {
       static auto constexpr description
-        { "util::lock::SharedMutex<queue::FIFO>"
+        { "util::concurrency::SharedMutex<queue::FIFO>"
         };
 
-      using Guard = lock::SharedMutex<lock::queue::FIFO>;
+      using Guard = concurrency::SharedMutex<concurrency::queue::FIFO>;
 
       static auto unique_lock (Guard& guard)
       {
-        return util::unique_lock (guard);
+        return std::unique_lock (guard);
       }
       static auto shared_lock (Guard& guard)
       {
-        return util::shared_lock (guard);
+        return std::shared_lock (guard);
       }
     };
 
     struct LockGuardFast
     {
       static auto constexpr description
-        { "util::lock::SharedMutex<queue::Fast>"
+        { "util::concurrency::SharedMutex<queue::Fast>"
         };
 
-      using Guard = lock::SharedMutex<lock::queue::Fast>;
+      using Guard = concurrency::SharedMutex<concurrency::queue::Fast>;
 
       static auto unique_lock (Guard& guard)
       {
-        return util::unique_lock (guard);
+        return std::unique_lock (guard);
       }
       static auto shared_lock (Guard& guard)
       {
-        return util::shared_lock (guard);
+        return std::shared_lock (guard);
       }
     };
 

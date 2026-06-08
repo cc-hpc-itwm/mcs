@@ -3,7 +3,7 @@
 
 #include <atomic>
 
-namespace mcs::util::lock::detail
+namespace mcs::util::concurrency::detail
 {
   template<is_awaitable_atomic Atomic>
     auto wait_for_value

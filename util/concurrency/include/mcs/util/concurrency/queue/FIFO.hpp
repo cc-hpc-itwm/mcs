@@ -5,9 +5,9 @@
 
 #include <atomic>
 #include <cstdint>
-#include <mcs/util/lock/Concepts.hpp>
+#include <mcs/util/concurrency/Concepts.hpp>
 
-namespace mcs::util::lock::queue
+namespace mcs::util::concurrency::queue
 {
   // The FIFO queue serves requests strictly in FIFO order. Later
   // requests never overtake earlier requests.

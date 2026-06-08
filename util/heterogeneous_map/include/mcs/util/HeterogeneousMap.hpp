@@ -5,12 +5,13 @@
 
 #include <mcs/Error.hpp>
 #include <mcs/config.hpp>
-#include <mcs/util/Lock.hpp>
+#include <mcs/util/concurrency/SharedMutex.hpp>
+#include <mcs/util/concurrency/queue/Fast.hpp>
 #include <mcs/util/heterogeneous_map/Concepts.hpp>
-#include <mcs/util/lock/queue/Fast.hpp>
 #include <mcs/util/not_null.hpp>
 #include <mcs/util/type/List.hpp>
 #include <mutex>
+#include <shared_mutex>
 #include <type_traits>
 #include <unordered_map>
 #include <variant>
@@ -162,9 +163,10 @@ namespace mcs::util
     using typename Base::ID;
     using Base::id;
     using typename Base::Error;
+    using Mutex = concurrency::SharedMutex<concurrency::queue::Fast>;
 
-    template<lock::is_mode Mode>
-      struct Locked : private Lock<Mode, lock::queue::Fast>
+    template<concurrency::is_lock Lock>
+      struct Locked
     {
       // some inline function definitions to make clang accept
 
@@ -172,7 +174,7 @@ namespace mcs::util
         requires (std::invocable<Fun, Ts const&> && ...)
         auto visit (Key key, Fun&& fun) const
       {
-        return _base->template visit<Fun> (key, std::forward<Fun> (fun));
+        return _const_base->template visit<Fun> (key, std::forward<Fun> (fun));
       }
 
       template<typename T, typename Fun>
@@ -181,26 +183,24 @@ namespace mcs::util
                  )
         auto invoke (Key key, Fun&& fun) const
       {
-        return _base->template invoke<T, Fun> (key, std::forward<Fun> (fun));
+        return _const_base->template invoke<T, Fun> (key, std::forward<Fun> (fun));
       }
 
-    private:
+    protected:
       friend struct HeterogeneousMap;
-      UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>> const* _base;
-      template<typename... LockArgs>
-        Locked
-          ( UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>> const*
-          , LockArgs&&...
-          );
-    };
-    using ReadAccess = Locked<lock::mode::Shared>;
+      Lock _scoped_lock;
 
-    struct ReadWriteAccess : public Locked<lock::mode::Unique>
+      Base const* _const_base;
+      Locked (Base const*, Mutex*);
+    };
+    using ReadAccess = Locked<std::shared_lock<Mutex>>;
+
+    struct ReadWriteAccess : public Locked<std::unique_lock<Mutex>>
     {
       // some inline function definitions to make clang accept
 
-      using Locked<lock::mode::Unique>::visit;
-      using Locked<lock::mode::Unique>::invoke;
+      using Locked<std::unique_lock<Mutex>>::visit;
+      using Locked<std::unique_lock<Mutex>>::invoke;
 
       template<typename T, typename... Args>
         requires (  (std::is_same_v<T, Ts> || ...)
@@ -208,7 +208,7 @@ namespace mcs::util
                  )
         [[nodiscard]] auto create (Args&&... args) const -> Key
       {
-        return _base->template create<T> (std::forward<Args> (args)...);
+        return _mutable_base->template create<T> (std::forward<Args> (args)...);
       }
 
       auto remove (Key key) const -> void;
@@ -217,7 +217,7 @@ namespace mcs::util
         requires (std::invocable<Fun, Ts&> && ...)
         auto visit (Key key, Fun&& fun) const
       {
-        return _base->template visit<Fun> (key, std::forward<Fun> (fun));
+        return _mutable_base->template visit<Fun> (key, std::forward<Fun> (fun));
       }
 
       template<typename T, typename Fun>
@@ -226,33 +226,27 @@ namespace mcs::util
                  )
         auto modify (Key key, Fun&& fun) const
       {
-        return _base->template modify<T, Fun> (key, std::forward<Fun> (fun));
+        return _mutable_base->template modify<T, Fun> (key, std::forward<Fun> (fun));
       }
 
     private:
       friend struct HeterogeneousMap;
-      UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>>* _base;
-      template<typename... LockArgs>
-        ReadWriteAccess
-          ( UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>>*
-          , LockArgs&&...
-          );
+      ReadWriteAccess (Base*, Mutex*);
+      Base* const _mutable_base;
     };
 
     // Only a single ReadWriteAccess can exist at the same
     // time. ReadAccess and ReadWriteAccess can not exist at the same
-    // time. To acquire a ReadWriteAccess has priority over acquiring
-    // ReadAccess: ReadWriteAccess access will be granted after all
+    // time. ReadWriteAccess access will be granted after all
     // current ReadAccesses have been released and before ReadAccesses
     // accesses are granted that are requested after the request for
-    // ReadWriteAccess access has been granted. Sequences of
-    // ReadWriteAccess delay ReadAccess indefinitely long.
+    // ReadWriteAccess access has been granted.
     //
     [[nodiscard]] auto read_access() const -> ReadAccess;
     [[nodiscard]] auto read_write_access() -> ReadWriteAccess;
 
   private:
-    lock::SharedMutex<lock::queue::Fast> _guard;
+    mutable concurrency::SharedMutex<concurrency::queue::Fast> _guard;
   };
 }
 

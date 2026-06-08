@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <exception>
@@ -18,7 +18,7 @@ namespace mcs::rpc::multi_client::detail
   auto Counters::call_started (CallID call_id) -> void
   try
   {
-    auto const lock {std::lock_guard {_guard}};
+    auto const lock {std::scoped_lock {_guard}};
 
     ++_call_started;
     start (lock, call_id);
@@ -37,7 +37,7 @@ namespace mcs::rpc::multi_client::detail
   auto Counters::call_completed (CallID call_id) -> void
   try
   {
-    auto const lock {std::lock_guard {_guard}};
+    auto const lock {std::scoped_lock {_guard}};
 
     ++_call_completed;
     complete (lock, call_id);
@@ -56,7 +56,7 @@ namespace mcs::rpc::multi_client::detail
   auto Counters::error_execution (CallID call_id) -> void
   try
   {
-    auto const lock {std::lock_guard {_guard}};
+    auto const lock {std::scoped_lock {_guard}};
 
     ++_error_execution;
     complete (lock, call_id);

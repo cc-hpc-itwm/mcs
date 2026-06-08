@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 target_sources (mcs_serialization
@@ -6,7 +6,9 @@ target_sources (mcs_serialization
   PRIVATE OArchive.cpp
   PRIVATE error/AdditionalBytes.cpp
   PRIVATE error/Load.cpp
+  PRIVATE error/NotEnoughBytes.cpp
   PRIVATE error/Save.cpp
+  PRIVATE error/WrongTag.cpp
   PRIVATE STD/filesystem/path.cpp
 )
 target_link_libraries (mcs_serialization

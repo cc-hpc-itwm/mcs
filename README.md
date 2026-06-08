@@ -21,16 +21,16 @@ Requirements:
 - [cmake](https://cmake.org/), version 3.24 or higher
 - a c++20 compiler
   * tested: [gcc](https://gcc.gnu.org/) versions 11, 12, 13, 14, 15
-  * tested: [clang](https://clang.llvm.org/) versions 20, 21
-  * tested: [Intel oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/overview.html) version 2025.3
+  * tested: [clang](https://clang.llvm.org/) versions 20, 21, 22
+  * tested: [Intel oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/overview.html) version 2026.0
 
 MCS is tested on
 
-- [Alpine Linux](https://alpinelinux.org/) versions 3.21.5, 3.22.2
+- [Alpine Linux](https://alpinelinux.org/) versions 3.21.7, 3.22.4, 3.23.4
 - [archlinux](https://archlinux.org/)
 - [Oracle Linux](https://www.oracle.com/linux/) version 9
 - [Rocky Linux](https://rockylinux.org/) version 9
-- [Ubuntu](https://ubuntu.com/) versions 22.04, 24.04, 25.10
+- [Ubuntu](https://ubuntu.com/) versions 22.04, 24.04, 26.04
 
 How to install:
 ---------------
@@ -64,7 +64,7 @@ Present MCS storage content as a filesystem.
 - `MCS_FUSE`: ON, OFF
 - Default: `MCS_FUSE=OFF`
 - Additional source dependency:
-  * [libfuse3](https://github.com/libfuse/libfuse) version 3.18.1
+  * [libfuse3](https://github.com/libfuse/libfuse) version 3.18.2
 - Additional runtime dependency:
   * The kernel must support fuse, the fuse-kernel module must be
     installed and inserted.

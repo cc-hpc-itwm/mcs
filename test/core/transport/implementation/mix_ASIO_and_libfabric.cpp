@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/ip/tcp.hpp>
@@ -342,17 +342,17 @@ namespace mcs::testing::core::transport::implementation::libfabric
 
 namespace mcs::core
 {
-  template< rpc::is_protocol _ProtocolLibfabricControl
-          , rpc::is_protocol _ProtocolAsioControlAndTransport
-          , typename _ProviderStorage
-          , typename _ClientStorage
+  template< rpc::is_protocol ProtocolLibfabricControl_
+          , rpc::is_protocol ProtocolAsioControlAndTransport_
+          , typename ProviderStorage_
+          , typename ClientStorage_
           >
     struct ProtocolsAndStorages
   {
-    using ProtocolLibfabricControl = _ProtocolLibfabricControl;
-    using ProtocolAsioControlAndTransport = _ProtocolAsioControlAndTransport;
-    using ProviderStorage = _ProviderStorage;
-    using ClientStorage = _ClientStorage;
+    using ProtocolLibfabricControl = ProtocolLibfabricControl_;
+    using ProtocolAsioControlAndTransport = ProtocolAsioControlAndTransport_;
+    using ProviderStorage = ProviderStorage_;
+    using ClientStorage = ClientStorage_;
   };
 
   namespace TestingStorage = testing::core::storage::implementation;

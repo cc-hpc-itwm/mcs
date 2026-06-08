@@ -27,7 +27,7 @@ endfunction()
 
 mcs_test_util (Buffer)
 mcs_test_util (HeterogeneousMap PRIVATE mcs_util_HeterogeneousMap)
-mcs_test_util (Lock PRIVATE mcs_util_lock)
+mcs_test_util (Lock PRIVATE mcs_util_concurrency)
 mcs_test_util (MapWithHitMissCallbacks)
 mcs_test_util (RangesIterator)
 mcs_test_util (TaggedRange)
@@ -41,7 +41,7 @@ mcs_test_util (not_null)
 mcs_test_util (select)
 mcs_test_util (true_once)
 
-mcs_performance_test_util (LockPerformance PRIVATE mcs_util_lock)
+mcs_performance_test_util (LockPerformance PRIVATE mcs_util_concurrency)
 
 add_subdirectory (ASIO)
 add_subdirectory (FMT)

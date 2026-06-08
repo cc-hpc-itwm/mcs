@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/transport/implementation/libfabric/transporter/rdm/Provider.hpp>
@@ -17,7 +17,7 @@ namespace mcs::core::transport::implementation::libfabric::transporter::rdm
     ( std::vector<std::byte> name
     ) -> fi_addr_t
   {
-    auto const lock {std::lock_guard {_addresses_mutex}};
+    auto const lock {std::scoped_lock {_addresses_mutex}};
 
     {
       auto const address {_addresses.find (name)};

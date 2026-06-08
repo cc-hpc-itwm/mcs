@@ -13,10 +13,13 @@
 #include <list>
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/value/integral.hpp>
-#include <mcs/util/Lock.hpp>
-#include <mcs/util/lock/queue/FIFO.hpp>
-#include <mcs/util/lock/queue/Fast.hpp>
+#include <mcs/util/concurrency/Concepts.hpp>
+#include <mcs/util/concurrency/SharedMutex.hpp>
+#include <mcs/util/concurrency/queue/FIFO.hpp>
+#include <mcs/util/concurrency/queue/Fast.hpp>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <thread>
 
 namespace mcs::util
@@ -24,22 +27,20 @@ namespace mcs::util
   namespace
   {
     using Queues = ::testing::Types
-      < lock::queue::FIFO
-      , lock::queue::Fast
+      < concurrency::queue::FIFO
+      , concurrency::queue::Fast
       >;
 
     template<class> struct MCSLockR : public testing::random::Test{};
     TYPED_TEST_SUITE (MCSLockR, Queues);
   }
 
-  namespace lock_write_access_example_from_documentation_compiles
+  TYPED_TEST (MCSLockR, lock_write_access_example_from_documentation_compiles)
   {
     // EXAMPLE:
     //
     // Wrap an UnsynchronizedContainer into a SynchronizedContainer with
     // shared read access and unique write access.
-
-    using LockQueueType = lock::queue::FIFO;
 
     struct UnsynchronizedContainer
     {
@@ -50,6 +51,7 @@ namespace mcs::util
     struct SynchronizedContainer : private UnsynchronizedContainer
     {
       using UnsynchronizedContainer::UnsynchronizedContainer;
+      using Mutex = mcs::util::concurrency::SharedMutex<TypeParam>;
 
       struct ReadAccess
       {
@@ -60,15 +62,16 @@ namespace mcs::util
 
       private:
         friend struct SynchronizedContainer;
-        Lock<lock::mode::Shared, LockQueueType> _lock;
+
+        std::shared_lock<Mutex> _lock;
         UnsynchronizedContainer const* _unsynchronized_container;
-        template<typename... LockArgs>
-          ReadAccess
-            ( UnsynchronizedContainer const* unsynchronized_container
-            , LockArgs&&... lock_args
-            )
-            : _lock {std::forward<LockArgs> (lock_args)...}
-            , _unsynchronized_container {unsynchronized_container}
+
+        ReadAccess
+          ( UnsynchronizedContainer const* unsynchronized_container
+          , Mutex* mutex
+          )
+          : _lock {*mutex}
+          , _unsynchronized_container {unsynchronized_container}
         {}
       };
 
@@ -81,15 +84,16 @@ namespace mcs::util
 
       private:
         friend struct SynchronizedContainer;
-        Lock<lock::mode::Unique, LockQueueType> _lock;
+
+        std::unique_lock<Mutex> _lock;
         UnsynchronizedContainer* _unsynchronized_container;
-        template<typename... LockArgs>
-          WriteAccess
-            ( UnsynchronizedContainer* unsynchronized_container
-            , LockArgs&&... lock_args
-            )
-            : _lock {std::forward<LockArgs> (lock_args)...}
-            , _unsynchronized_container {unsynchronized_container}
+
+        WriteAccess
+          ( UnsynchronizedContainer* unsynchronized_container
+          , Mutex* mutex
+          )
+          : _lock {*mutex}
+          , _unsynchronized_container {unsynchronized_container}
         {}
       };
 
@@ -103,19 +107,17 @@ namespace mcs::util
       }
 
     private:
-      lock::SharedMutex<LockQueueType> _guard;
+      mutable Mutex _guard;
     };
   }
 
-  namespace lock_read_write_access_example_from_documentation_compiles
+  namespace
   {
     // EXAMPLE:
     //
     // Wrap an UnsynchronizedContainer into a SynchronizedContainer with
     // shared read access and unique read&write access.
-    //
-
-    using LockQueueType = lock::queue::Fast;
+    // QueueType is parameterized.
 
     struct UnsynchronizedContainer
     {
@@ -123,11 +125,13 @@ namespace mcs::util
       auto mm() -> void;
     };
 
-    struct SynchronizedContainer : private UnsynchronizedContainer
+    template<concurrency::is_request_queue QueueType>
+      struct SynchronizedContainer : private UnsynchronizedContainer
     {
       using UnsynchronizedContainer::UnsynchronizedContainer;
+      using Mutex = concurrency::SharedMutex<QueueType>;
 
-      template<lock::is_mode Mode>
+      template<concurrency::is_lock Lock>
         struct Access
       {
         auto cm() const
@@ -135,44 +139,42 @@ namespace mcs::util
           return _unsynchronized_container->cm();
         }
 
-      private:
-        friend struct SynchronizedContainer;
+      protected:
+        Lock _lock;
 
-        Lock<Mode, LockQueueType> _lock;
+      private:
         UnsynchronizedContainer const* _unsynchronized_container;
 
-        template<typename... LockArgs>
-          Access
-            ( UnsynchronizedContainer const* unsynchronized_container
-            , LockArgs&&... lock_args
-            )
-            : _lock {std::forward<LockArgs> (lock_args)...}
-            , _unsynchronized_container {unsynchronized_container}
+        friend struct SynchronizedContainer;
+
+        Access
+          ( UnsynchronizedContainer const* unsynchronized_container
+          , Mutex* mutex
+          )
+          : _lock {*mutex}
+          , _unsynchronized_container {unsynchronized_container}
         {}
       };
-      using ReadAccess = Access<lock::mode::Shared>;
+      using ReadAccess = Access<std::shared_lock<Mutex>>;
 
-      struct ReadWriteAccess : public Access<lock::mode::Unique>
+      struct ReadWriteAccess : public Access<std::unique_lock<Mutex>>
       {
-        using Access<lock::mode::Unique>::cm;
-        auto mm() const
+        auto mm()
         {
-          return _unsynchronized_container->mm();
+          return _mutable_unsynchronized_container->mm();
         }
 
       private:
         friend struct SynchronizedContainer;
-        UnsynchronizedContainer* _unsynchronized_container;
-        template<typename... LockArgs>
-          ReadWriteAccess
-            ( UnsynchronizedContainer* unsynchronized_container
-            , LockArgs&&... lock_args
-            )
-              : Access<lock::mode::Unique>
-                { unsynchronized_container
-                , std::forward<LockArgs> (lock_args)...
-                }
-              , _unsynchronized_container {unsynchronized_container}
+        UnsynchronizedContainer * const _mutable_unsynchronized_container;
+
+        ReadWriteAccess
+          ( UnsynchronizedContainer* unsynchronized_container
+          , Mutex* mutex
+          )
+          : Access<std::unique_lock<Mutex>>
+              {unsynchronized_container, mutex}
+          , _mutable_unsynchronized_container {unsynchronized_container}
         {}
       };
 
@@ -180,18 +182,24 @@ namespace mcs::util
       {
         return ReadAccess {this, std::addressof (_guard)};
       }
-      [[nodiscard]] auto write_access() -> ReadWriteAccess
+      [[nodiscard]] auto read_write_access() -> ReadWriteAccess
       {
         return ReadWriteAccess {this, std::addressof (_guard)};
       }
     private:
-      lock::SharedMutex<LockQueueType> _guard;
+      mutable Mutex _guard;
     };
+  }
+
+  TYPED_TEST (MCSLockR, lock_read_write_access_example_from_documentation_compiles)
+  {
+    using QueueType = TypeParam;
+    [[maybe_unused]] SynchronizedContainer<QueueType> c;
   }
 
   TYPED_TEST (MCSLockR, a_guard_can_have_multiple_shared_locks_at_the_same_time)
   {
-    auto const guard {lock::SharedMutex<TypeParam>{}};
+    auto guard {concurrency::SharedMutex<TypeParam>{}};
 
     auto const number_of_readers
       { std::invoke
@@ -217,7 +225,7 @@ namespace mcs::util
             , [&]
               {
                 {
-                  auto const lock {shared_lock (guard)};
+                  auto const lock {std::shared_lock (guard)};
 
                   in_critical_section.fetch_add (1);
 
@@ -242,7 +250,7 @@ namespace mcs::util
 
   TYPED_TEST (MCSLockR, a_guard_can_have_at_most_one_unique_lock)
   {
-    auto guard {lock::SharedMutex<TypeParam>{}};
+    auto guard {concurrency::SharedMutex<TypeParam>{}};
 
     auto const number_of_writers
       { std::invoke
@@ -267,7 +275,7 @@ namespace mcs::util
             , [&]
               {
                 {
-                  auto const lock {unique_lock (guard)};
+                  auto const lock {std::unique_lock (guard)};
 
                   in_critical_section.fetch_add (1);
 
@@ -298,7 +306,7 @@ namespace mcs::util
 
   TYPED_TEST (MCSLockR, writer_waits_for_all_ongoing_readers_to_finish)
   {
-    auto guard {lock::SharedMutex<TypeParam>{}};
+    auto guard {concurrency::SharedMutex<TypeParam>{}};
 
     auto const number_of_readers
       { std::invoke
@@ -323,7 +331,7 @@ namespace mcs::util
             ( std::launch::async
             , [&]
               {
-                auto const lock {shared_lock (guard)};
+                auto const lock {std::shared_lock (guard)};
 
                 readers_started.count_down();
 
@@ -352,7 +360,7 @@ namespace mcs::util
           {
             readers_started.wait();
 
-            auto const lock {unique_lock (guard)};
+            auto const lock {std::unique_lock (guard)};
 
             return readers_done == number_of_readers;
           }
@@ -386,7 +394,7 @@ namespace mcs::util
     //       [-- write -- ]
     //
 
-    auto guard {lock::SharedMutex<TypeParam>{}};
+    auto guard {concurrency::SharedMutex<TypeParam>{}};
 
     auto const execution_time {std::chrono::milliseconds {30}};
     auto const create_delay {std::chrono::milliseconds {10}};
@@ -409,7 +417,7 @@ namespace mcs::util
             ( std::launch::async
             , [&]
               {
-                auto const lock {shared_lock (guard)};
+                auto const lock {std::shared_lock (guard)};
 
                 std::this_thread::sleep_for (execution_time);
 
@@ -432,6 +440,7 @@ namespace mcs::util
               readers.emplace_back (reader());
 
               number_of_readers_created.fetch_add (1);
+              number_of_readers_created.notify_one();
 
               std::this_thread::sleep_for (create_delay);
             }
@@ -439,13 +448,12 @@ namespace mcs::util
         )
       };
 
-    std::this_thread::sleep_for (create_delay);
-
     // writer is generated after some but not all readers are created
+    number_of_readers_created.wait (0);
     ASSERT_GT (number_of_readers_created, 0);
     ASSERT_LT (number_of_readers_created, number_of_readers);
     {
-      auto const lock {unique_lock (guard)};
+      auto const lock {std::unique_lock (guard)};
 
       // the writer takes some time itself and then modifies the value
       std::this_thread::sleep_for (execution_time);
@@ -487,7 +495,7 @@ namespace mcs::util
     //       [-- read -- ]
     //
 
-    auto guard {lock::SharedMutex<TypeParam>{}};
+    auto guard {concurrency::SharedMutex<TypeParam>{}};
 
     auto const execution_time {std::chrono::milliseconds {30}};
     auto const create_delay {std::chrono::milliseconds {10}};
@@ -510,7 +518,7 @@ namespace mcs::util
             ( std::launch::async
             , [&]
               {
-                auto const lock {unique_lock (guard)};
+                auto const lock {std::unique_lock (guard)};
 
                 std::this_thread::sleep_for (execution_time);
 
@@ -533,6 +541,7 @@ namespace mcs::util
               writers.emplace_back (writer());
 
               number_of_writers_created.fetch_add (1);
+              number_of_writers_created.notify_one();
 
               std::this_thread::sleep_for (create_delay);
             }
@@ -540,16 +549,15 @@ namespace mcs::util
         )
       };
 
-    std::this_thread::sleep_for (create_delay);
-
     // reader is generated after some but not all writers are created
+    number_of_writers_created.wait (0);
     ASSERT_GT (number_of_writers_created, 0);
     ASSERT_LT (number_of_writers_created, number_of_writers);
     auto const observed_value
       { std::invoke
         ( [&]
           {
-            auto const lock {shared_lock (guard)};
+            auto const lock {std::shared_lock (guard)};
 
             // the reader takes some time itself and then reads the value
             std::this_thread::sleep_for (execution_time);
@@ -567,5 +575,358 @@ namespace mcs::util
 
     // The reader saw an intermediate value, not the final value.
     ASSERT_LT (observed_value, value);
+  }
+
+  namespace
+  {
+    class SharedResource
+    {
+    public:
+      auto modify() -> void
+      {
+        _is_modified.store (true);
+      }
+
+      [[nodiscard]] auto is_modified() const -> bool
+      {
+        return _is_modified.load();
+      }
+    private:
+      std::atomic<bool> _is_modified {false};
+    };
+  }
+
+  TYPED_TEST (MCSLockR, scoped_lock_excludes_shared_lock)
+  {
+    auto mutex {concurrency::SharedMutex<TypeParam>{}};
+
+    auto shared_resource {SharedResource{}};
+
+    // Ensures that the reader does not try to acquire the lock
+    // before the writer has acquired it.
+    //
+    auto lock_is_acquired {std::latch {1}};
+
+    auto writer
+      { std::async
+        ( std::launch::async
+        , [&]
+          {
+            auto const lock {std::scoped_lock (mutex)};
+
+            lock_is_acquired.count_down();
+
+            // If the lock does not provide mutual exclusion,
+            // the reader will read the unmodified shared_resource
+            // within this time window.
+            // Which is the fail condition of this test.
+            //
+            std::this_thread::sleep_for (std::chrono::milliseconds {10});
+
+            shared_resource.modify();
+
+            return shared_resource.is_modified();
+          }
+        )
+      };
+
+    auto reader
+      { std::async
+        ( std::launch::async
+        , [&]
+          {
+            lock_is_acquired.wait();
+
+            auto const lock {std::shared_lock (mutex)};
+
+            return shared_resource.is_modified();
+          }
+        )
+      };
+
+    ASSERT_TRUE (writer.get());
+    ASSERT_TRUE (reader.get());
+  }
+
+  TYPED_TEST (MCSLockR, scoped_lock_excludes_unique_lock)
+  {
+    auto mutex {concurrency::SharedMutex<TypeParam>{}};
+
+    auto shared_resource {SharedResource{}};
+
+    auto lock_is_acquired {std::latch {1}};
+
+    auto writer
+      { std::async
+        ( std::launch::async
+        , [&]
+          {
+            auto const lock {std::scoped_lock (mutex)};
+
+            lock_is_acquired.count_down();
+
+            std::this_thread::sleep_for (std::chrono::milliseconds {10});
+
+            shared_resource.modify();
+
+            return shared_resource.is_modified();
+          }
+        )
+      };
+
+    auto reader
+      { std::async
+        ( std::launch::async
+        , [&]
+          {
+            lock_is_acquired.wait();
+
+            auto const lock {std::unique_lock (mutex)};
+
+            return shared_resource.is_modified();
+          }
+        )
+      };
+
+    ASSERT_TRUE (writer.get());
+    ASSERT_TRUE (reader.get());
+  }
+
+  TYPED_TEST (MCSLockR, deferred_unique_lock_does_not_own_on_construction)
+  {
+    auto guard {concurrency::SharedMutex<TypeParam>{}};
+
+    auto const lock {std::unique_lock (guard, std::defer_lock)};
+
+    ASSERT_FALSE (lock.owns_lock());
+  }
+
+  TYPED_TEST (MCSLockR, deferred_shared_lock_does_not_own_on_construction)
+  {
+    auto guard {concurrency::SharedMutex<TypeParam>{}};
+
+    auto const lock {std::shared_lock (guard, std::defer_lock)};
+
+    ASSERT_FALSE (lock.owns_lock());
+  }
+
+  TYPED_TEST (MCSLockR, deferred_shared_lock_allows_multiple_shared_locks)
+  {
+    auto mutex {concurrency::SharedMutex<TypeParam>{}};
+
+    auto lock1 {std::shared_lock (mutex, std::defer_lock)};
+    auto lock2 {std::shared_lock (mutex, std::defer_lock)};
+
+    ASSERT_FALSE (lock1.owns_lock());
+    ASSERT_FALSE (lock2.owns_lock());
+
+    lock1.lock();
+    ASSERT_TRUE (lock1.owns_lock());
+    ASSERT_FALSE (lock2.owns_lock());
+
+    lock2.lock();
+    ASSERT_TRUE (lock1.owns_lock());
+    ASSERT_TRUE (lock2.owns_lock());
+  }
+
+  TYPED_TEST (MCSLockR, deferred_unique_lock_excludes_shared_lock)
+  {
+    auto mutex {concurrency::SharedMutex<TypeParam>{}};
+
+    auto shared_resource {SharedResource{}};
+
+    auto lock_is_acquired {std::latch {1}};
+
+    auto writer
+      { std::async
+        ( std::launch::async
+        , [&]
+          {
+            auto lock {std::unique_lock (mutex, std::defer_lock)};
+            EXPECT_FALSE (lock.owns_lock());
+
+            lock.lock();
+            EXPECT_TRUE (lock.owns_lock());
+
+            lock_is_acquired.count_down();
+
+            std::this_thread::sleep_for (std::chrono::milliseconds {10});
+
+            shared_resource.modify();
+
+            return shared_resource.is_modified();
+          }
+        )
+      };
+
+    auto reader
+      { std::async
+        ( std::launch::async
+        , [&]
+          {
+            lock_is_acquired.wait();
+
+            auto const lock {std::shared_lock (mutex)};
+
+            return shared_resource.is_modified();
+          }
+        )
+      };
+
+    ASSERT_TRUE (writer.get());
+    ASSERT_TRUE (reader.get());
+  }
+
+  // first_owner                                     second_owner
+  // |                                               |
+  // | lock (mutex)                                  | latch.wait
+  // | latch.count_down()                            |
+  // |   releases latch for second_owner  ==>        | lock (mutex)
+  // |                                               |   waits for first_owner to release mutex
+  // |                                               |   :
+  // | sleep_for (10ms)                              |   :
+  // |   ensures second_owner is waiting for mutex   |   :
+  // |                                               |   :
+  // | first_owner_resource.modify()                 |   :
+  // |   gives second_owner something to observe     |   :
+  // |                                               |   :
+  // | unlock (mutex)                                |   :
+  // |   allows second_owner to acquire mutex        |   acquires mutex
+  // |                                               |
+  // | lock (mutex)                                  | tests modification of first_owner_resource
+  // |    waits for second_owner to release mutex    |
+  // |    :                                          | sleep_for (10ms)
+  // |    :                                          |   ensures first_owner is waiting for mutex
+  // |    :                                          |
+  // |    :                                          | second_owner_resource.modify()
+  // |    :                                          |   gives first_owner something to observe
+  // |    :                                          |
+  // |    :                                          | return
+  // |    : acquire mutex                            |   unlocks mutex
+  // |                                               |
+  // | return                                        |
+  //
+  TYPED_TEST
+    ( MCSLockR
+    , Lock_on_SharedMutex_can_be_acquired_and_released_multiple_times
+    )
+  {
+    auto mutex {concurrency::SharedMutex<TypeParam>{}};
+
+    auto first_owner_resource {SharedResource{}};
+    auto second_owner_resource {SharedResource{}};
+
+    auto lock_is_acquired {std::latch {1}};
+
+    auto first_owner
+      { std::async
+        ( std::launch::async
+        , [&]
+          {
+            auto lock {std::unique_lock (mutex)};
+
+            lock_is_acquired.count_down();
+
+            std::this_thread::sleep_for (std::chrono::milliseconds {10});
+
+            first_owner_resource.modify();
+
+            lock.unlock();
+
+            // Ensures the second owner has acquired the lock.
+            // This is not necessary for FIFO.
+            //
+            std::this_thread::sleep_for (std::chrono::milliseconds {10});
+
+            // now the second owner can acquire the lock and observe
+            // the modification of first_owner_resource.
+            // After that the second owner modifies second_owner_resource,
+            // which is observed by the first owner after it reacquires
+            // the lock.
+            //
+            lock.lock();
+
+            return (  first_owner_resource.is_modified()
+                   && second_owner_resource.is_modified()
+                   );
+          }
+        )
+      };
+
+    auto second_owner
+      { std::async
+        ( std::launch::async
+        , [&]
+          {
+            lock_is_acquired.wait();
+
+            auto const lock {std::shared_lock (mutex)};
+
+            if (!first_owner_resource.is_modified())
+            {
+              return false;
+            }
+
+            std::this_thread::sleep_for (std::chrono::milliseconds {10});
+
+            second_owner_resource.modify();
+
+            return (  first_owner_resource.is_modified()
+                   && second_owner_resource.is_modified()
+                   );
+          }
+        )
+      };
+
+    ASSERT_TRUE (first_owner.get());
+    ASSERT_TRUE (second_owner.get());
+  }
+
+  TYPED_TEST (MCSLockR, deferred_shared_lock_excludes_unique_lock)
+  {
+    auto mutex {concurrency::SharedMutex<TypeParam>{}};
+
+    auto shared_resource {SharedResource{}};
+
+    auto lock_is_acquired {std::latch {1}};
+
+    auto writer
+      { std::async
+        ( std::launch::async
+        , [&]
+          {
+            auto lock {std::shared_lock (mutex, std::defer_lock)};
+            EXPECT_FALSE (lock.owns_lock());
+
+            lock.lock();
+            EXPECT_TRUE (lock.owns_lock());
+
+            lock_is_acquired.count_down();
+
+            std::this_thread::sleep_for (std::chrono::milliseconds {10});
+
+            shared_resource.modify();
+
+            return shared_resource.is_modified();
+          }
+        )
+      };
+
+    auto reader
+      { std::async
+        ( std::launch::async
+        , [&]
+          {
+            lock_is_acquired.wait();
+
+            auto const lock {std::unique_lock (mutex)};
+
+            return shared_resource.is_modified();
+          }
+        )
+      };
+
+    ASSERT_TRUE (writer.get());
+    ASSERT_TRUE (reader.get());
   }
 }
