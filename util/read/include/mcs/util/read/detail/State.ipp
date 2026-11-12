@@ -1,11 +1,13 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/format.h>
 #include <iterator>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/read/ParseError.hpp>
+#include <memory>
 #include <string>
+#include <string_view>
 
 namespace mcs::util::read
 {
@@ -96,5 +98,16 @@ namespace mcs::util::read
     auto make_state (std::basic_string<Char> const& s) noexcept
   {
     return make_state (s.c_str(), s.size());
+  }
+
+  template<typename Char>
+    auto make_state (std::basic_string_view<Char> input) noexcept
+  {
+    static constexpr auto empty {Char{}};
+
+    return make_state
+      ( input.empty() ? std::addressof (empty) : input.data()
+      , input.size()
+      );
   }
 }

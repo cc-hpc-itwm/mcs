@@ -1,8 +1,8 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
-#include <mcs/util/FMT/STD/filesystem/path.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <tuple>
 
 namespace fmt
@@ -29,11 +29,11 @@ namespace fmt
       ( context.out()
       , "trace::event::file::Read {}"
       , std::make_tuple
-        ( file_read._parameter_file_read
-        , file_read._segment_id
-        , file_read._offset
-        , file_read._path
-        , file_read._range
+        ( file_read.parameter_file_read
+        , file_read.segment_id
+        , file_read.offset
+        , mcs::util::FMT::STD::FILESYSTEM::Path {file_read.path}
+        , file_read.range
         )
       );
   }

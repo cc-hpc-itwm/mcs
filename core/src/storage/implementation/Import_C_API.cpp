@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <cstring>
@@ -13,6 +13,7 @@
 #include <mcs/serialization/STD/vector.hpp>
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/execute_and_die_on_exception.hpp>
 #include <memory>
@@ -46,8 +47,8 @@ namespace mcs::util
     ) const -> ::mcs_core_storage_memory_range
   {
     return ::mcs_core_storage_memory_range
-      { util::cast<::mcs_core_storage_memory_offset> (begin (range))
-      , util::cast<::mcs_core_storage_memory_size> (size (range))
+      { .begin = util::cast<::mcs_core_storage_memory_offset> (begin (range))
+      , .size = util::cast<::mcs_core_storage_memory_size> (size (range))
       };
   }
 }
@@ -107,8 +108,8 @@ namespace mcs::core::storage::implementation
     [[nodiscard]] auto make_parameter (Import_C_API::StorageParameter const& p)
     {
       return ::mcs_core_storage_parameter
-        { util::cast<::MCS_CORE_STORAGE_BYTE const*> (p.data())
-        , p.size()
+        { .data = util::cast<::MCS_CORE_STORAGE_BYTE const*> (p.data())
+        , .size = p.size()
         };
     }
   }
@@ -146,12 +147,12 @@ namespace mcs::core::storage::implementation
 {
   Import_C_API::Import_C_API (Parameter::Create create)
   try
-    : _storage {create._storage}
+    : _storage {create.storage}
     , _instance
       { new ::mcs_core_storage_instance
         { invoke_and_throw_on_error
           ( _storage.construct
-          , make_parameter (create._parameter_create)
+          , make_parameter (create.parameter_create)
           )
         }
       , InstanceDeleter {std::addressof (_storage)}
@@ -189,7 +190,7 @@ namespace mcs::core::storage::implementation
       ( invoke_and_throw_on_error
         ( _storage.size_max
         , *_instance
-        , make_parameter (parameter_size_max._parameter_size_max)
+        , make_parameter (parameter_size_max.parameter_size_max)
         ).value
       );
   }
@@ -210,7 +211,7 @@ namespace mcs::core::storage::implementation
       ( invoke_and_throw_on_error
         ( _storage.size_used
         , *_instance
-        , make_parameter (parameter_size_used._parameter_size_used)
+        , make_parameter (parameter_size_used.parameter_size_used)
         ).value
       );
   }
@@ -238,7 +239,7 @@ namespace mcs::core::storage::implementation
               return invoke_and_throw_on_error
                 ( _storage.segment_create
                 , *_instance
-                , make_parameter (parameter_segment_create._parameter_segment_create)
+                , make_parameter (parameter_segment_create.parameter_segment_create)
                 , util::cast<::mcs_core_storage_memory_size> (size)
                 , detail::channel (std::addressof (bad_alloc))
                 );
@@ -308,7 +309,7 @@ namespace mcs::core::storage::implementation
       ( invoke_and_throw_on_error
         ( _storage.segment_remove
         , *_instance
-        , make_parameter (parameter_segment_remove._parameter_segment_remove)
+        , make_parameter (parameter_segment_remove.parameter_segment_remove)
         , util::cast<::mcs_core_storage_segment_id> (segment_id)
         ).value
       );
@@ -345,12 +346,12 @@ namespace mcs::core::storage::implementation
       ( invoke_and_throw_on_error
         ( _storage.file_read
         , *_instance
-        , make_parameter (parameter_file_read._parameter_file_read)
+        , make_parameter (parameter_file_read.parameter_file_read)
         , util::cast<::mcs_core_storage_segment_id> (segment_id)
         , util::cast<::mcs_core_storage_memory_offset> (offset)
         , ::mcs_core_storage_parameter
-          { util::cast<::MCS_CORE_STORAGE_BYTE const*> (path.c_str())
-          , path.string().size()
+          { .data = util::cast<::MCS_CORE_STORAGE_BYTE const*> (path.c_str())
+          , .size = path.string().size()
           }
         , util::cast<::mcs_core_storage_memory_range> (range)
         ).value
@@ -388,12 +389,12 @@ namespace mcs::core::storage::implementation
       ( invoke_and_throw_on_error
         ( _storage.file_write
         , *_instance
-        , make_parameter (parameter_file_write._parameter_file_write)
+        , make_parameter (parameter_file_write.parameter_file_write)
         , util::cast<::mcs_core_storage_segment_id> (segment_id)
         , util::cast<::mcs_core_storage_memory_offset> (offset)
         , ::mcs_core_storage_parameter
-          { util::cast<::MCS_CORE_STORAGE_BYTE const*> (path.c_str())
-          , path.string().size()
+          { .data = util::cast<::MCS_CORE_STORAGE_BYTE const*> (path.c_str())
+          , .size = path.string().size()
           }
         , util::cast<::mcs_core_storage_memory_range> (range)
         ).value
@@ -444,7 +445,7 @@ namespace mcs::core::storage::implementation
     )
       : mcs::Error
         { fmt::format ( "storage::Import_C_API::Create ({})"
-                      , parameter._parameter_create
+                      , parameter.parameter_create
                       )
         }
       , _parameter {parameter}
@@ -533,7 +534,7 @@ namespace mcs::core::storage::implementation
             , parameter
             , segment_id
             , offset
-            , path
+            , util::FMT::STD::FILESYSTEM::Path {path}
             , range
             )
         }
@@ -561,7 +562,7 @@ namespace mcs::core::storage::implementation
             , parameter
             , segment_id
             , offset
-            , path
+            , util::FMT::STD::FILESYSTEM::Path {path}
             , range
             )
         }
@@ -603,7 +604,7 @@ namespace mcs::serialization
     , mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max const& value
     ) -> OArchive&
   {
-    save (oa, value._parameter_size_max);
+    save (oa, value.parameter_size_max);
 
     return oa;
   }
@@ -611,7 +612,7 @@ namespace mcs::serialization
     ( IArchive& ia
     ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max
   {
-    auto _parameter_size_max {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max::_parameter_size_max)> (ia)};
+    auto _parameter_size_max {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max::parameter_size_max)> (ia)};
 
     return mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max {_parameter_size_max};
   }
@@ -623,7 +624,7 @@ namespace mcs::serialization
     , mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used const& value
     ) -> OArchive&
   {
-    save (oa, value._parameter_size_used);
+    save (oa, value.parameter_size_used);
 
     return oa;
   }
@@ -631,7 +632,7 @@ namespace mcs::serialization
     ( IArchive& ia
     ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used
   {
-    auto _parameter_size_used {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used::_parameter_size_used)> (ia)};
+    auto _parameter_size_used {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used::parameter_size_used)> (ia)};
 
     return mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used {_parameter_size_used};
   }
@@ -644,7 +645,7 @@ namespace mcs::serialization
     , mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create const& value
     ) -> OArchive&
   {
-    save (oa, value._parameter_segment_create);
+    save (oa, value.parameter_segment_create);
 
     return oa;
   }
@@ -652,7 +653,7 @@ namespace mcs::serialization
     ( IArchive& ia
     ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create
   {
-    auto _parameter_segment_create {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create::_parameter_segment_create)> (ia)};
+    auto _parameter_segment_create {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create::parameter_segment_create)> (ia)};
 
     return mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create {_parameter_segment_create};
   }
@@ -664,7 +665,7 @@ namespace mcs::serialization
     , mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove const& value
     ) -> OArchive&
   {
-    save (oa, value._parameter_segment_remove);
+    save (oa, value.parameter_segment_remove);
 
     return oa;
   }
@@ -672,7 +673,7 @@ namespace mcs::serialization
     ( IArchive& ia
     ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove
   {
-    auto _parameter_segment_remove {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove::_parameter_segment_remove)> (ia)};
+    auto _parameter_segment_remove {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove::parameter_segment_remove)> (ia)};
 
     return mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove {_parameter_segment_remove};
   }
@@ -685,7 +686,7 @@ namespace mcs::serialization
     , mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description const& value
     ) -> OArchive&
   {
-    save (oa, value._parameter_chunk_description);
+    save (oa, value.parameter_chunk_description);
 
     return oa;
   }
@@ -693,7 +694,7 @@ namespace mcs::serialization
     ( IArchive& ia
     ) -> mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description
   {
-    auto _parameter_chunk_description {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description::_parameter_chunk_description)> (ia)};
+    auto _parameter_chunk_description {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description::parameter_chunk_description)> (ia)};
 
     return mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description {_parameter_chunk_description};
   }
@@ -706,7 +707,7 @@ namespace mcs::serialization
     , mcs::core::storage::implementation::Import_C_API::Parameter::File::Read const& value
     ) -> OArchive&
   {
-    save (oa, value._parameter_file_read);
+    save (oa, value.parameter_file_read);
 
     return oa;
   }
@@ -714,7 +715,7 @@ namespace mcs::serialization
     ( IArchive& ia
     ) -> mcs::core::storage::implementation::Import_C_API::Parameter::File::Read
   {
-    auto _parameter_file_read {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::File::Read::_parameter_file_read)> (ia)};
+    auto _parameter_file_read {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::File::Read::parameter_file_read)> (ia)};
 
     return mcs::core::storage::implementation::Import_C_API::Parameter::File::Read {_parameter_file_read};
   }
@@ -726,7 +727,7 @@ namespace mcs::serialization
     , mcs::core::storage::implementation::Import_C_API::Parameter::File::Write const& value
     ) -> OArchive&
   {
-    save (oa, value._parameter_file_write);
+    save (oa, value.parameter_file_write);
 
     return oa;
   }
@@ -734,7 +735,7 @@ namespace mcs::serialization
     ( IArchive& ia
     ) -> mcs::core::storage::implementation::Import_C_API::Parameter::File::Write
   {
-    auto _parameter_file_write {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::File::Write::_parameter_file_write)> (ia)};
+    auto _parameter_file_write {load<decltype (mcs::core::storage::implementation::Import_C_API::Parameter::File::Write::parameter_file_write)> (ia)};
 
     return mcs::core::storage::implementation::Import_C_API::Parameter::File::Write {_parameter_file_write};
   }

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -25,7 +25,7 @@ namespace fmt
       ( context.out()
       , "trace::event::size::Max {}"
       , std::make_tuple
-        ( size_max._parameter_size_max
+        ( size_max.parameter_size_max
         )
       );
   }

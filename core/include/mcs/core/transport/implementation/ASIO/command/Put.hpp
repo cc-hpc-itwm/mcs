@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -7,6 +7,8 @@
 #include <mcs/core/memory/Size.hpp>
 #include <mcs/core/transport/Address.hpp>
 #include <mcs/serialization/Concepts.hpp>
+#include <memory>
+#include <span>
 #include <variant>
 
 namespace mcs::core::transport::implementation::ASIO::command
@@ -14,13 +16,20 @@ namespace mcs::core::transport::implementation::ASIO::command
   struct Put
   {
     using Response = core::memory::Size;
-    using Bytes = std::span<std::byte const>;
+    struct Source
+    {
+      [[nodiscard]] virtual auto data
+        (
+        ) const -> std::span<std::byte const> = 0
+        ;
+      virtual ~Source() = default;
+    };
 
-    Put (core::transport::Address, Bytes);
+    Put (core::transport::Address, std::unique_ptr<Source>);
     Put (core::transport::Address, std::size_t);
 
     core::transport::Address destination;
-    std::variant<Bytes, std::size_t> bytes_or_size;
+    std::variant<std::unique_ptr<Source>, std::size_t> source_or_size;
   };
 }
 

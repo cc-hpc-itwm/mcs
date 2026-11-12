@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -19,7 +19,7 @@ namespace mcs::rpc::detail
     constexpr auto operator<=> (CommandIndex const&) const noexcept = default;
 
   private:
-    template<typename, typename, typename> friend struct fmt::formatter;
+    friend struct fmt::formatter<CommandIndex>;
 
     std::size_t _value {0};
   };

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -25,7 +25,7 @@ namespace mcs::core::storage::tracer
     {
       struct Create
       {
-        util::not_null<Events> _events;
+        util::not_null<Events> events;
       };
     };
 

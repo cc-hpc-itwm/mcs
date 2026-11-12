@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/execute_and_die_on_exception.hpp>
@@ -34,17 +34,17 @@ namespace mcs::core::storage::implementation
   template<typename Tracer, is_implementation Storage>
     requires (storage::trace::is_tracer<Tracer, Storage>)
     Trace<Tracer, Storage>::Trace (Parameter::Create parameter_create)
-      : _tracer {parameter_create._parameter_tracer_create}
+      : _tracer {parameter_create.parameter_tracer_create}
       , _storage
         { std::invoke
           ( [&]
             {
               trace<storage::trace::event::Create<Storage>>
-                ( parameter_create._parameter_storage_create
+                ( parameter_create.parameter_storage_create
                 );
 
               return new Storage
-                { parameter_create._parameter_storage_create
+                { parameter_create.parameter_storage_create
                 };
             }
           )

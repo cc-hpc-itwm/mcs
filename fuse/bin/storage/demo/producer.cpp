@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 // This file represents a legacy application that writes data to
@@ -6,7 +6,7 @@
 // I/O. The producer cannot be modified to use MCS data access methods
 // directly.
 //
-// Usage: file_producer <file> <size_in_bytes> [<chunk_size>]
+// Usage: file_producer --file FILE --size BYTES [--chunk-size BYTES]
 //
 // The producer writes data to the file in chunks. Each chunk contains
 // a pattern that allows verifying the data integrity later.
@@ -15,12 +15,15 @@
 #include <cstddef>
 #include <filesystem>
 #include <fmt/format.h>
-#include <mcs/util/FMT/STD/filesystem/path.hpp>
+#include <functional>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
+#include <mcs/util/arguments/View.hpp>
 #include <mcs/util/buffer/Bytes.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
 #include <mcs/util/fopen.hpp>
 #include <mcs/util/main.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/read/read.hpp>
-#include <mcs/util/read/uint.hpp>
 #include <mcs/util/syscall/fileno.hpp>
 #include <mcs/util/syscall/ftruncate.hpp>
 #include <mcs/util/syscall/pwrite.hpp>
@@ -29,27 +32,85 @@
 
 namespace
 {
-  auto mcs_fuse_bin_storage_demo_producer (mcs::util::Args args) -> int
+  namespace option
   {
-    if (args.size() < 3 || args.size() > 4)
+    using mcs::util::command_line::option::Parameter;
+
+    using Presence = Parameter::Presence;
+    constexpr auto chunk_size
+      { Parameter {"chunk-size", Presence::Optional{}}
+      };
+    constexpr auto file {Parameter {"file"}};
+    constexpr auto size {Parameter {"size"}};
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <PATH>\n"
+        "    Output file to create.\n"
+        "  --{2} <SIZE_IN_BYTES>\n"
+        "    Size of the output file.\n"
+        "Optional settings:\n"
+        "  --{3} <SIZE_IN_BYTES>\n"
+        "    Bytes per write (default: 4096).\n"
+      , args.at (0)
+      , option::file
+      , option::size
+      , option::chunk_size
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print ("{}", usage (args));
+  }
+
+  auto mcs_fuse_bin_storage_demo_producer
+    ( mcs::util::arguments::View args
+    ) -> int
+  {
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::file)
+        . add (option::size)
+        . add (option::chunk_size)
+        )
+      };
+    auto const file_path
+      { std::filesystem::path {options.at (option::file)}
+      };
+    auto const file_size
+      { mcs::util::read::read<std::size_t> (options.at (option::size))
+      };
+    auto const chunk_size
+      { std::invoke
+        ( [&]
+          {
+            if (auto const value {options.optional (option::chunk_size)})
+            {
+              return mcs::util::read::read<std::size_t> (*value);
+            }
+
+            return std::size_t {4 << 10};
+          }
+        )
+      };
+    if (chunk_size == 0)
     {
       throw std::invalid_argument
-        { fmt::format
-          ( "Usage: {} <file> <size_in_bytes> [<chunk_size>]\n"
-            "\n"
-            "Writes data with a reproducible pattern to <file>.\n"
-            "The pattern can be verified by a consumer application.\n"
-            "\n"
-            "  chunk_size  Write chunk size in bytes (default: 4096)\n"
-          , args[0]
-          )
+        { fmt::format ("--{0} must be positive", option::chunk_size)
         };
     }
 
-    auto const file_path {std::filesystem::path {args[1]}};
-    auto const file_size {mcs::util::read::read<std::size_t> (args[2])};
-
-    fmt::print ("Writing {} bytes to {}\n", file_size, file_path);
+    fmt::print
+      ( "Writing {} bytes to {}\n"
+      , file_size
+      , mcs::util::FMT::STD::FILESYSTEM::Path {file_path}
+      );
 
     auto const file {mcs::util::fopen (file_path, "wb")};
     auto const fd {mcs::util::syscall::fileno (file.get())};
@@ -59,11 +120,6 @@ namespace
     //
     mcs::util::syscall::ftruncate (fd, static_cast<off_t> (file_size));
 
-    auto const chunk_size
-      { args.size() > 3
-      ? mcs::util::read::read<std::size_t> (args[3])
-      : std::size_t {4 << 10}
-      };
     auto const buffer
       { mcs::util::buffer::Bytes {std::min (file_size, chunk_size)}
       };
@@ -101,7 +157,11 @@ namespace
       offset += bytes_to_write;
     }
 
-    fmt::print ("SUCCESS: Wrote {} bytes to {}.\n", file_size, file_path);
+    fmt::print
+      ( "SUCCESS: Wrote {} bytes to {}.\n"
+      , file_size
+      , mcs::util::FMT::STD::FILESYSTEM::Path {file_path}
+      );
 
     return EXIT_SUCCESS;
   }
@@ -109,5 +169,10 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, mcs_fuse_bin_storage_demo_producer);
+  return mcs::util::main
+    ( argc
+    , argv
+    , help
+    , mcs_fuse_bin_storage_demo_producer
+    );
 }

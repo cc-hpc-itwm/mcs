@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -7,6 +7,7 @@
 #include <mcs/share_service/command/Attach.hpp>
 #include <mcs/share_service/command/Create.hpp>
 #include <mcs/share_service/command/Remove.hpp>
+#include <mcs/util/not_null.hpp>
 #include <mcs/util/type/List.hpp>
 
 namespace mcs::share_service::provider
@@ -16,7 +17,11 @@ namespace mcs::share_service::provider
   template<is_supported_storage_implementation... StorageImplementations>
     struct Handler<util::type::List<StorageImplementations...>>
   {
-    Handler (core::Storages<util::type::List<StorageImplementations...>>&);
+    using Storages
+      = core::Storages<util::type::List<StorageImplementations...>>
+      ;
+
+    explicit Handler (util::not_null<Storages>);
 
     auto operator() (command::Create) -> command::Create::Response;
     auto operator() (command::Remove) -> command::Remove::Response;
@@ -28,7 +33,7 @@ namespace mcs::share_service::provider
       ;
 
   private:
-    core::Storages<util::type::List<StorageImplementations...>>& _storages;
+    util::not_null<Storages> _storages;
   };
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -21,6 +21,12 @@ namespace mcs::core::control::command::storage::size
     mcs::core::storage::ID storage_id;
     mcs::core::storage::Parameter storage_parameter;
   };
+
+  [[nodiscard]] auto make_max
+    ( mcs::core::storage::ID
+    , mcs::core::storage::Parameter
+    ) -> Max
+    ;
 }
 
 namespace fmt
@@ -34,8 +40,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::control::command::storage::size::Max const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

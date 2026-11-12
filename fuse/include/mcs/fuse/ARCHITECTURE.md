@@ -27,7 +27,7 @@ Symbolic links are second names to (target) directory entries. They are implemen
 
 ### mcs/fuse/state/inode/File
 
-Files are inodes that contain data. They have a size and allow to write and to read data. Also interfaces to flock, fallocate and ioctl are provided by files.
+Files are inodes that contain data. They have a size and allow to write and to read data. File-specific interfaces include ioctl and other file operations supported by the current implementation.
 
 Files store the data using an implementation of the concept
 
@@ -36,3 +36,10 @@ Files store the data using an implementation of the concept
 File content has access to a state that is shared across the content of all the files in the system. Besides some basic interaction with the libfuse (the determine size and free space), the content provides size and method to read and write data. The content can safely access the shared content state, the access control and avoidance of conflicting access is managed by mcs/fuse/State and proven by access tokens.
 
 Memory management happens in the content and there are example implementations based on std::vector, based on realloc and based on a sole mcs::core::storage::implementation. The MCS fuse layer turns into a distributed file system if the content implementation uses storages from multiple distributed machines.
+
+The public `mcs::fuse::content::selection::select` operation selects the
+`Vector`, `Realloc`, or `Storage` content family from command-line arguments.
+Callers provide the core storage implementations accepted by the `Storage`
+family. The selector delegates storage parameter parsing to
+`mcs::core::storage::selection::select` and returns remaining
+application-specific arguments unchanged to a typed callback.

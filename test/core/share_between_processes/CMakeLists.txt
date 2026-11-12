@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 add_executable (mcs_test_core_share_between_processes_reverse_ints
@@ -8,6 +8,7 @@ target_link_libraries (mcs_test_core_share_between_processes_reverse_ints
   PRIVATE mcs_config
   PRIVATE mcs_core
   PRIVATE mcs_util
+  PRIVATE mcs_util_command_line
   PRIVATE mcs_util_read
 )
 add_executable (mcs_test_core_share_between_processes_test

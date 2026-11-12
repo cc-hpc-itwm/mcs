@@ -11,6 +11,7 @@ target_link_libraries (mcs_fuse
   PUBLIC mcs_error
   PUBLIC mcs_serialization
   PUBLIC mcs_util
+  PUBLIC mcs_util_command_line
   PUBLIC mcs_util_FMT
   PUBLIC mcs_util_concurrency
   PUBLIC mcs_util_syscall

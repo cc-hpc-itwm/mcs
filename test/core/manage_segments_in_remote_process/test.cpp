@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include "SupportedStorageImplementations.hpp"
@@ -28,6 +28,7 @@
 #include <mcs/testing/random/one_of.hpp>
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/read/read.hpp>
 #include <memory>
 #include <unordered_map>
@@ -203,7 +204,7 @@ namespace mcs::core
               , storage::make_parameter
                   (testing_storage.get().parameter_segment_create())
               , size
-              , segment_id_file
+              , util::FMT::STD::FILESYSTEM::Path {segment_id_file}
               ).c_str()
             )
           );

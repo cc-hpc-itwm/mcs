@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -120,12 +120,6 @@ namespace mcs::fuse
            //
            { content.resize (write_access, size)
            } -> std::convertible_to<content::result::Resize>
-           ;
-
-           // See man 2 fallocate
-           //
-           { content.fallocate (write_access, mode, offset, length)
-           } -> std::convertible_to<int>
            ;
 
            // Called immediately before destruction

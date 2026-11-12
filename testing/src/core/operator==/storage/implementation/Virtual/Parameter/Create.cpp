@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/testing/core/operator==/storage/MaxSize.hpp>
@@ -16,8 +16,8 @@ namespace mcs::core::storage::implementation
       { [] (auto const& x)
         {
           return std::make_tuple
-            ( x._shared_object
-            , x._parameter_create
+            ( x.shared_object
+            , x.parameter_create
             );
         }
       };

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -10,9 +10,21 @@
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
 #include <mutex>
+#include <utility>
 
 namespace mcs::block_device::meta_data
 {
+  auto Blocks::make_location
+    ( util::ASIO::AnyConnectable provider
+    , core::transport::Address address
+    ) -> Location
+  {
+    return Location
+      { .provider = std::move (provider)
+      , .address = std::move (address)
+      };
+  }
+
   Blocks::Error::BlockNotInAnyStorage::BlockNotInAnyStorage (block::ID block_id)
     : mcs::Error
       { fmt::format
@@ -54,7 +66,7 @@ namespace mcs::block_device::meta_data
   auto Blocks::add (Storage storage) -> AddResult
   {
     auto const number_of_blocks
-      {block::make_count (size (storage._range) / _block_size)};
+      {block::make_count (size (storage.range) / _block_size)};
 
     if (! (number_of_blocks > block::make_count (0)))
     {
@@ -79,17 +91,17 @@ namespace mcs::block_device::meta_data
               ( block::make_range (_next_block_id, number_of_blocks)
               , storage::with_range
                 ( storage
-                , begin (storage._range)
+                , begin (storage.range)
                 , used_offset_end
                 )
               ).first->range
           }
-      , .unused = used_offset_end < end (storage._range)
+      , .unused = used_offset_end < end (storage.range)
             ? std::optional<Storage>
               { storage::with_range
                 ( storage
                 , used_offset_end
-                , end (storage._range)
+                , end (storage.range)
                 )
               }
             : std::optional<Storage>{}
@@ -136,7 +148,7 @@ namespace mcs::block_device::meta_data
              )
           , storage::with_range
              ( storage->storage
-             , begin (storage->storage._range)
+             , begin (storage->storage.range)
              , block_offset (storage, begin (*intersection))
              )
           );
@@ -154,7 +166,7 @@ namespace mcs::block_device::meta_data
           , storage::with_range
               ( storage->storage
               , block_offset (storage, end (*intersection))
-              , end (storage->storage._range)
+              , end (storage->storage.range)
               )
           );
       }
@@ -199,15 +211,15 @@ namespace mcs::block_device::meta_data
        && block_id >= begin (storage->range)
        )
     {
-      return Location
-        { storage->storage._provider_connectable
-        , core::transport::Address
-          { storage->storage._storage_id
-          , storage->storage._storage_parameter_chunk_description
-          , storage->storage._segment_id
+      return make_location
+        ( storage->storage.provider_connectable
+        , core::transport::make_address
+          ( storage->storage.storage_id
+          , storage->storage.storage_parameter_chunk_description
+          , storage->storage.segment_id
           , block_offset (storage, block_id)
-          }
-        };
+          )
+        );
     }
 
     throw Error::BlockNotInAnyStorage {block_id};
@@ -218,7 +230,7 @@ namespace mcs::block_device::meta_data
     , block::Count b
     ) const noexcept -> core::memory::Offset
   {
-    return begin (storage._range) + b * _block_size;
+    return begin (storage.range) + b * _block_size;
   }
 
   auto Blocks::block_offset
@@ -249,7 +261,10 @@ namespace mcs::serialization
     auto blocks {load<decltype (mcs::block_device::meta_data::Blocks::AddResult::blocks)> (ia)};
     auto unused {load<decltype (mcs::block_device::meta_data::Blocks::AddResult::unused)> (ia)};
 
-    return mcs::block_device::meta_data::Blocks::AddResult {blocks, unused};
+    return mcs::block_device::meta_data::Blocks::AddResult
+      { .blocks = blocks
+      , .unused = unused
+      };
   }
 }
 
@@ -293,6 +308,9 @@ namespace mcs::serialization
     auto provider {load<decltype (mcs::block_device::meta_data::Blocks::Location::provider)> (ia)};
     auto address {load<decltype (mcs::block_device::meta_data::Blocks::Location::address)> (ia)};
 
-    return mcs::block_device::meta_data::Blocks::Location {provider, address};
+    return mcs::block_device::meta_data::Blocks::make_location
+      ( std::move (provider)
+      , std::move (address)
+      );
   }
 }

@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 function (mcs_test_core_storage_implementation name)
@@ -34,7 +34,7 @@ add_dependencies (mcs_test_core_storage_implementation_Virtual
   mcs_test_core_storage_implementation_chunky
 )
 mcs_test_core_storage_implementation (more_segments_than_max_open_files_is_possible
-  PRIVATE mcs_util_syscall
+  PRIVATE mcs_testing_syscall
 )
 
 add_subdirectory (Files)

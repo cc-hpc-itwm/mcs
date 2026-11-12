@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/serialization/load.hpp>
@@ -31,11 +31,11 @@ namespace mcs::serialization
     auto size {load<decltype (mcs::share_service::Chunk::size)> (ia)};
 
     return mcs::share_service::Chunk
-      { provider_connectable
-      , storage_id
-      , storage_implementation_id
-      , segment_id
-      , size
+      { .provider_connectable = provider_connectable
+      , .storage_id = storage_id
+      , .storage_implementation_id = storage_implementation_id
+      , .segment_id = segment_id
+      , .size = size
       };
   }
 }

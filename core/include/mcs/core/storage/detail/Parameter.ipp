@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -6,8 +6,8 @@
 #include <mcs/serialization/load_from.hpp>
 #include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/STD/vector.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/read/prefix.hpp>
-#include <mcs/util/read/uint.hpp>
 #include <tuple>
 #include <utility>
 
@@ -34,17 +34,17 @@ namespace mcs::core::storage
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::Parameter>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::Parameter>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::Parameter>::format
       ( mcs::core::storage::Parameter const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
-    return fmt::format_to (ctx.out(), "{}{}", "Parameter ", value._blob);
+    return fmt::format_to (context.out(), "{}{}", "Parameter ", value._blob);
   }
 }
 

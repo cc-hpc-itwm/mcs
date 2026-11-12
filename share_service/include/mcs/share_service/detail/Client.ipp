@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/rpc/Client.hpp>
@@ -31,10 +31,7 @@ namespace mcs::share_service
   {
     auto const [storage_id, storage_implementation_id, segment_id]
       { Base::operator()
-          ( command::Create
-            { size
-            , parameters
-            }
+          ( command::make_create (size, std::move (parameters))
           )
       };
 
@@ -78,10 +75,7 @@ namespace mcs::share_service
         ) const -> void
   {
     return Base::operator()
-      ( command::Remove
-        { chunk
-        , parameters
-        }
+      ( command::make_remove (std::move (chunk), std::move (parameters))
       );
   }
 }

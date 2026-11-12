@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/signal_set.hpp>
@@ -27,11 +27,15 @@
 #include <mcs/util/ASIO/Connectable.hpp>
 #include <mcs/util/ASIO/Endpoint.hpp>
 #include <mcs/util/ASIO/is_protocol.hpp>
+#include <mcs/util/FMT/print_noexcept.hpp>
 #include <mcs/util/TemporaryDirectory.hpp>
 #include <mcs/util/TemporaryFile.hpp>
-#include <mcs/util/main.hpp>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
+#include <mcs/util/daemon.hpp>
+#include <mcs/util/daemon/option.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/read/read.hpp>
-#include <mcs/util/read/uint.hpp>
 #include <mcs/util/syscall/getpid.hpp>
 #include <mcs/util/type/List.hpp>
 #include <memory>
@@ -41,6 +45,59 @@
 
 namespace
 {
+  namespace option
+  {
+    using mcs::util::command_line::option::Parameter;
+
+    constexpr auto metadata_provider_path
+      { Parameter {"metadata-provider-path"}
+      };
+    constexpr auto number_of_threads {Parameter {"number-of-threads"}};
+    constexpr auto size {Parameter {"size"}};
+    constexpr auto storage {Parameter {"storage"}};
+    constexpr auto storage_endpoint {Parameter {"storage-endpoint"}};
+    constexpr auto storage_provider_path
+      { Parameter {"storage-provider-path"}
+      };
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <PATH>\n"
+        "    Directory containing metadata-provider information.\n"
+        "  --{2} <ENDPOINT>\n"
+        "    Storage-transport listening endpoint.\n"
+        "  --{3} <PATH>\n"
+        "    Directory for publishing storage-provider information.\n"
+        "  --{4} <COUNT>\n"
+        "    Number of transport I/O threads.\n"
+        "  --{5} <SIZE_IN_BYTES>\n"
+        "    Size of the storage segment.\n"
+        "  --{6} <STORAGE_SPEC>\n"
+        "    Files, Heap or SHMEM backend with creation parameters.\n"
+      , args.at (0)
+      , option::metadata_provider_path
+      , option::storage_endpoint
+      , option::storage_provider_path
+      , option::number_of_threads
+      , option::size
+      , option::storage
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print
+      ( "{0}\nOptional settings:\n"
+        "  {1}  Run in foreground (default: background)\n"
+      , usage (args)
+      , mcs::util::daemon::option::foreground
+      );
+  }
+
   using SupportedStorageImplementations = mcs::util::type::List
     < mcs::core::storage::implementation::Files
     , mcs::core::storage::implementation::Heap
@@ -58,24 +115,32 @@ namespace
     using type = Implementation::Parameter::Create;
   };
 
-  auto storage_provider_main (mcs::util::Args args) -> int
+  auto storage_provider_main
+    ( mcs::util::arguments::View args
+    , mcs::util::Daemon& daemon
+    ) -> int
   {
-    if (args.size() != 7)
-    {
-      throw std::invalid_argument
-        { fmt::format
-            ( "usage: {} meta_data_provider_path storage_endpoint storage_provider_path number_of_threads size STORAGE"
-            , args[0]
-            )
-         };
-    }
-
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::metadata_provider_path)
+        . add (option::storage_endpoint)
+        . add (option::storage_provider_path)
+        . add (option::number_of_threads)
+        . add (option::size)
+        . add (option::storage)
+        )
+      };
     auto storages {mcs::core::Storages<SupportedStorageImplementations>{}};
 
-    auto const size {mcs::util::read::read<mcs::core::memory::Size> (args[5])};
+    auto const size
+      { mcs::util::read::read<mcs::core::memory::Size>
+          ( options.at (option::size)
+          )
+      };
 
     return SupportedStorageImplementations::template parse_id_and_run<Create>
-      ( args[6]
+      ( options.at (option::storage)
       , [&]<is_supported_storage_implementation StorageImplementation>
           (typename StorageImplementation::Parameter::Create create)
         {
@@ -93,7 +158,9 @@ namespace
               )
             };
 
-    auto const meta_data_provider_path {std::filesystem::path (args[1])};
+    auto const meta_data_provider_path
+      { std::filesystem::path {options.at (option::metadata_provider_path)}
+      };
     auto const meta_data_provider_connectable
       { mcs::util::read::from_file<mcs::util::ASIO::AnyConnectable>
           (meta_data_provider_path / "PROVIDER")
@@ -102,7 +169,10 @@ namespace
     auto io_context_transport_provider
       { mcs::rpc::ScopedRunningIOContext
         { mcs::rpc::ScopedRunningIOContext::NumberOfThreads
-            {mcs::util::read::read<unsigned int> (args[4])}
+            { mcs::util::read::read<unsigned int>
+                ( options.at (option::number_of_threads)
+                )
+            }
         }
       };
     auto io_context_meta_data
@@ -112,7 +182,9 @@ namespace
       };
 
     return mcs::util::ASIO::run
-      ( mcs::util::read::read<mcs::util::ASIO::Endpoint> (args[2])
+      ( mcs::util::read::read<mcs::util::ASIO::Endpoint>
+          ( options.at (option::storage_endpoint)
+          )
       , [&]<mcs::util::ASIO::is_protocol StorageProtocol>
           (typename StorageProtocol::endpoint storage_endpoint)
         {
@@ -132,8 +204,8 @@ namespace
             };
 
           auto const block_storage
-            { mcs::block_device::Storage
-              { transport_provider.connection_information()
+            { mcs::block_device::make_storage
+              ( transport_provider.connection_information()
               , storage->id()
               , mcs::core::storage::make_parameter
                   ( typename StorageImplementation
@@ -142,7 +214,7 @@ namespace
               , segment->id()
               , mcs::core::memory::make_range
                   (mcs::core::memory::make_offset (0), size)
-              }
+              )
             };
 
           return mcs::util::ASIO::run
@@ -168,17 +240,28 @@ namespace
                                      }
                   };
                 signals.async_wait
-                  ( [&] (auto, auto)
+                  ( [&] (auto, auto) noexcept
                     {
-                      if (add_result.blocks.has_value())
+                      try
                       {
-                        auto const remove_result
-                          {meta_data_client.remove (*add_result.blocks)};
+                        if (add_result.blocks.has_value())
+                        {
+                          auto const remove_result
+                            {meta_data_client.remove (*add_result.blocks)};
 
-                        fmt::print ("reclaimed {}\n", remove_result.unused);
+                          fmt::print ("reclaimed {}\n", remove_result.unused);
+                        }
+
+                        io_context_transport_provider.stop();
                       }
-
-                      io_context_transport_provider.stop();
+                      catch (...)
+                      {
+                        mcs::util::FMT::print_noexcept
+                          ( stderr
+                          , "ERROR when removing blocks: {}\n"
+                          , std::current_exception()
+                          );
+                      }
                     }
                   );
 
@@ -192,7 +275,10 @@ namespace
                 }
 
                 auto const temporary_directory
-                  {mcs::util::TemporaryDirectory {args[3]}};
+                  { mcs::util::TemporaryDirectory
+                    { options.at (option::storage_provider_path)
+                    }
+                  };
 
                 auto const pid_information
                   { mcs::util::TemporaryFile
@@ -202,11 +288,9 @@ namespace
                     }
                   };
 
-                // run "for ever"
-                io_context_transport_provider.join();
+                daemon.ready();
 
-                // \todo daemonize and proper return once the connection
-                // information has been written
+                io_context_transport_provider.join();
 
                 return EXIT_SUCCESS;
               }
@@ -220,5 +304,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, storage_provider_main);
+  return mcs::util::daemonize (argc, argv, help, storage_provider_main);
 }

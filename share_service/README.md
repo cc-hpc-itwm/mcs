@@ -35,31 +35,33 @@ export MCS_SHARE_SERVICE_PROVIDER_PATH=$(mktemp -d)/PROVIDER
 
 Providers can use either `ip::tcp` or `local::stream_protocol` for communication. They use a number of threads to handle requests from multiple clients. Note that providers with a single thread can still serve multiple clients in parallel using cooperative multi-tasking. Using more than one thread is only necessary when the number of concurrent clients is huge.
 
+The provider daemonizes by default and returns after publishing `PID` and `PROVIDER` in the provider path. Add `--mcs-daemon-foreground` anywhere in the command line to run it in the foreground. Successful background startup redirects the standard streams to `/dev/null`.
+
 EXAMPLE: Start a provider that communicates via `ip::tcp` and let the kernel assign a port:
 
 ```
-${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_provider                 \
-  'ip::tcp()'                                                         \
-  ${MCS_SHARE_SERVICE_PROVIDER_PATH:?}                                \
-  'ScopedRunningIOContext::NumberOfThreads 1'
+${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_provider                     \
+  --endpoint 'ip::tcp()'                                                  \
+  --share-service-path ${MCS_SHARE_SERVICE_PROVIDER_PATH:?}               \
+  --number-of-threads 'ScopedIOContext::NumberOfThreads (1)'
 ```
 
 EXAMPLE: Start a provider that communicates via `ip::tcp` on port `8765`:
 
 ```
-${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_provider                 \
-  'ip::tcp ("127.0.0.1", 8765)'                                       \
-  ${MCS_SHARE_SERVICE_PROVIDER_PATH:?}                                \
-  'ScopedRunningIOContext::NumberOfThreads 1'
+${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_provider                     \
+  --endpoint 'ip::tcp ("127.0.0.1", 8765)'                                \
+  --share-service-path ${MCS_SHARE_SERVICE_PROVIDER_PATH:?}               \
+  --number-of-threads 'ScopedIOContext::NumberOfThreads (1)'
 ```
 
 EXAMPLE: Start a provider that communicates via `local::stream_protocol` with the socket name `/tmp/MCS_SHARE_SERVICE`:
 
 ```
-${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_provider                 \
-  'local::stream_protocol ("/tmp/MCS_SHARE_SERVICE")'                 \
-  ${MCS_SHARE_SERVICE_PROVIDER_PATH:?}                                \
-  'ScopedRunningIOContext::NumberOfThreads 1'
+${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_provider                     \
+  --endpoint 'local::stream_protocol ("/tmp/MCS_SHARE_SERVICE")'          \
+  --share-service-path ${MCS_SHARE_SERVICE_PROVIDER_PATH:?}               \
+  --number-of-threads 'ScopedIOContext::NumberOfThreads (1)'
 ```
 
 2. Create a chunk:
@@ -70,10 +72,10 @@ Chunks of certain size can be created either in shared memory or in a file. Clie
 EXAMPLE: Create a chunk of size `32 MiB` in shared memory, using the prefix `share_service_chunk` and store it in `chunk`:
 
 ```
-${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_create                   \
-  ${MCS_SHARE_SERVICE_PROVIDER_PATH:?}                                \
-  $((32*2**20))                                                       \
-  'SHMEM (Prefix "share_service_chunk", Unlimited)'                   \
+${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_create                       \
+  --share-service-path ${MCS_SHARE_SERVICE_PROVIDER_PATH:?}               \
+  --size $((32*2**20))                                                    \
+  --storage 'SHMEM (Prefix "share_service_chunk", Unlimited)'             \
   > chunk
 ```
 
@@ -97,10 +99,10 @@ EXAMPLE: Create a chunk of size `32 MiB` in a file in the folder `/tmp/share_ser
 
 ```
 mkdir -p /tmp/share_service_storage
-${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_client                   \
-  ${MCS_SHARE_SERVICE_PROVIDER_PATH:?}                                \
-  $((32*2**20))                                                       \
-  'Files (Prefix "/tmp/share_service_storage", Unlimited'             \
+${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_create                       \
+  --share-service-path ${MCS_SHARE_SERVICE_PROVIDER_PATH:?}               \
+  --size $((32*2**20))                                                    \
+  --storage 'Files (Prefix "/tmp/share_service_storage", Unlimited)'      \
   > chunk
 ```
 
@@ -126,7 +128,7 @@ sg_0
 To interact with the content of the chunk, the provider path is no longer required as the chunk is self contained. Given there is some data in the file `IN` and a chunk information has been stored in the file `chunk`, the data can be stored in the chunk using
 
 ```
-cat IN | ${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_write "$(cat chunk)"
+cat IN | ${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_write --chunk "$(cat chunk)"
 ```
 
 4. Retrieve data from a chunk:
@@ -135,7 +137,7 @@ cat IN | ${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_write "$(cat chunk)"
 The `cat` tool retrieves the data stored in a chunk and outputs it on the standard output channel:
 
 ```
-${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_cat "$(cat chunk)" > OUT
+${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_cat --chunk "$(cat chunk)" > OUT
 ```
 
 Check that the data has not changed
@@ -148,5 +150,5 @@ diff IN OUT || echo "FAILURE, data differs."
 ------------------
 
 ```
-${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_remove "$(cat chunk)"
+${MCS_INSTALL_DIR}/bin/mcs_share_service_bin_remove --chunk "$(cat chunk)"
 ```

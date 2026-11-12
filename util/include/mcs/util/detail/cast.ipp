@@ -1,9 +1,8 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/format.h>
 #include <limits>
-#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -160,6 +159,38 @@ namespace mcs::util
 
 namespace mcs::util
 {
+  template<std::unsigned_integral To, std::unsigned_integral From>
+    struct Cast<To, From>
+  {
+    constexpr auto operator() (From const& from) const -> To
+    {
+      if constexpr (std::is_same_v<To, From>)
+      {
+        return from;
+      }
+
+      if constexpr (sizeof (To) >= sizeof (From))
+      {
+        return static_cast<To> (from);
+      }
+
+      if (std::cmp_greater (from, std::numeric_limits<To>::max()))
+      {
+        throw CastOutOfRange
+          {fmt::format ( "cast unsigned to unsigned: {} > {}"
+                       , from
+                       , std::numeric_limits<To>::max()
+                       )
+          };
+      }
+
+      return static_cast<To> (from);
+    }
+  };
+}
+
+namespace mcs::util
+{
   template<std::unsigned_integral To, std::signed_integral From>
     struct Cast<To, From>
   {
@@ -167,7 +198,7 @@ namespace mcs::util
     {
       if (std::cmp_greater (from, std::numeric_limits<To>::max()))
       {
-        throw std::invalid_argument
+        throw CastOutOfRange
           {fmt::format ( "cast signed to unsigned: {} > {}"
                        , from
                        , std::numeric_limits<To>::max()
@@ -177,7 +208,7 @@ namespace mcs::util
 
       if (std::cmp_less (from, 0))
       {
-        throw std::invalid_argument
+        throw CastOutOfRange
           {fmt::format ("cast signed to unsigned: {} < 0", from)};
       }
 
@@ -195,7 +226,7 @@ namespace mcs::util
     {
       if (std::cmp_greater (from, std::numeric_limits<To>::max()))
       {
-        throw std::invalid_argument
+        throw CastOutOfRange
           {fmt::format ( "cast unsigned to signed: {} > {}"
                        , from
                        , std::numeric_limits<To>::max()
@@ -225,12 +256,22 @@ namespace mcs::util
         return static_cast<To> (from);
       }
 
-      if (std::cmp_greater (from, std::numeric_limits<To>::max()))
+      if (from > static_cast<From> (std::numeric_limits<To>::max()))
       {
-        throw std::invalid_argument
+        throw CastOutOfRange
           {fmt::format ( "cast signed to signed: {} > {}"
                        , from
                        , std::numeric_limits<To>::max()
+                       )
+          };
+      }
+
+      if (from < static_cast<From> (std::numeric_limits<To>::min()))
+      {
+        throw CastOutOfRange
+          {fmt::format ( "cast signed to signed: {} < {}"
+                       , from
+                       , std::numeric_limits<To>::min()
                        )
           };
       }

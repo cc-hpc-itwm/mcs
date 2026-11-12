@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/format.h>
@@ -20,29 +20,29 @@ namespace mcs::util
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::util::string>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::util::string>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::util::string>::format
       ( mcs::util::string const& str
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
-    fmt::format_to (ctx.out(), "\"");
+    fmt::format_to (context.out(), "\"");
 
     for (auto c : static_cast<std::string> (str))
     {
       if (c == '"')
       {
-        fmt::format_to (ctx.out(), "{}", c);
+        fmt::format_to (context.out(), "{}", c);
       }
 
-      fmt::format_to (ctx.out(), "{}", c);
+      fmt::format_to (context.out(), "{}", c);
     }
 
-    return fmt::format_to (ctx.out(), "\"");
+    return fmt::format_to (context.out(), "\"");
   }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -112,13 +112,20 @@ namespace mcs::block_device::meta_data
       util::ASIO::AnyConnectable provider;
       core::transport::Address address;
     };
+
+    [[nodiscard]] static auto make_location
+      ( util::ASIO::AnyConnectable
+      , core::transport::Address
+      ) -> Location
+      ;
+
     [[nodiscard]] auto location (block::ID) const -> Location;
 
     struct Error
     {
       struct BlockNotInAnyStorage : public mcs::Error
       {
-        constexpr auto block_id() const noexcept;
+        [[nodiscard]] constexpr auto block_id() const noexcept;
 
         ~BlockNotInAnyStorage() override;
         BlockNotInAnyStorage (BlockNotInAnyStorage const&) = default;

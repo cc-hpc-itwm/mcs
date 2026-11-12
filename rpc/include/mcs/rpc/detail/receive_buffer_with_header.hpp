@@ -1,17 +1,17 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
 
 #include <asio/awaitable.hpp>
-#include <mcs/rpc/detail/Buffer.hpp>
-#include <tuple>
+#include <mcs/rpc/detail/ReceivedFrame.hpp>
+#include <memory>
 
 namespace mcs::rpc::detail
 {
   template<typename Header, typename Socket>
-    auto receive_buffer_with_header (Socket&)
-      -> asio::awaitable<std::tuple<Header, Buffer>>
+    auto receive_buffer_with_header (std::shared_ptr<Socket>)
+      -> asio::awaitable<ReceivedFrame<Header>>
     ;
 }
 

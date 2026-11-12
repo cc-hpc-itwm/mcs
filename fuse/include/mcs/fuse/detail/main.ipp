@@ -1,30 +1,42 @@
 // Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
+#include <algorithm>
 #include <cstdlib>
 #include <fmt/base.h>
 #include <mcs/fuse/Session.hpp>
 #include <mcs/fuse/detail/managed_object.hpp>
 #include <mcs/fuse/fuse/low_level.hpp>
 #include <memory>
+#include <new>
+#include <utility>
 
 namespace mcs::fuse
 {
-  template<is_content Content, typename PrintUsage>
-    auto main ( PrintUsage print_usage
-              , int argc
-              , char** argv
-              , typename Content::State content_state
-              ) -> int
+  template<is_content Content, typename PrintUsage, typename Ready>
+    auto main
+      ( PrintUsage print_usage
+      , util::arguments::View arguments
+      , typename Content::State content_state
+      , Ready ready
+      ) -> int
   {
     auto const args
       { detail::managed_object<::fuse_args>
         ( ::fuse_opt_free_args
-        , argc
-        , argv
-        , 0
         )
       };
+
+    std::ranges::for_each
+      ( arguments
+      , [&args] (char const* argument)
+        {
+          if (::fuse_opt_add_arg (args.get(), argument) != 0)
+          {
+            throw std::bad_alloc{};
+          }
+        }
+      );
 
     auto const options
       { detail::managed_object<::fuse_cmdline_opts>
@@ -65,11 +77,31 @@ namespace mcs::fuse
       return EXIT_FAILURE;
     }
 
-    return Session<Content>
-      { args.get()
-      , std::addressof (content_state)
-      , session::Options {options.get()}
-      }.result().get()
-      ;
+    auto filesystem_session
+      { Session<Content>
+        { args.get()
+        , std::addressof (content_state)
+        , session::Options {options.get()}
+        }
+      };
+    ready();
+    return filesystem_session.result().get();
+  }
+
+  template<is_content Content, typename PrintUsage>
+    auto main
+      ( PrintUsage print_usage
+      , util::arguments::View arguments
+      , typename Content::State content_state
+      ) -> int
+  {
+    return main<Content>
+      ( std::move (print_usage)
+      , arguments
+      , std::move (content_state)
+      , []() noexcept
+        {
+        }
+      );
   }
 }

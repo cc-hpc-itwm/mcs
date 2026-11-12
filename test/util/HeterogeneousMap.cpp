@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -298,18 +298,18 @@ namespace mcs::util
   {
     struct A
     {
-      int _value;
+      int value;
       [[nodiscard]] auto f() const noexcept -> int
       {
-        return _value;
+        return value;
       }
     };
     struct B
     {
-      int _value;
+      int value;
       [[nodiscard]] auto f() const noexcept -> int
       {
-        return _value;
+        return value;
       }
     };
 
@@ -356,18 +356,18 @@ namespace mcs::util
   {
     struct A
     {
-      int _value;
+      int value;
       [[nodiscard]] auto f() const noexcept -> int
       {
-        return _value;
+        return value;
       }
     };
     struct B
     {
-      int _value;
+      int value;
       [[nodiscard]] auto f() const noexcept -> int
       {
-        return _value;
+        return value;
       }
     };
 
@@ -392,7 +392,7 @@ namespace mcs::util
       , [&] (auto const& x)
         {
           ASSERT_EQ (typeid (x), typeid (A));
-          ASSERT_EQ (x._value, va);
+          ASSERT_EQ (x.value, va);
         }
       );
     ab_map.visit
@@ -400,7 +400,7 @@ namespace mcs::util
       , [&] (auto const& x)
         {
           ASSERT_EQ (typeid (x), typeid (B));
-          ASSERT_EQ (x._value, vb);
+          ASSERT_EQ (x.value, vb);
         }
       );
   }

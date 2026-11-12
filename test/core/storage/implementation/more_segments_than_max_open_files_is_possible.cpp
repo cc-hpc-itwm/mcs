@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Fraunhofer ITWM
+// Copyright (C) 2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -19,7 +19,12 @@
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/random_device.hpp>
 #include <mcs/testing/random/value/integral.hpp>
-#include <mcs/util/syscall/getrlimit.hpp>
+#include <mcs/testing/syscall/getrlimit.hpp>
+#include <mcs/testing/syscall/setrlimit.hpp>
+#include <mcs/util/cast.hpp>
+#include <mcs/util/read/State.hpp>
+#include <mcs/util/read/integer.hpp>
+#include <mcs/util/read_file.hpp>
 #include <mcs/util/type/List.hpp>
 #include <memory>
 #include <numeric>
@@ -56,15 +61,43 @@ namespace mcs::core
       { std::invoke
         ( []
           {
-            try
-            {
-              return util::syscall::getrlimit (RLIMIT_NOFILE).rlim_cur;
-            }
-            catch (...)
-            {
-              std::throw_with_nested
-                (std::runtime_error {"Could not determine max_open_file."});
-            }
+            auto const max_map_count
+              { std::invoke
+                ( []
+                  {
+                    auto const content
+                      { util::read_file ("/proc/sys/vm/max_map_count")
+                      };
+                    auto state {util::read::make_state (content)};
+
+                    return util::read::parse<unsigned long> (state);
+                  }
+                )
+              };
+
+            auto const _max_open_files
+              { std::min
+                ( std::min
+                  ( 512UL
+                  , util::cast<unsigned long>
+                    ( testing::syscall::getrlimit (RLIMIT_NOFILE).rlim_cur
+                    )
+                  )
+                , max_map_count / 4UL
+                  //            ^ The test will create max_open_files
+                  // * 3 many segments, each does a mmap. Limit to
+                  // max_map_count / 4 to leave some space.
+                )
+              };
+
+            testing::syscall::setrlimit
+              ( RLIMIT_NOFILE
+              , rlimit { .rlim_cur = _max_open_files
+                       , .rlim_max = _max_open_files
+                       }
+              );
+
+            return _max_open_files;
           }
         )
       };

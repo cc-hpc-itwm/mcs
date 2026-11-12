@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/ASIO/Connectable.hpp>
@@ -11,7 +11,7 @@ namespace mcs::block_device
   template<typename MakeTransportClient, typename MetaDataClient>
     Writer<MakeTransportClient, MetaDataClient>::Writer
         ( MetaDataClient& meta_data_client
-        , MakeTransportClient&& make_transport_client
+        , MakeTransportClient make_transport_client
         )
           : _meta_data_client {meta_data_client}
           , _make_transport_client

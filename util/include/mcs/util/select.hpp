@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -15,9 +15,9 @@ namespace mcs::util
       struct OutOfRange : public mcs::Error
       {
       public:
-        constexpr auto offset() const noexcept -> std::size_t;
-        constexpr auto count() const noexcept -> std::size_t;
-        constexpr auto size() const noexcept -> std::size_t;
+        [[nodiscard]] constexpr auto offset() const noexcept -> std::size_t;
+        [[nodiscard]] constexpr auto count() const noexcept -> std::size_t;
+        [[nodiscard]] constexpr auto size() const noexcept -> std::size_t;
 
         ~OutOfRange() override;
         OutOfRange (OutOfRange const&) = default;

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <exception>
@@ -10,15 +10,16 @@ namespace mcs::util
     auto DLHandle::symbol (char const* name) const -> T*
   try
   {
-    union
-    {
-      void* _ptr;
-      T* _data;
-    } symbol {nullptr};
-
-    symbol._ptr = syscall::dlsym (_loaded_library.get(), name);
-
-    return symbol._data;
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconditionally-supported"
+#endif
+    return reinterpret_cast<T*>
+      ( syscall::dlsym (_loaded_library.get(), name)
+      );
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
   }
   catch (...)
   {

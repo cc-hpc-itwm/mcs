@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 namespace mcs::fuse::state
@@ -12,7 +12,7 @@ namespace mcs::fuse::state
       , mode_t mode
       )
         : inode::Common {ino, uid, gid, nlink_t {1UL}, mode}
-        , _target_name {symlink._target_name}
+        , _target_name {symlink.target_name}
   {}
 
   template<is_content Content>

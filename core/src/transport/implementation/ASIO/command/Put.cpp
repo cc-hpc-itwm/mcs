@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/transport/implementation/ASIO/command/Put.hpp>
@@ -6,23 +6,24 @@
 #include <mcs/serialization/OArchive.hpp>
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
+#include <utility>
 
 namespace mcs::core::transport::implementation::ASIO::command
 {
   Put::Put
     ( core::transport::Address destination_
-    , Bytes bytes
+    , std::unique_ptr<Source> source
     )
-      : destination {destination_}
-      , bytes_or_size {bytes}
+      : destination {std::move (destination_)}
+      , source_or_size {std::move (source)}
   {}
 
   Put::Put
     ( core::transport::Address destination_
     , std::size_t size
     )
-      : destination {destination_}
-      , bytes_or_size {size}
+      : destination {std::move (destination_)}
+      , source_or_size {size}
   {}
 }
 
@@ -39,7 +40,9 @@ namespace mcs::serialization
     save (oa, put.destination);
 
     // when saving, the bytes must be available
-    auto bytes {std::get<typename Put::Bytes> (put.bytes_or_size)};
+    auto bytes
+      { std::get<std::unique_ptr<Put::Source>> (put.source_or_size)->data()
+      };
 
     // save the number of bytes in the archive and stream the bytes
     // through the channel

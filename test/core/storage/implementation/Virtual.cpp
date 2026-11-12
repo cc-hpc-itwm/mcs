@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -76,10 +76,10 @@ namespace mcs::core::storage::implementation
         )
       };
     auto const parameter_create
-      { Virtual::Parameter::Create
-        { non_existing_file
+      { Virtual::Parameter::make_create
+        ( non_existing_file
         , std::invoke (testing::random::value<Virtual::StorageParameter>{})
-        }
+        )
       };
 
     testing::require_exception
@@ -104,8 +104,8 @@ namespace mcs::core::storage::implementation
     // encoded in the parameter and throws the content of the
     // parameter if it has the wrong size.
     auto const parameter_create
-      { Virtual::Parameter::Create
-        { MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
+      { Virtual::Parameter::make_create
+        ( MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
         , testing::until
           ( [] (auto const& parameter)
             {
@@ -113,7 +113,7 @@ namespace mcs::core::storage::implementation
             }
           , testing::random::value<Virtual::StorageParameter>{}
           )
-        }
+        )
       };
 
     testing::require_exception
@@ -130,8 +130,8 @@ namespace mcs::core::storage::implementation
       , testing::Assert<Import_C_API::Error::Create>
         { [&] (auto const& caught)
           {
-            ASSERT_EQ ( caught.parameter()._parameter_create
-                      , parameter_create._parameter_create
+            ASSERT_EQ ( caught.parameter().parameter_create
+                      , parameter_create.parameter_create
                       );
           }
         }
@@ -187,10 +187,10 @@ namespace mcs::core::storage::implementation
       };
     auto const vstorage
       { Virtual
-        { Virtual::Parameter::Create
-          { MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
+        { Virtual::Parameter::make_create
+          ( MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
           , make_implementation_parameter_create (max_size)
-          }
+          )
         }
       };
     ASSERT_EQ
@@ -209,10 +209,10 @@ namespace mcs::core::storage::implementation
       {std::invoke (testing::random::value<::MCS_CORE_STORAGE_SIZE>{})};
     auto const vstorage
       { Virtual
-        { Virtual::Parameter::Create
-          { MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
+        { Virtual::Parameter::make_create
+          ( MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
           , make_implementation_parameter_create (max_size)
-          }
+          )
         }
       };
     ASSERT_EQ
@@ -234,10 +234,10 @@ namespace mcs::core::storage::implementation
       };
     auto vstorage
       { Virtual
-        { Virtual::Parameter::Create
-          { MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
+        { Virtual::Parameter::make_create
+          ( MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
           , make_implementation_parameter_create (max_size)
-          }
+          )
         }
       };
 
@@ -291,12 +291,12 @@ namespace mcs::core::storage::implementation
   {
     auto vstorage
       { Virtual
-        { Virtual::Parameter::Create
-          { MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
+        { Virtual::Parameter::make_create
+          ( MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
           , make_implementation_parameter_create
             ( std::invoke (testing::random::value<::MCS_CORE_STORAGE_SIZE>{})
             )
-          }
+          )
         }
       };
 
@@ -324,10 +324,10 @@ namespace mcs::core::storage::implementation
   {
     auto vstorage
       { Virtual
-        { Virtual::Parameter::Create
-          { MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
+        { Virtual::Parameter::make_create
+          ( MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
           , make_implementation_parameter_create (::MCS_CORE_STORAGE_SIZE {0})
-          }
+          )
         }
       };
 
@@ -357,7 +357,7 @@ namespace mcs::core::storage::implementation
       , testing::Assert<Virtual::Error::Segment::Remove>
         { [&] (auto const& caught)
           {
-            ASSERT_EQ ( caught.parameter()._parameter_segment_remove
+            ASSERT_EQ ( caught.parameter().parameter_segment_remove
                       , implementation_parameter
                       );
             ASSERT_EQ (caught.segment_id(), segment_id);
@@ -373,10 +373,10 @@ namespace mcs::core::storage::implementation
   {
     auto vstorage
       { Virtual
-        { Virtual::Parameter::Create
-          { MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
+        { Virtual::Parameter::make_create
+          ( MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
           , make_implementation_parameter_create (::MCS_CORE_STORAGE_SIZE {0})
-          }
+          )
         }
       };
 
@@ -439,10 +439,10 @@ namespace mcs::core::storage::implementation
   {
     auto vstorage
       { Virtual
-        { Virtual::Parameter::Create
-          { MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
+        { Virtual::Parameter::make_create
+          ( MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
           , make_implementation_parameter_create (::MCS_CORE_STORAGE_SIZE {0})
-          }
+          )
         }
       };
 
@@ -536,10 +536,10 @@ namespace mcs::core::storage::implementation
 
     auto vstorage
       { Virtual
-        { Virtual::Parameter::Create
-          { MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
+        { Virtual::Parameter::make_create
+          ( MCS_TEST_CORE_STORAGE_IMPLEMENTATION_VIRTUAL_CHUNKY
           , make_implementation_parameter_create (max)
-          }
+          )
         }
       };
 

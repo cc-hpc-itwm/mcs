@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <csignal>
@@ -11,6 +11,8 @@
 #include <mcs/rpc/ScopedRunningIOContext.hpp>
 #include <mcs/rpc/access_policy/Exclusive.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
 #include <mcs/util/main.hpp>
 #include <mcs/util/read/read.hpp>
 #include <stdexcept>
@@ -18,25 +20,58 @@
 
 namespace
 {
-  auto remove_main (mcs::util::Args args) -> int
+  namespace option
   {
-    if (args.size() != 3)
-    {
-      throw std::invalid_argument
-        { fmt::format ( "usage: {} meta_data_provider_path block_range"
-                      , args[0]
-                      )
-        };
-    }
+    using mcs::util::command_line::option::Parameter;
 
-    auto const meta_data_provider_path {std::filesystem::path (args[1])};
+    constexpr auto block_range {Parameter {"block-range"}};
+    constexpr auto metadata_provider_path
+      { Parameter {"metadata-provider-path"}
+      };
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <PATH>\n"
+        "    Directory containing metadata-provider information.\n"
+        "  --{2} <block::Range>\n"
+        "    Range of blocks to remove.\n"
+      , args.at (0)
+      , option::metadata_provider_path
+      , option::block_range
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print ("{}\n", usage (args));
+  }
+
+  auto remove_main (mcs::util::arguments::View args) -> int
+  {
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::metadata_provider_path)
+        . add (option::block_range)
+        )
+      };
+    auto const meta_data_provider_path
+      { std::filesystem::path {options.at (option::metadata_provider_path)}
+      };
     auto const meta_data_provider_connectable
       { mcs::util::read::from_file<mcs::util::ASIO::AnyConnectable>
           (meta_data_provider_path / "PROVIDER")
       };
 
     auto const block_range
-      {mcs::util::read::read<mcs::block_device::block::Range> (args[2])};
+      { mcs::util::read::read<mcs::block_device::block::Range>
+          ( options.at (option::block_range)
+          )
+      };
 
     auto io_context
       { mcs::rpc::ScopedRunningIOContext
@@ -72,5 +107,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, remove_main);
+  return mcs::util::main (argc, argv, help, remove_main);
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -26,12 +26,12 @@ namespace mcs::core::storage
 
     // Returns true if there is no limit on the size.
     //
-    constexpr auto is_unlimited() const noexcept -> bool;
+    [[nodiscard]] constexpr auto is_unlimited() const noexcept -> bool;
 
     // Pre: !is_unlimited()
     // Returns the limit.
     //
-    constexpr auto limit() const -> memory::Size;
+    [[nodiscard]] constexpr auto limit() const -> memory::Size;
 
   private:
     friend constexpr auto operator>
@@ -47,8 +47,8 @@ namespace mcs::core::storage
 
     constexpr MaxSize (decltype (_limit)) noexcept;
 
-    template<typename, typename, typename> friend struct fmt::formatter;
-    template<typename> friend struct serialization::Implementation;
+    friend struct fmt::formatter<MaxSize>;
+    friend struct serialization::Implementation<MaxSize>;
 
     // \note defined in (some) tests
     friend constexpr auto operator==
@@ -80,8 +80,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::MaxSize const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

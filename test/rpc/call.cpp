@@ -1,8 +1,10 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/awaitable.hpp>
 #include <asio/ip/tcp.hpp>
+#include <asio/post.hpp>
+#include <asio/use_awaitable.hpp>
 #include <compare>
 #include <functional>
 #include <gtest/gtest.h>
@@ -113,9 +115,14 @@ namespace
   {
     using Inc::Inc;
     auto operator()
+      // Borrowed commands across suspension -> dispatch owns the
+      // command.
+      // NOLINTNEXTLINE (cppcoreguidelines-avoid-reference-coroutine-parameters)
       ( Command const& command
       ) const -> asio::awaitable<Command::Response>
     {
+      co_await asio::post (asio::use_awaitable);
+
       co_return Inc::inc (command);
     }
   };
@@ -125,17 +132,22 @@ namespace
     using Inc::Inc;
     auto operator() (Command&& command) const noexcept -> Command::Response
     {
-      return Inc::inc (command);
+      return Inc::inc (std::move (command));
     }
   };
   struct HandleByUniversalRefAwaitableResponse : public Inc
   {
     using Inc::Inc;
     auto operator()
+      // Borrowed commands across suspension -> dispatch owns the
+      // command.
+      // NOLINTNEXTLINE (cppcoreguidelines-avoid-reference-coroutine-parameters)
       ( Command&& command
       ) const -> asio::awaitable<Command::Response>
     {
-      co_return Inc::inc (command);
+      co_await asio::post (asio::use_awaitable);
+
+      co_return Inc::inc (std::move (command));
     }
   };
 
@@ -206,7 +218,7 @@ TYPED_TEST ( RPCClientT
 
   auto random_value {mcs::testing::random::value<int>{}};
 
-  auto io_context_server
+  auto io_context_provider
     { mcs::rpc::ScopedRunningIOContext
         {mcs::rpc::ScopedRunningIOContext::NumberOfThreads {1u}}
     };
@@ -218,7 +230,11 @@ TYPED_TEST ( RPCClientT
   auto const offset {random_value()};
 
   auto const provider
-    { mcs::rpc::make_provider<Protocol, Dispatcher> ({}, io_context_server, offset)
+    { mcs::rpc::make_provider<Protocol, Dispatcher>
+      ( {}
+      , io_context_provider
+      , offset
+      )
     };
 
   auto const client

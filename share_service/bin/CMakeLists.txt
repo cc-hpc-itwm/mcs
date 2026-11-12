@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 add_library (mcs_share_service_bin INTERFACE)
@@ -17,6 +17,8 @@ target_link_libraries (mcs_share_service_bin_provider
   PRIVATE mcs_share_service
   PRIVATE mcs_rpc
   PRIVATE mcs_util
+  PRIVATE mcs_util_command_line
+  PRIVATE mcs_util_daemon
   PRIVATE mcs_util_read
   PRIVATE mcs_util_syscall
 )
@@ -28,6 +30,7 @@ target_link_libraries (mcs_share_service_bin_create
   PRIVATE mcs_share_service
   PRIVATE mcs_rpc
   PRIVATE mcs_util
+  PRIVATE mcs_util_command_line
   PRIVATE mcs_util_read
 )
 
@@ -38,6 +41,7 @@ target_link_libraries (mcs_share_service_bin_remove
   PRIVATE mcs_share_service
   PRIVATE mcs_share_service_bin
   PRIVATE mcs_util
+  PRIVATE mcs_util_command_line
   PRIVATE mcs_util_read
 )
 
@@ -48,6 +52,7 @@ target_link_libraries (mcs_share_service_bin_cat
   PRIVATE mcs_share_service
   PRIVATE mcs_share_service_bin
   PRIVATE mcs_util
+  PRIVATE mcs_util_command_line
   PRIVATE mcs_util_read
 )
 
@@ -58,6 +63,7 @@ target_link_libraries (mcs_share_service_bin_write
   PRIVATE mcs_share_service
   PRIVATE mcs_share_service_bin
   PRIVATE mcs_util
+  PRIVATE mcs_util_command_line
   PRIVATE mcs_util_read
 )
 

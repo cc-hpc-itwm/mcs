@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -585,28 +585,6 @@ namespace mcs::fuse::state::detail
       , request
       , count
       , forgets
-      );
-  }
-
-  template<is_content Content>
-    auto fallocate
-      ( ::fuse_req_t request
-      , ::fuse_ino_t ino
-      , int mode
-      , off_t offset
-      , off_t length
-      , ::fuse_file_info* fi
-      ) noexcept -> void
-  {
-    lift_and_reply_EIO_on_exception<Content>
-      ( &State<Content>::fallocate
-      , "fallocate"
-      , request
-      , ino
-      , mode
-      , offset
-      , length
-      , fi
       );
   }
 

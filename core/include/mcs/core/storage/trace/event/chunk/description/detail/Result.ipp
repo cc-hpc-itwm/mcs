@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 namespace fmt
@@ -32,7 +32,7 @@ namespace fmt
       ( context.out()
       , "trace::event::chunk::description::Result<{}> = {}"
       , Access{}
-      , chunk_description_result._chunk_description
+      , chunk_description_result.chunk_description
       );
   }
 }

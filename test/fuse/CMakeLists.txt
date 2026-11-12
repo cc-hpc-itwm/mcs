@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Fraunhofer ITWM
+# Copyright (C) 2025-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 function (mcs_test_fuse_executable prefix name)
@@ -25,6 +25,7 @@ function (mcs_test_fuse name)
 endfunction()
 
 mcs_test_fuse (basics)
+mcs_test_fuse (main)
 
 function (mcs_test_fuse_performance name)
   mcs_test_fuse_executable (mcs_test_fuse_performance ${name})
@@ -36,3 +37,4 @@ endfunction()
 mcs_test_fuse_performance (create_remove_write)
 
 add_subdirectory (bin)
+add_subdirectory (content)

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -25,7 +25,7 @@ namespace fmt
       ( context.out()
       , "trace::event::size::Used {}"
       , std::make_tuple
-        ( size_used._parameter_size_used
+        ( size_used.parameter_size_used
         )
       );
   }

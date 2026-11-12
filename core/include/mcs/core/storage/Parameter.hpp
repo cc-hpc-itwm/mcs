@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -34,9 +34,9 @@ namespace mcs::core::storage
 
     std::vector<std::byte> _blob;
 
-    template<typename, typename, typename> friend struct fmt::formatter;
-    template<typename> friend struct serialization::Implementation;
-    template<typename> friend struct util::read::Read;
+    friend struct fmt::formatter<Parameter>;
+    friend struct serialization::Implementation<Parameter>;
+    friend struct util::read::Read<Parameter>;
 
     explicit Parameter (std::vector<std::byte>);
   };
@@ -53,8 +53,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::Parameter const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <csignal>
@@ -13,6 +13,8 @@
 #include <mcs/share_service/Client.hpp>
 #include <mcs/share_service/SupportedStorageImplementations.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
 #include <mcs/util/main.hpp>
 #include <mcs/util/read/read.hpp>
 #include <stdexcept>
@@ -20,6 +22,38 @@
 
 namespace
 {
+  namespace option
+  {
+    using mcs::util::command_line::option::Parameter;
+
+    constexpr auto share_service_path {Parameter {"share-service-path"}};
+    constexpr auto size {Parameter {"size"}};
+    constexpr auto storage {Parameter {"storage"}};
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <PATH>\n"
+        "    Directory containing share-service information.\n"
+        "  --{2} <SIZE_IN_BYTES>\n"
+        "    Size of the chunk to create.\n"
+        "  --{3} <STORAGE_SPEC>\n"
+        "    Files or SHMEM backend with creation parameters.\n"
+      , args.at (0)
+      , option::share_service_path
+      , option::size
+      , option::storage
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print ("{}\n", usage (args));
+  }
+
   template< mcs::share_service::is_supported_storage_implementation
               Implementation
           >
@@ -28,25 +62,24 @@ namespace
     using type = Implementation::Parameter::Create;
   };
 
-  auto create_main (mcs::util::Args const& args) -> int
+  auto create_main (mcs::util::arguments::View const& args) -> int
   {
-    auto const usage
-      { fmt::format
-        ( "usage: {} share_service_path size STORAGE\n"
-          "\n"
-          "Only STORAGEs 'Files' and 'SHMEM' are supported."
-        , args[0]
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::share_service_path)
+        . add (option::size)
+        . add (option::storage)
         )
-        // \todo collect parse information from SupportedImplementations
       };
-
-    if (args.size() != 4)
-    {
-      throw std::invalid_argument {usage};
-    }
-
-    auto const size {mcs::util::read::read<mcs::core::memory::Size> (args[2])};
-    auto const share_service_path {std::filesystem::path (args[1])};
+    auto const size
+      { mcs::util::read::read<mcs::core::memory::Size>
+          ( options.at (option::size)
+          )
+      };
+    auto const share_service_path
+      { std::filesystem::path {options.at (option::share_service_path)}
+      };
     auto io_context
       { mcs::rpc::ScopedRunningIOContext
           { mcs::rpc::ScopedRunningIOContext::NumberOfThreads {1u}
@@ -72,7 +105,7 @@ namespace
           auto const chunk
             { mcs::share_service::SupportedStorageImplementations
                 ::template parse_id_and_run<Create>
-              ( args[3]
+              ( options.at (option::storage)
               , [&]<mcs::share_service::is_supported_storage_implementation
                       StorageImplementation
                    >
@@ -102,5 +135,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, create_main);
+  return mcs::util::main (argc, argv, help, create_main);
 }

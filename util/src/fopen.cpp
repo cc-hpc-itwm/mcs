@@ -1,11 +1,11 @@
-// Copyright (C) 2024-2025 Fraunhofer ITWM
+// Copyright (C) 2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
 #include <fmt/format.h>
-#include <mcs/util/FMT/STD/filesystem/path.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/fopen.hpp>
 #include <stdexcept>
 
@@ -22,7 +22,7 @@ namespace mcs::util
       // \todo specific exception
       throw std::runtime_error
         { fmt::format ( "Could not open '{}'/{}: {}"
-                      , path
+                      , FMT::STD::FILESYSTEM::Path {path}
                       , mode
                       , strerror (error_code)
                       )

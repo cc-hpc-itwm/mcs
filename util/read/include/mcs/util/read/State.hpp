@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -6,6 +6,7 @@
 #include <fmt/base.h>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace mcs::util::read
 {
@@ -16,7 +17,7 @@ namespace mcs::util::read
   {
     // Returns true iff input is available
     //
-    constexpr auto end() const noexcept -> bool;
+    [[nodiscard]] constexpr auto end() const noexcept -> bool;
 
     // Returns next character of available input.
     //
@@ -39,7 +40,7 @@ namespace mcs::util::read
     // Produce an error with the state being included into the message.
     //
     template<fmt::formattable Reason>
-      constexpr auto error (Reason) const;
+      [[nodiscard]] constexpr auto error (Reason) const;
 
   private:
     Char* _input;
@@ -62,6 +63,9 @@ namespace mcs::util::read
 
   template<typename Char>
     [[nodiscard]] auto make_state (std::basic_string<Char> const&) noexcept;
+
+  template<typename Char>
+    [[nodiscard]] auto make_state (std::basic_string_view<Char>) noexcept;
 }
 
 #include "detail/State.ipp"

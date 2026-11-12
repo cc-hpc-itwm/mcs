@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <gtest/gtest.h>
@@ -6,16 +6,19 @@
 #include <mcs/testing/random/value/UTIL/string.hpp>
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/testing/read_of_fmt_is_identity.hpp>
-#include <mcs/util/FMT/STD/optional.hpp>
+#include <mcs/util/FMT/STD/Optional.hpp>
 #include <mcs/util/read/STD/optional.hpp>
-#include <mcs/util/read/uint.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/string.hpp>
 
 namespace mcs::util::read
 {
   TEST (ReadOfFmtIsIdentity, nullopt)
   {
-    testing::read_of_fmt_is_identity (std::optional<unsigned int>{});
+    testing::read_from_custom_formatter_is_identity
+      ( FMT::STD::OPTIONAL::format{}
+      , std::optional<unsigned int>{}
+      );
   }
 
   namespace
@@ -30,7 +33,9 @@ namespace mcs::util::read
 
   TYPED_TEST (ReadOfFmtIsIdentityT, random_optional)
   {
-    testing::read_of_fmt_is_identity
-      (std::optional<TypeParam> {testing::random::value<TypeParam>{}()});
+    testing::read_from_custom_formatter_is_identity
+      ( FMT::STD::OPTIONAL::format{}
+      , std::optional<TypeParam> {testing::random::value<TypeParam>{}()}
+      );
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -7,9 +7,6 @@
 #include <asio/ip/tcp.hpp>
 #include <asio/local/stream_protocol.hpp>
 #include <concepts>
-#include <exception>
-#include <mcs/rpc/detail/CallID.hpp>
-#include <mcs/rpc/detail/Completion.hpp>
 #include <mcs/serialization/Concepts.hpp>
 #include <mcs/util/ASIO/is_protocol.hpp>
 #include <type_traits>
@@ -17,6 +14,13 @@
 
 namespace mcs::rpc
 {
+  namespace access_policy
+  {
+    struct Exclusive;
+    struct Sequential;
+    struct Concurrent;
+  }
+
   template<typename Protocol>
     concept is_protocol = util::ASIO::is_protocol<Protocol>;
 
@@ -37,13 +41,23 @@ namespace mcs::rpc
     concept command_is_streaming
       = requires (Command const& command, Socket& socket)
         {
-          {command.stream (socket)} -> std::convertible_to<void>;
+          { command.stream (socket)
+          } -> std::convertible_to<void>
+          ;
         };
 
   template<typename Command, typename... Commands>
     concept is_one_of_the_commands =
-      (std::is_same_v<Command, Commands> || ...)
+      ( std::is_same_v<Command, Commands> || ...
+      )
     ;
+
+  // Coroutine handler arguments must not be reference types. Value
+  // arguments may still borrow and their referents must outlive every
+  // operation that uses them.
+  //
+  template<typename T>
+    concept is_handler_arg = !std::is_reference_v<T>;
 
   namespace handler
   {
@@ -81,27 +95,63 @@ namespace mcs::rpc
       )
     ;
 
+  // Optional policy notification hooks, detected independently so
+  // policies may implement only the events they need.
+  //
+  // - call_started reports submission,
+  // - call_completed reports response delivery, including
+  //   handler-error responses, and
+  // - error_execution reports an RPC/submission failure or rejection,
+  //   not a handler error received in a response.
+  //
+  // The completion hooks call_completed and error_execution run
+  // before the future becomes ready. call_completed does not
+  // guarantee a successful result: decoding the response or a handler
+  // error may still fail the future.
+  //
+  // call_started runs on the submitting thread. Completion hooks run
+  // on the connection strand and synchronous submission failures
+  // invoke error_execution on the submitting thread.
+  //
+  // Hooks must not throw and must tolerate concurrent submissions and
+  // completion notifications.
+  //
+  // Return values are ignored. Observed policies use these hooks to
+  // forward events when present.
+  //
+  template<typename Policy>
+    concept has_call_started = requires (Policy& policy)
+    {
+      policy.call_started();
+    };
+
+  template<typename Policy>
+    concept has_call_completed = requires (Policy& policy)
+    {
+      policy.call_completed();
+    };
+
+  template<typename Policy>
+    concept has_error_execution = requires (Policy& policy)
+    {
+      policy.error_execution();
+    };
+
+  // Policies select a static admission policy tag. The connection
+  // owns admission, call IDs, and completions.
+  //
   template<typename AP>
     concept is_access_policy
-     = requires ( AP policy
-                , detail::CallID call_id
-                , detail::Completion completion
-                , std::exception_ptr rpc_error
-                )
+     = requires
        {
-         { policy.start_call (std::move (completion)) } -> std::convertible_to<detail::CallID>;
-         { policy.completion (call_id) } -> std::convertible_to<detail::Completion>;
-         { policy.error (rpc_error) } -> std::convertible_to<void>;
+         typename AP::admission;
+         requires
+           (  std::same_as<typename AP::admission, access_policy::Exclusive>
+           || std::same_as<typename AP::admission, access_policy::Sequential>
+           || std::same_as<typename AP::admission, access_policy::Concurrent>
+           );
        }
     ;
-
-  template<typename AP>
-    concept needs_read_lock = requires (AP ap) { ap.read_lock(); };
-  template<typename AP>
-    concept needs_sent_notification = requires (AP ap)
-    {
-      { ap.sent() } -> std::convertible_to<void>;
-    };
 
   // The observer is informed about the calls into the access policy.
   //
@@ -110,9 +160,7 @@ namespace mcs::rpc
   // observer(s).
   //
   template<typename Observer>
-    concept is_access_policy_observer =
-    requires ( Observer observer
-             )
+    concept is_access_policy_observer = requires (Observer observer)
     {
       { observer.call_started() } -> std::convertible_to<void>;
       { observer.call_completed() } -> std::convertible_to<void>;

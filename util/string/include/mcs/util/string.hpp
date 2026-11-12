@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -34,7 +34,7 @@ namespace mcs::util
   private:
     std::string _str;
 
-    template<typename> friend struct std::hash;
+    friend struct std::hash<string>;
   };
 }
 
@@ -49,8 +49,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::util::string const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -58,8 +58,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::rpc::multi_client::ParallelCallsLimit const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

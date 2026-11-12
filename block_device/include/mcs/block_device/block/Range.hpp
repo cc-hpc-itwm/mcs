@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -58,9 +58,9 @@ namespace mcs::block_device::block
     ID _begin;
     ID _end;
 
-    template<typename, typename, typename> friend struct fmt::formatter;
-    template<typename> friend struct serialization::Implementation;
-    template<typename> friend struct util::read::Read;
+    friend struct fmt::formatter<Range>;
+    friend struct serialization::Implementation<Range>;
+    friend struct util::read::Read<Range>;
   };
 
   [[nodiscard]] constexpr auto UNSAFE_make_range (ID, ID) noexcept -> Range;
@@ -82,8 +82,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::block_device::block::Range const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

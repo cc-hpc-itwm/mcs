@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/io_context.hpp>
@@ -17,10 +17,13 @@
 #include <mcs/util/TemporaryFile.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/syscall/getpid.hpp>
+#include <memory>
 #include <tuple>
 
   struct mcs_share_service_tcp_provider
   {
+    using Provider = mcs::share_service::Provider<asio::ip::tcp>;
+
     template<typename ProtocolVersion>
       mcs_share_service_tcp_provider
         ( ProtocolVersion protocol
@@ -29,18 +32,41 @@
         , int number_of_threads
         )
           : _number_of_threads {number_of_threads}
-          , _provider {_io_context, asio::ip::tcp::endpoint {protocol, port}}
+          , _provider
+            { _io_context
+            , asio::ip::tcp::endpoint {protocol, port}
+            , std::addressof (_storages)
+            }
           , _provider_path {provider_path}
     {
-      _signals.async_wait ([&] (auto, auto) { _io_context.stop(); });
+      _signals.async_wait
+        ( [&] (auto, auto) noexcept
+          {
+            _io_context.stop();
+          }
+        );
     }
+
+    mcs_share_service_tcp_provider (mcs_share_service_tcp_provider const&) = delete;
+    mcs_share_service_tcp_provider (mcs_share_service_tcp_provider&&) = delete;
+    auto operator= (mcs_share_service_tcp_provider const&) -> mcs_share_service_tcp_provider& = delete;
+    auto operator= (mcs_share_service_tcp_provider&&) -> mcs_share_service_tcp_provider& = delete;
+
+    ~mcs_share_service_tcp_provider() noexcept
+    {
+      _io_context.stop();
+    }
+
+    // Threads join before context cleanup; storage is destroyed last.
+    //
+    Provider::Storages _storages{};
     int _number_of_threads;
+    asio::io_context _io_context {_number_of_threads};
     asio::thread_pool _threads
       { mcs::util::cast<std::size_t> (_number_of_threads)
       };
-    asio::io_context _io_context {_number_of_threads};
     asio::signal_set _signals {_io_context};
-    mcs::share_service::Provider<asio::ip::tcp> _provider;
+    Provider _provider;
     mcs::util::TemporaryDirectory _provider_path;
     mcs::util::TemporaryFile _pid_information
       { _provider_path.path() / "PID"
@@ -181,7 +207,24 @@ auto mcs_share_service_run_tcp_provider
   {
     for (auto i {0}; i != provider->_number_of_threads; ++i)
     {
-      asio::post (provider->_threads, [&] { provider->_io_context.run(); });
+      asio::post
+        ( provider->_threads
+        , [provider]() noexcept
+          {
+            try
+            {
+              provider->_io_context.run();
+            }
+            catch (...)
+            {
+              mcs::util::FMT::print_noexcept
+                ( stderr
+                , "Error: {}\n"
+                , std::current_exception()
+                );
+            }
+          }
+        );
     }
 
     provider->_threads.join();

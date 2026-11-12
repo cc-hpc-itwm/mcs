@@ -31,7 +31,7 @@ A single storage in the network of storages that the block device aggregates.
 meta_data/{Provider, Client}:
 -----------------------------
 
-The `meta_data/Provider` is the central entry point of a block device. Storages can be added and the location of a block with a given id can be retrieved from the provider. The provider knowns about the block size, the number of blocks and the list of blocks in the block device. Ranges of blocks can be removed from the block device. See [Blocks](include/mcs/block_device/meta_data/Blocks.hpp) for more details about the semantics of the commands handled by the provider.
+The `meta_data/Provider` is the central entry point of a block device. Storages can be added and the location of a block with a given id can be retrieved from the provider. The provider knows about the block size, the number of blocks and the list of blocks in the block device. Ranges of blocks can be removed from the block device. See [Blocks](include/mcs/block_device/meta_data/Blocks.hpp) for more details about the semantics of the commands handled by the provider.
 
 The `meta_data/Client` allows to use a remote `meta_data/Provider`.
 
@@ -66,53 +66,55 @@ export MCS_BLOCK_DEVICE_PROVIDER_PATH=$(mktemp -d)/PROVIDER
 
 Providers can use either `ip::tcp` or `local::stream_protocol` for communication. They use a number of threads to handle requests from multiple clients. Note that providers with a single thread can still serve multiple clients in parallel using cooperative multi-tasking. Using more than one thread is only necessary when the number of concurrent clients is huge.
 
+Provider commands daemonize by default and return after publishing their startup files. The provider path contains the process id in `PID`. Add `--mcs-daemon-foreground` anywhere in the command line to run a provider in the foreground.
+
 EXAMPLE: Start a provider with a single thread for blocks of size 4 MiByte. The provider communicates via `ip::tcp` and the kernel assigns a port:
 
 ```
-${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_meta_data_provider        \
-  'ip::tcp()'                                                         \
-  ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}                                 \
-  "mcs::block_device::block::Size ($((4*2**20)))"                     \
-  1
+${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_meta_data_provider            \
+  --metadata-endpoint 'ip::tcp()'                                         \
+  --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}            \
+  --block-size "mcs::block_device::block::Size ($((4*2**20)))"            \
+  --number-of-threads 1
 ```
 
 EXAMPLE: Start a provider with a single thread for blocks of size 4 MiByte. The provider communicates via `ip::tcp` on port `8765`:
 
 ```
-${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_meta_data_provider        \
-  'ip::tcp ("127.0.0.1", 8765)'                                       \
-  ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}                                 \
-  "mcs::block_device::block::Size ($((4*2**20)))"                     \
-  1
+${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_meta_data_provider            \
+  --metadata-endpoint 'ip::tcp ("127.0.0.1", 8765)'                       \
+  --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}            \
+  --block-size "mcs::block_device::block::Size ($((4*2**20)))"            \
+  --number-of-threads 1
 ```
 
 EXAMPLE: Start a provider with a single thread for blocks of size 4 MiByte. The provider communicates via `local::stream_protocol` with the socket name `/tmp/MCS_BLOCK_DEVICE`:
 
 ```
-${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_meta_data_provider        \
-  'local::stream_protocol ("/tmp/MCS_BLOCK_DEVICE")'                  \
-  ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}                                 \
-  "mcs::block_device::block::Size ($((4*2**20)))"                     \
-  1
+${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_meta_data_provider            \
+  --metadata-endpoint 'local::stream_protocol ("/tmp/MCS_BLOCK_DEVICE")'  \
+  --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}            \
+  --block-size "mcs::block_device::block::Size ($((4*2**20)))"            \
+  --number-of-threads 1
 ```
 
 Check that the service is running and has no blocks available:
 
 ```
-> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_block_size              \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
+> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_block_size                  \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
 mcs::block_device::block::Size (4194304)
 ```
 
 ```
-> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_number_of_blocks        \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
+> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_number_of_blocks            \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
 mcs::block_device::block::Count (0)
 ```
 
 ```
-> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_blocks                  \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
+> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_blocks                      \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
 []
 ```
 
@@ -124,41 +126,41 @@ Multiple storages of any type can be added to the aggregation. The command line 
 EXAMPLE: First create a single threaded Heap storage of size 1 GiB that uses `ip::tcp()` for data transport and stores its connection information in `/tmp/bd-heap`:
 
 ```
-> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_storage_provider        \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH}                                 \
-    'ip::tcp()'                                                       \
-    /tmp/bd-heap                                                      \
-    1                                                                 \
-    $((2**30))                                                        \
-    'Heap (Unlimited)'
+> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_storage_provider            \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH}            \
+    --storage-endpoint 'ip::tcp()'                                        \
+    --storage-provider-path /tmp/bd-heap                                  \
+    --number-of-threads 1                                                 \
+    --size $((2**30))                                                     \
+    --storage 'Heap (Unlimited)'
 new blocks: mcs::block_device::block::Range (mcs::block_device::block::ID (0), mcs::block_device::block::ID (256))
 ```
 
 The output tells about the new block ids. Check that the service has the correct information:
 
 ```
-> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_number_of_blocks        \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
+> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_number_of_blocks            \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
 mcs::block_device::block::Count (256)
 ```
 
 ```
-> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_blocks                  \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
+> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_blocks                      \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
 [mcs::block_device::block::Range (mcs::block_device::block::ID (0), mcs::block_device::block::ID (256))]
 ```
 
-Second create a single threaded Files storage also of size 1 GiB that also uses `ip::tcp()` for data transport and stores its connection information in `/tmp/bd-files` and data in `/tmp/bs-files-storage`:
+Second create a single threaded Files storage also of size 1 GiB that also uses `ip::tcp()` for data transport and stores its connection information in `/tmp/bd-files` and data in `/tmp/bd-files-storage`:
 
 ```
-> mkdir -p /tmp/bs-files-storage
-> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_storage_provider        \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH}                                 \
-    'ip::tcp()'                                                       \
-    /tmp/bd-heap                                                      \
-    1                                                                 \
-    $((2**30))                                                        \
-    'Files (Prefix "/tmp/bd-files-storage", Unlimited)'
+> mkdir -p /tmp/bd-files-storage
+> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_storage_provider            \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH}            \
+    --storage-endpoint 'ip::tcp()'                                        \
+    --storage-provider-path /tmp/bd-files                                 \
+    --number-of-threads 1                                                 \
+    --size $((2**30))                                                     \
+    --storage 'Files (Prefix "/tmp/bd-files-storage", Unlimited)'
 new blocks: mcs::block_device::block::Range (mcs::block_device::block::ID (256), mcs::block_device::block::ID (512))
 ```
 
@@ -167,13 +169,13 @@ Now the block device contains 512 blocks, half of them in Heap and half of them 
 3. Storage data in a block:
 ---------------------------
 
-To storage data from file `IN` in the block with the number 300 use:
+To store data from file `IN` in the block with the number 300 use:
 
 ```
-cat IN                                                              | \
-  ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_write                   \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH}                                 \
-    'mcs::block_device::block::ID (300)'
+cat IN                                                                  | \
+  ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_write                       \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH}            \
+    --block-id 'mcs::block_device::block::ID (300)'
 ```
 
 The old content of the block is overwritten with the input data. If the data is too large or too small, then the write command will issue warnings.
@@ -184,9 +186,9 @@ The old content of the block is overwritten with the input data. If the data is 
 The `cat` tool retrieves the data stored in a block and outputs it on the standard output channel:
 
 ```
-${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_cat                       \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH}                                 \
-    'mcs::block_device::block::ID (300)'                              \
+${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_cat                           \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH}            \
+    --block-id 'mcs::block_device::block::ID (300)'                       \
     > OUT
 ```
 
@@ -199,9 +201,9 @@ diff IN OUT || echo "FAILURE, data differs."
 5a) Remove complete storages:
 -----------------------------
 
-By stopping a `storage_provider` (e.g. by sending a SIGINT) the storage is taken out of the aggregation.
+By stopping a `storage_provider` (e.g. by sending a SIGINT) the storage is taken out of the aggregation. Run the provider with `--mcs-daemon-foreground` to observe its runtime output on the standard streams.
 
-EXAMPLE: If the Heap provider from the example above is stopped, the output is
+EXAMPLE: If the foreground Heap provider from the example above is stopped, the output is
 
 ```
 reclaimed [mcs::block_device::Storage (ip::tcp (...), bi_0, Parameter [], sg_0, [of_0..of_1073741824))]
@@ -215,22 +217,22 @@ To remove some blocks but not the complete storage provider is also possible.
 EXAMPLE: To remove the blocks with the ids between 400 and 500 use:
 
 ```
-> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_remove                  \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH}                                 \
-    'mcs::block_device::block::Range (mcs::block_device::block::ID (400), mcs::block_device::block::ID (500))'
+> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_remove                      \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH}            \
+    --block-range 'mcs::block_device::block::Range (mcs::block_device::block::ID (400), mcs::block_device::block::ID (500))'
 [mcs::block_device::Storage (ip::tcp (...), bi_0, Parameter [], sg_1, [of_603979776..of_1023410176))]
 ```
 
 After 5a and 5b, the block device now has 156 blocks left:
 
 ```
-> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_number_of_blocks        \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
+> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_number_of_blocks            \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
 mcs::block_device::block::Count (156)
 ```
 
 ```
-> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_blocks                  \
-    ${MCS_BLOCK_DEVICE_PROVIDER_PATHv:?}
+> ${MCS_INSTALL_DIR}/bin/mcs_block_device_bin_blocks                      \
+    --metadata-provider-path ${MCS_BLOCK_DEVICE_PROVIDER_PATH:?}
 [mcs::block_device::block::Range (mcs::block_device::block::ID (256), mcs::block_device::block::ID (400)), mcs::block_device::block::Range (mcs::block_device::block::ID (500), mcs::block_device::block::ID (512))]
 ```

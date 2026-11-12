@@ -1,11 +1,13 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
 #include <asio/ip/tcp.hpp>
 #include <asio/local/stream_protocol.hpp>
+#include <chrono>
 #include <compare>
 #include <cstddef>
+#include <functional>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <iterator>
@@ -22,9 +24,12 @@
 #include <mcs/core/transport/Address.hpp>
 #include <mcs/core/transport/implementation/ASIO/Client.hpp>
 #include <mcs/core/transport/implementation/ASIO/Provider.hpp>
+#include <mcs/nonstd/scope.hpp>
 #include <mcs/rpc/Concepts.hpp>
+#include <mcs/rpc/ScopedIOContext.hpp>
 #include <mcs/rpc/ScopedRunningIOContext.hpp>
 #include <mcs/rpc/access_policy/Exclusive.hpp>
+#include <mcs/rpc/access_policy/Sequential.hpp>
 #include <mcs/testing/RPC/ProtocolState.hpp>
 #include <mcs/testing/core/storage/implementation/Files.hpp>
 #include <mcs/testing/core/storage/implementation/Heap.hpp>
@@ -36,6 +41,7 @@
 #include <mcs/util/type/List.hpp>
 #include <memory>
 #include <span>
+#include <utility>
 
 namespace mcs::core
 {
@@ -180,13 +186,13 @@ namespace mcs::core
 
       [[nodiscard]] auto source() const -> transport::Address
       {
-        return transport::Address
-          { _storage->id()
+        return transport::make_address
+          ( _storage->id()
           , storage::make_parameter
               (_testing_storage.parameter_chunk_description())
           , _segment->id()
           , memory::make_offset (0)
-          };
+          );
       }
 
       [[nodiscard]] auto elements() -> std::span<Element const>
@@ -256,6 +262,7 @@ namespace mcs::core
             , rpc::is_protocol Protocol
             , typename TestingStorage
             , typename StoragesProvider
+            , typename AccessPolicy = rpc::access_policy::Exclusive
             >
       struct StoragesClient
     {
@@ -275,7 +282,27 @@ namespace mcs::core
           )
             : _testing_storage {fmt::format ("C-{}", tag)}
             , _number_of_bytes_per_chunk {number_of_bytes_per_chunk}
-            , _connection_information {connection_information}
+            , _owned_context
+                { std::make_unique<rpc::ScopedRunningIOContext>
+                    ( rpc::ScopedRunningIOContext::NumberOfThreads {1u}
+                    , SIGINT, SIGTERM
+                    )
+                }
+            , _io_context {*_owned_context}
+            , _connection_information {std::move (connection_information)}
+      {}
+
+      template<typename Tag>
+        StoragesClient
+          ( rpc::ScopedIOContext& io_context
+          , util::ASIO::Connectable<Protocol> connection_information
+          , memory::Size number_of_bytes_per_chunk
+          , Tag tag
+          )
+            : _testing_storage {fmt::format ("C-{}", tag)}
+            , _number_of_bytes_per_chunk {number_of_bytes_per_chunk}
+            , _io_context {io_context}
+            , _connection_information {std::move (connection_information)}
       {}
 
       [[nodiscard]] auto memory_get
@@ -339,13 +366,13 @@ namespace mcs::core
     private:
       [[nodiscard]] auto local_address() const -> transport::Address
       {
-        return transport::Address
-          { _storage->id()
+        return transport::make_address
+          ( _storage->id()
           , storage::make_parameter
               (_testing_storage.parameter_chunk_description())
           , _segment->id()
           , memory::make_offset (0)
-          };
+          );
       }
 
       Storages<SupportedClientStorageImplementations> _storages{};
@@ -395,13 +422,13 @@ namespace mcs::core
             )
           };
       std::span<Element const> _elements {as<Element const> (_chunk)};
-      rpc::ScopedRunningIOContext _io_context
-        {rpc::ScopedRunningIOContext::NumberOfThreads {1u}, SIGINT, SIGTERM};
+      std::unique_ptr<rpc::ScopedRunningIOContext> _owned_context;
+      rpc::ScopedIOContext& _io_context;
 
       util::ASIO::Connectable<Protocol> _connection_information;
       transport::implementation::ASIO::Client
          < Protocol
-         , rpc::access_policy::Exclusive
+         , AccessPolicy
          , SupportedClientStorageImplementations
          >
         _client
@@ -410,6 +437,102 @@ namespace mcs::core
           , std::addressof (_storages)
           };
     };
+  }
+
+  namespace
+  {
+    using Protocols = ::testing::Types
+      < asio::ip::tcp
+      , asio::local::stream_protocol
+      >;
+
+    template<class> struct MCSTransportASIOPut
+      : public testing::random::Test
+    {};
+    TYPED_TEST_SUITE (MCSTransportASIOPut, Protocols);
+  }
+
+  TYPED_TEST (MCSTransportASIOPut, queued_puts_keep_source_chunks)
+  {
+    using Provider = StoragesProvider
+                   < int
+                   , TypeParam
+                   , Impl::Files
+                   >;
+    using Client = StoragesClient
+                 < int
+                 , TypeParam
+                 , Impl::Files
+                 , Provider
+                 , rpc::access_policy::Sequential
+                 >;
+
+    using RandomUInt = testing::random::value<unsigned int>;
+    auto const number_of_elements
+      { std::invoke (RandomUInt {4u << 10u, 64u << 10u})
+      };
+    auto const number_of_bytes
+      { memory::make_size (number_of_elements * sizeof (int))
+      };
+    auto generate {testing::random::value<int>{}};
+    auto provider
+      { Provider { generate
+                 , number_of_elements
+                 , number_of_bytes
+                 , "queued-put"
+                 }
+      };
+
+    // Not yet started
+    //
+    auto client_context
+      { rpc::ScopedIOContext {rpc::ScopedIOContext::NumberOfThreads {1u}}
+      };
+    auto client
+      { Client { client_context
+               , provider.connection_information()
+               , number_of_bytes
+               , "queued-put"
+               }
+      };
+    client.generate (generate);
+
+    auto const stop_client
+      { nonstd::make_scope_exit
+          ( [&]() noexcept
+            {
+              client_context.stop();
+              client_context.join();
+            }
+          )
+      };
+
+    // Submit two requests with no wait for the first to finish. The
+    // access policy is Sequential, so the second is not started until
+    // the first finishes. If the submission code would create a chunk
+    // and deliver only the span of bytes into the command, then the
+    // successful submission would destroy the chunk and the later
+    // send would be invalid.
+    //
+    auto first {client.memory_put (provider.source())};
+    auto second {client.memory_put (provider.source())};
+    EXPECT_EQ (first.wait_for (std::chrono::seconds {0}), std::future_status::timeout);
+    EXPECT_EQ (second.wait_for (std::chrono::seconds {0}), std::future_status::timeout);
+
+    // Only now start the io_context.
+    //
+    client_context.start();
+
+    ASSERT_EQ (first.wait_for (std::chrono::seconds {5}), std::future_status::ready);
+    ASSERT_EQ (second.wait_for (std::chrono::seconds {5}), std::future_status::ready);
+
+    EXPECT_EQ (first.get(), number_of_bytes);
+    EXPECT_EQ (second.get(), number_of_bytes);
+
+    EXPECT_THAT
+      ( provider.elements()
+      , ::testing::ElementsAreArray (client.elements())
+      );
   }
 
   TYPED_TEST (MCSTransportAsio, memory_get_put_works)

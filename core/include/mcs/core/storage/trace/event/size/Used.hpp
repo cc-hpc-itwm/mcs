@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -11,7 +11,7 @@ namespace mcs::core::storage::trace::event::size
   template<core::storage::is_implementation Storage>
     struct Used
   {
-    typename Storage::Parameter::Size::Used _parameter_size_used;
+    typename Storage::Parameter::Size::Used parameter_size_used;
   };
 }
 
@@ -26,8 +26,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::trace::event::size::Used<Storage> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include "SupportedStorageImplementations.hpp"
@@ -18,6 +18,7 @@
 #include <mcs/testing/core/printer/storage/MaxSize.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
 #include <mcs/util/FMT/write_file.hpp>
+#include <mcs/util/arguments/View.hpp>
 #include <mcs/util/main.hpp>
 #include <mcs/util/read/STD/filesystem/path.hpp>
 #include <mcs/util/read/read.hpp>
@@ -25,24 +26,32 @@
 
 namespace
 {
-  auto storage_create_main (mcs::util::Args args) -> int
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {} provider_connectable max_size output_file"
+      , args.at (0)
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print ("{}\n", usage (args));
+  }
+
+  auto storage_create_main (mcs::util::arguments::View args) -> int
   {
     if (args.size() != 4)
     {
-      throw std::invalid_argument
-        { fmt::format
-            ( "usage: {} provider_connectable max_size output_file"
-            , args[0]
-            )
-        };
+      throw std::invalid_argument {usage (args)};
     }
 
     auto const provider_connectable
-      {mcs::util::read::read<mcs::util::ASIO::AnyConnectable> (args[1])};
+      {mcs::util::read::read<mcs::util::ASIO::AnyConnectable> (args.at (1))};
     auto const max_size
-      {mcs::util::read::read<mcs::core::storage::MaxSize> (args[2])};
+      {mcs::util::read::read<mcs::core::storage::MaxSize> (args.at (2))};
     auto const output_file
-      {mcs::util::read::read<std::filesystem::path> (args[3])};
+      {mcs::util::read::read<std::filesystem::path> (args.at (3))};
 
     auto io_context
       { mcs::rpc::ScopedRunningIOContext
@@ -73,11 +82,11 @@ namespace
             { client
             . template storage_create<Storage>
               ( typename Storage::Parameter::Create
-                { typename Storage::Prefix
+                { .prefix = typename Storage::Prefix
                   { mcs::util::string
                     {"MCS_CORE_TEST_MANAGE_STORAGE_IN_REMOTE_PROCESS_STORAGE_CREATE"}
                   }
-                , max_size
+                , .max_size = max_size
                 }
               )
             };
@@ -120,5 +129,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, storage_create_main);
+  return mcs::util::main (argc, argv, help, storage_create_main);
 }

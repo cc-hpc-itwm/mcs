@@ -14,7 +14,7 @@
 #include <mcs/util/isspace.hpp>
 #include <mcs/util/read/STD/tuple.hpp>
 #include <mcs/util/read/State.hpp>
-#include <mcs/util/read/uint.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/string.hpp>
 #include <string>
 #include <tuple>

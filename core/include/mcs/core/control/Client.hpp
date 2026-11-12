@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -205,7 +205,7 @@ namespace mcs::core::control
     //       , segment_id
     //       )
     //
-    auto segment_remove
+    [[nodiscard]] auto segment_remove
       ( storage::ID
       , storage::Parameter
       , storage::segment::ID
@@ -277,7 +277,7 @@ namespace mcs::core::control
     // Pre: The segment has, starting at the given offset, space for
     // size (range) many bytes.
     //
-    auto file_read
+    [[nodiscard]] auto file_read
       ( storage::ID
       , storage::Parameter
       , storage::segment::ID
@@ -295,7 +295,7 @@ namespace mcs::core::control
     // least size (range) many bytes.
     // Post: The file size is at least begin (range) + size (range).
     //
-    auto file_write
+    [[nodiscard]] auto file_write
       ( storage::ID
       , storage::Parameter
       , storage::segment::ID

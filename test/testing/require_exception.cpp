@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/format.h>
@@ -65,37 +65,37 @@ namespace fmt
     struct formatter<::CustomError>
   {
     template<typename ParseContext>
-      constexpr auto parse (ParseContext&);
+      [[maybe_unused]] constexpr auto parse (ParseContext&);
 
     template<typename FormatContext>
-      constexpr auto format
+      [[maybe_unused]] constexpr auto format
         ( ::CustomError const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
   template<>
     struct formatter<::AnotherCustomError>
   {
     template<typename ParseContext>
-      constexpr auto parse (ParseContext&);
+      [[maybe_unused]] constexpr auto parse (ParseContext&);
 
     template<typename FormatContext>
-      constexpr auto format
+      [[maybe_unused]] constexpr auto format
         ( ::AnotherCustomError const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
   template<>
     struct formatter<::OneMoreCustomError>
   {
     template<typename ParseContext>
-      constexpr auto parse (ParseContext&);
+      [[maybe_unused]] constexpr auto parse (ParseContext&);
 
     template<typename FormatContext>
-      constexpr auto format
+      [[maybe_unused]] constexpr auto format
         ( ::OneMoreCustomError const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

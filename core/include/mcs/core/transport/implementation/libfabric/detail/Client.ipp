@@ -1,8 +1,9 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/Chunk.hpp>
 #include <mcs/core/chunk/access/Mutable.hpp>
+#include <mcs/core/transport/client/Concepts.hpp>
 #include <mcs/core/transport/implementation/libfabric/command/Get.hpp>
 #include <mcs/core/transport/implementation/libfabric/command/Put.hpp>
 #include <mcs/rpc/Client.hpp>
@@ -140,7 +141,17 @@ namespace mcs::core::transport::implementation::libfabric
             , connection_information.transport.value()
             }
           , _storages {storages}
-  {}
+  {
+    static_assert
+      ( client::is_stateful_implementation
+          < Client< Protocol
+                  , AccessPolicy
+                  , Transporter
+                  , util::type::List<StorageImplementations...>
+                  >
+          >
+      );
+  }
 }
 
 namespace mcs::core::transport::implementation::libfabric
@@ -222,7 +233,13 @@ namespace mcs::core::transport::implementation::libfabric
         )
       };
 
-    auto command {_controller.get_future (command::Put {destination, size})};
+    auto command
+      { _controller.get_future
+        ( command::Put { .destination = destination
+                       , .size = size
+                       }
+        )
+      };
 
     auto const data {chunk.data()};
     _transporter.send (data);

@@ -1,7 +1,8 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/prefix.hpp>
 #include <tuple>
@@ -36,18 +37,18 @@ namespace mcs::core::storage::implementation
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Virtual::Tag>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Virtual::Tag>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Virtual::Tag>::format
       ( mcs::core::storage::implementation::Virtual::Tag const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "mcs::core::storage::implementation::Virtual"
       , std::make_tuple()
@@ -72,21 +73,24 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Virtual::Parameter::Create>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Virtual::Parameter::Create>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Virtual::Parameter::Create>::format
       ( mcs::core::storage::implementation::Virtual::Parameter::Create const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Virtual "
-      , std::make_tuple (value._shared_object, value._parameter_create)
+      , std::make_tuple
+        ( mcs::util::FMT::STD::FILESYSTEM::Path {value.shared_object}
+        , value.parameter_create
+        )
       );
   }
 }
@@ -103,8 +107,8 @@ namespace mcs::util::read
     using Create = mcs::core::storage::implementation::Virtual::Parameter::Create;
     return std::make_from_tuple<Create>
       ( parse< std::tuple
-               < decltype (Create::_shared_object)
-               , decltype (Create::_parameter_create)
+               < decltype (Create::shared_object)
+               , decltype (Create::parameter_create)
                >
              > (state)
       );

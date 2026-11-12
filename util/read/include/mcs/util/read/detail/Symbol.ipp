@@ -1,14 +1,15 @@
-// Copyright (C) 2022,2024-2025 Fraunhofer ITWM
+// Copyright (C) 2022,2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/read/prefix.hpp>
 #include <mcs/util/read/skip_whitespace.hpp>
+#include <utility>
 
 namespace mcs::util::read
 {
   template<typename What>
     constexpr Symbol<What>::Symbol (What what) noexcept
-      : _what {what}
+      : _what {std::move (what)}
   {}
 
   template<typename What>

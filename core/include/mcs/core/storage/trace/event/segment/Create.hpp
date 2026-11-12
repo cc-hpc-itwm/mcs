@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -12,8 +12,8 @@ namespace mcs::core::storage::trace::event::segment
   template<core::storage::is_implementation Storage>
     struct Create
   {
-    typename Storage::Parameter::Segment::Create _parameter_segment_create;
-    core::memory::Size _size;
+    typename Storage::Parameter::Segment::Create parameter_segment_create;
+    core::memory::Size size;
   };
 }
 
@@ -28,8 +28,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::trace::event::segment::Create<Storage> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

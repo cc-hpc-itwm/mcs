@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -19,11 +19,11 @@ namespace mcs::core::storage::trace::event::file
     auto const essence
       { [&] (auto const& x)
         {
-          return std::tie ( x._parameter_file_write
-                          , x._segment_id
-                          , x._offset
-                          , x._path
-                          , x._range
+          return std::tie ( x.parameter_file_write
+                          , x.segment_id
+                          , x.offset
+                          , x.path
+                          , x.range
                           );
         }
       };

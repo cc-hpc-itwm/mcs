@@ -1,7 +1,7 @@
-// Copyright (C) 2024-2025 Fraunhofer ITWM
+// Copyright (C) 2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-#include <mcs/util/FMT/STD/filesystem/path.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/NonExistingPath.hpp>
 #include <memory>
 
@@ -11,7 +11,10 @@ namespace mcs::util
     ( std::filesystem::path path
     )
       : mcs::Error
-        { fmt::format ("NonExistingPath: '{}' already exists.", path)
+        { fmt::format
+            ( "NonExistingPath: '{}' already exists."
+            , util::FMT::STD::FILESYSTEM::Path {path}
+            )
         }
       , _path {path}
   {}

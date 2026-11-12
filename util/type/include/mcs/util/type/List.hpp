@@ -1,11 +1,11 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
 
 #include <mcs/util/read/State.hpp>
 #include <mcs/util/type/ID.hpp>
-#include <string>
+#include <string_view>
 #include <variant>
 
 namespace mcs::util::type
@@ -105,15 +105,17 @@ namespace mcs::util::type
         , Args&&...
         );
 
-    // Convenience helper that creates a parse state and calls
-    // parse_and_run (state, ...)
+    // Convenience helper that borrows input, creates a parse state
+    // and calls parse_id_and_run (state, ...). Input characters must
+    // remain alive and unchanged throughout parsing and runner
+    // execution.
     //
     template< template<typename> typename Parse
             , typename Runner
             , typename... Args
             >
       static auto parse_id_and_run
-        ( std::string input
+        ( std::string_view
         , Runner&&
         , Args&&...
         );

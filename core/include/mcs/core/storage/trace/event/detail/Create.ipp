@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -28,7 +28,7 @@ namespace fmt
       ( context.out()
       , "trace::event::Create {}"
       , std::make_tuple
-        ( create._parameter_create
+        ( create.parameter_create
         )
       );
   }

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -73,14 +73,6 @@ namespace mcs::fuse::content::implementation
       ) -> content::result::Write
       ;
 
-    [[nodiscard]] auto fallocate
-      ( state::writing auto const&
-      , int mode
-      , off_t offset
-      , off_t size
-      ) -> int
-      ;
-
     auto cleanup (state::writing auto const&) -> void;
 
     Vector (Vector const&) = delete;
@@ -90,13 +82,6 @@ namespace mcs::fuse::content::implementation
     ~Vector() = default;
 
   private:
-    constexpr static auto const _xattr_key_capacity
-      { "user.mcs.content.Vector.capacity"
-      };
-    util::not_null<state::inode::Common> _inode;
-
-    auto xattr_set_capacity (state::writing auto const&, int flags) -> void;
-
     std::vector<std::byte> _data;
   };
   static_assert (is_content<Vector>);

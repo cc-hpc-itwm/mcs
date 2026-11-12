@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/testing/core/storage/implementation/SHMEM.hpp>
@@ -21,7 +21,7 @@ namespace mcs::testing::core::storage::implementation
     (
     ) const -> typename Storage::Parameter::Create
   {
-    return {_prefix, _max_size};
+    return {.prefix = _prefix, .max_size = _max_size};
   }
 
   auto SHMEM::parameter_size_max

@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/awaitable.hpp>
@@ -47,7 +47,7 @@ TYPED_TEST ( RPCClientT
   using Protocol = TypeParam;
   using Dispatcher = mcs::rpc::Dispatcher<Handler, Handler::Sleep>;
 
-  auto io_context_server
+  auto io_context_provider
     { mcs::rpc::ScopedRunningIOContext
         {mcs::rpc::ScopedRunningIOContext::NumberOfThreads {1u}}
     };
@@ -57,7 +57,7 @@ TYPED_TEST ( RPCClientT
     };
 
   auto const provider
-    { mcs::rpc::make_provider<Protocol, Dispatcher> ({}, io_context_server)
+    { mcs::rpc::make_provider<Protocol, Dispatcher> ({}, io_context_provider)
     };
 
   auto const client

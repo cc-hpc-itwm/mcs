@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -23,12 +23,6 @@ namespace mcs::serialization
 
     template<is_serializable... T>
       constexpr explicit OArchive (T const&...);
-
-    template<is_serializable... T>
-      constexpr explicit OArchive (T&...);
-
-    template<is_serializable... T>
-      constexpr explicit OArchive (T&&...);
 
     // Returns: The serialized bytes without size prefix.
     //
@@ -87,15 +81,8 @@ namespace mcs::serialization
     template<typename T> auto append (std::span<T>) -> OArchive&;
     template<typename T> auto stream (std::span<T>) -> OArchive&;
 
-    // Takes ownership of the bytes of the other archive.
-    auto store (OArchive const&) -> OArchive&;
-
     template<is_serializable T>
       friend constexpr auto save (OArchive&, T const&) -> OArchive&;
-    template<is_serializable T>
-      friend constexpr auto save (OArchive&, T&) -> OArchive&;
-    template<is_serializable T>
-      friend auto save (OArchive&, T&&) -> OArchive&;
 
     template<typename T> auto emplace_back (std::span<T>) -> std::size_t;
 
@@ -104,7 +91,7 @@ namespace mcs::serialization
       { std::as_bytes (std::span {std::addressof (_size_append), 1})
       };
     std::size_t _sum_size_buffers {_buffers.front().size()};
-    std::list<std::vector<std::byte>> _bytes_for_temporaries;
+    std::list<std::vector<std::byte>> _bytes;
   };
 }
 

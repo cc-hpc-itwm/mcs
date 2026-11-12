@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -20,8 +20,8 @@ namespace mcs::util
     {
       Error (T, T) noexcept;
 
-      constexpr auto numerator() const noexcept -> T;
-      constexpr auto denominator() const noexcept -> T;
+      [[nodiscard]] constexpr auto numerator() const noexcept -> T;
+      [[nodiscard]] constexpr auto denominator() const noexcept -> T;
 
       ~Error() override;
       Error (Error const&) = default;

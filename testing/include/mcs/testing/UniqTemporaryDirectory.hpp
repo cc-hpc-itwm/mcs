@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -10,8 +10,8 @@
 namespace mcs::testing
 {
   // Creates a temporary directory with a name based on the unique
-  // test ID. The constructor will create the directory and write test
-  // information in a file "INFO" in this directory.
+  // test ID. The constructor writes test information to separate
+  // files.
   //
   // EXAMPLE
   //
@@ -19,17 +19,19 @@ namespace mcs::testing
   //     {
   //       UniqTemporaryDirectory temp {PREFIX};
   //
-  // will produce the file
+  // will produce the files
   //
-  //     /$TMPDIR/PREFIX-PID-...-.../INFO
+  //     /$TMPDIR/MCS-TEST-<128-bit-digest>/TEST
+  //     /$TMPDIR/MCS-TEST-<128-bit-digest>/PID
+  //     /$TMPDIR/MCS-TEST-<128-bit-digest>/PREFIX
   //
-  // with the content
+  // TEST contains the test suite and name, including optional type
+  // and value parameters. PID contains the process ID, and PREFIX
+  // contains the caller-provided prefix.
   //
-  //    Suite.name
+  // It also produces the folder
   //
-  // and will produce the folder
-  //
-  //     /$TMPDIR/PREFIX-PID-...-.../DATA
+  //     /$TMPDIR/MCS-TEST-<128-bit-digest>/DATA
   //
   // which is returned by the method path().
   //
@@ -37,13 +39,13 @@ namespace mcs::testing
   {
     template<typename Prefix> UniqTemporaryDirectory (Prefix);
 
-    auto path() const -> std::filesystem::path;
+    [[nodiscard]] auto path() const -> std::filesystem::path;
 
   private:
-    util::TemporaryDirectory _temporary_directory
-      {std::filesystem::temp_directory_path() / _id};
+    util::TemporaryDirectory _temporary_directory;
     util::TemporaryDirectory _temporary_data_path
-      {_temporary_directory.path() / "DATA"};
+      { _temporary_directory.path() / "DATA"
+      };
   };
 }
 

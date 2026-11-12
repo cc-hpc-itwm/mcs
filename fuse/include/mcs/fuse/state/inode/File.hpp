@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -67,14 +67,6 @@ namespace mcs::fuse::state
       ;
 
     auto trunc_success (state::writing auto const&, ::fuse_req_t) -> bool;
-
-    [[nodiscard]] auto fallocate
-      ( state::writing auto const&
-      , int mode
-      , off_t offset
-      , off_t size
-      ) -> int
-      ;
 
     auto ioctl
       ( state::reading auto const&

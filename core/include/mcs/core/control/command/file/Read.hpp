@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Fraunhofer ITWM
+// Copyright (C) 2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -22,12 +22,12 @@ namespace mcs::core::control::command::file
   {
     using Response = mcs::core::memory::Size;
 
-    storage::ID _storage_id;
-    storage::Parameter _parameter_file_read;
-    storage::segment::ID _segment_id;
-    memory::Offset _offset;
-    std::filesystem::path _file;
-    memory::Range _range;
+    storage::ID storage_id;
+    storage::Parameter parameter_file_read;
+    storage::segment::ID segment_id;
+    memory::Offset offset;
+    std::filesystem::path file;
+    memory::Range range;
   };
 }
 
@@ -42,8 +42,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::control::command::file::Read const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

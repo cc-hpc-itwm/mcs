@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -22,6 +22,14 @@ namespace mcs::core::transport
     storage::segment::ID segment_id;
     memory::Offset offset;
   };
+
+  [[nodiscard]] auto make_address
+    ( storage::ID
+    , storage::Parameter
+    , storage::segment::ID
+    , memory::Offset
+    ) -> Address
+    ;
 }
 
 namespace fmt
@@ -35,8 +43,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::transport::Address const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# Copyright (C) 2026 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+set -euo pipefail
+
+MCS_TEST_FUSE_BIN_FS="@MCS_TEST_FUSE_BIN_FS@"
+TESTING_BASH_DIRECTORY="@TESTING_BASH_DIRECTORY@"
+VIRTUAL_ARGUMENTS="${1}"
+
+source "${TESTING_BASH_DIRECTORY}/cleanup"
+source "${TESTING_BASH_DIRECTORY}/TMP_DIRECTORY"
+source "${TESTING_BASH_DIRECTORY}/wait"
+
+help="$("${MCS_TEST_FUSE_BIN_FS}" --help)"
+grep -q "'Vector'" <<< "${help}"
+grep -q "'Realloc'" <<< "${help}"
+grep -q "'Storage'" <<< "${help}"
+grep -q "'Heap (Limit" <<< "${help}"
+grep -q -- "--storage-segment-create" <<< "${help}"
+grep -q -- "--mountpoint" <<< "${help}"
+grep -q -- "FUSE]]" <<< "${help}"
+awk 'length > 75 { exit 1 }' <<< "${help}"
+
+run_content()
+(
+  local name="${1}"
+  local mountpoint="${TMP_DIRECTORY}/mount-${name}"
+  local storage="${TMP_DIRECTORY}/storage-${name}"
+  local file="${mountpoint}/data"
+  local expected="${TMP_DIRECTORY}/expected-${name}"
+  local pid
+
+  mkdir -p "${mountpoint}" "${storage}"
+  printf 'content-%s\n' "${name}" > "${expected}"
+
+  case "${name}" in
+    Vector)
+      "${MCS_TEST_FUSE_BIN_FS}"                                       \
+        --content 'Vector'                                            \
+        --name "mcs-${name}"                                          \
+        --mountpoint "${mountpoint}"                                  \
+        '[[FUSE' -o auto_unmount -f 'FUSE]]'                          &
+      ;;
+    Realloc)
+      "${MCS_TEST_FUSE_BIN_FS}"                                       \
+        --content 'Realloc'                                           \
+        --name "mcs-${name}"                                          \
+        --mountpoint "${mountpoint}"                                  \
+        '[[FUSE' -o auto_unmount -f 'FUSE]]'                          &
+      ;;
+    Files)
+      "${MCS_TEST_FUSE_BIN_FS}"                                       \
+        --content 'Storage'                                           \
+        --storage "Files (Prefix \"${storage}\", Limit 16777216)"     \
+        --storage-size-max 'Files::Size::Max()'                       \
+        --storage-size-used 'Files::Size::Used()'                     \
+        --storage-segment-create                                      \
+          'Files::Segment::Create (Files::Segment::OnRemove::Remove())' \
+        --storage-segment-remove 'Files::Segment::Remove (Nothing)'   \
+        --storage-chunk-description 'Files::Chunk::Description()'     \
+        --name "mcs-${name}"                                          \
+        --mountpoint "${mountpoint}"                                  \
+        '[[FUSE' -o auto_unmount -f 'FUSE]]'                          &
+      ;;
+    Heap)
+      "${MCS_TEST_FUSE_BIN_FS}"                                       \
+        --content 'Storage'                                           \
+        --storage 'Heap (Limit 16777216)'                             \
+        --storage-size-max 'Heap::Size::Max()'                        \
+        --storage-size-used 'Heap::Size::Used()'                      \
+        --storage-segment-create 'Heap::Segment::Create (Nothing)'    \
+        --storage-segment-remove 'Heap::Segment::Remove()'            \
+        --storage-chunk-description 'Heap::Chunk::Description()'      \
+        --name "mcs-${name}"                                          \
+        --mountpoint "${mountpoint}"                                  \
+        '[[FUSE' -o auto_unmount -f 'FUSE]]' &
+      ;;
+    SHMEM)
+      "${MCS_TEST_FUSE_BIN_FS}"                                       \
+        --content 'Storage'                                           \
+        --storage "SHMEM (Prefix \"mcs-fuse-$$\", Limit 16777216)"    \
+        --storage-size-max 'SHMEM::Size::Max()'                       \
+        --storage-size-used 'SHMEM::Size::Used()'                     \
+        --storage-segment-create                                      \
+        'SHMEM::Segment::Create (SHMEM::Segment::AccessMode (384), Nothing)' \
+        --storage-segment-remove 'SHMEM::Segment::Remove()'           \
+        --storage-chunk-description 'SHMEM::Chunk::Description()'     \
+        --name "mcs-${name}"                                          \
+        --mountpoint "${mountpoint}"                                  \
+        '[[FUSE' -o auto_unmount -f 'FUSE]]'                          &
+      ;;
+    Virtual)
+      mapfile -t arguments < <("${VIRTUAL_ARGUMENTS}")
+      test "${#arguments[@]}" = 6
+      "${MCS_TEST_FUSE_BIN_FS}"                                       \
+        --content 'Storage'                                           \
+        --storage "${arguments[0]}"                                   \
+        --storage-size-max "${arguments[1]}"                          \
+        --storage-size-used "${arguments[2]}"                         \
+        --storage-segment-create "${arguments[3]}"                    \
+        --storage-segment-remove "${arguments[4]}"                    \
+        --storage-chunk-description "${arguments[5]}"                 \
+        --name "mcs-${name}"                                          \
+        --mountpoint "${mountpoint}"                                  \
+        '[[FUSE' -o auto_unmount -f 'FUSE]]'                          &
+      ;;
+    *)
+      echo "unknown content test ${name}" >&2
+      return 1
+      ;;
+  esac
+
+  pid=$!
+  on_exit=("kill ${pid} 2>/dev/null || true")
+  on_exit+=("fusermount3 -u ${mountpoint} 2>/dev/null || true")
+  trap cleanup EXIT
+
+  wait 50 mountpoint -q "${mountpoint}"
+  cp "${expected}" "${file}"
+  cmp "${expected}" "${file}"
+  truncate --size 1048576 "${file}"
+  test "$(stat --format '%s' "${file}")" = 1048576
+  rm "${file}"
+
+  fusermount3 -u "${mountpoint}"
+  builtin wait "${pid}"
+  on_exit=()
+)
+
+run_content Vector
+run_content Realloc
+run_content Files
+run_content Heap
+run_content SHMEM
+run_content Virtual

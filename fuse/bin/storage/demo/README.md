@@ -18,7 +18,7 @@ Architecture
            ▼                                   ▼
   ┌─────────────────────────────────────────────────────────────┐
   │                    FUSE Filesystem                          │
-  │            (mcs_fuse_bin_storage_fs)                        │
+  │                 (mcs_fuse_bin_fs)                           │
   └────────────────────────────┬────────────────────────────────┘
                                │
                                ▼
@@ -58,34 +58,39 @@ Running the Demo
 export MCS_FUSE_BIN_STORAGE_DEMO_PREFIX="demo_producer_consumer"
 export MCS_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT=$(mktemp -d)
 
-${MCS_INSTALL_DIR:?}/bin/mcs_fuse_bin_storage_fs                           \
-    "SHMEM (Prefix \"${MCS_FUSE_BIN_STORAGE_DEMO_PREFIX:?}\", Unlimited)"  \
-    'SHMEM::Size::Max()'                                                   \
-    'SHMEM::Size::Used()'                                                  \
-    'SHMEM::Segment::Create (SHMEM::Segment::AccessMode (384), Nothing)'   \
-    'SHMEM::Segment::Remove()'                                             \
-    'SHMEM::Chunk::Description()'                                          \
-    'mcs_demo_fs'                                                          \
-    -o auto_unmount                                                        \
-    -f                                                                     \
-    ${MCS_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT:?} &
+${MCS_INSTALL_DIR:?}/bin/mcs_fuse_bin_fs                                  \
+  --content 'Storage'                                                     \
+  --storage                                                               \
+    "SHMEM (Prefix \"${MCS_FUSE_BIN_STORAGE_DEMO_PREFIX:?}\", Unlimited)" \
+  --storage-size-max 'SHMEM::Size::Max()'                                 \
+  --storage-size-used 'SHMEM::Size::Used()'                               \
+  --storage-segment-create                                                \
+    'SHMEM::Segment::Create (SHMEM::Segment::AccessMode (384), Nothing)'  \
+  --storage-segment-remove 'SHMEM::Segment::Remove()'                     \
+  --storage-chunk-description 'SHMEM::Chunk::Description()'               \
+  --name 'mcs_demo_fs'                                                    \
+  --mountpoint ${MCS_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT:?}                  \
+  '[[FUSE' -o auto_unmount -f 'FUSE]]' &
 ```
 
 ### Step 2: Run the producer (writes data to a file)
 
 ```bash
 # Write 10 MiB of data
-${MCS_INSTALL_DIR:?}/bin/mcs_fuse_bin_storage_demo_producer                \
-    ${MCS_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT:?}/data                         \
-    $((10*2**20))
+${MCS_INSTALL_DIR:?}/bin/mcs_fuse_bin_storage_demo_producer               \
+    --file                                                                \
+      ${MCS_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT:?}/data                      \
+    --size $((10*2**20))
 ```
 
 ### Step 3: Check the file distribution
 
 ```bash
-${MCS_INSTALL_DIR:?}/bin/mcs_fuse_bin_storage_fs_distribution              \
-    ${MCS_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT:?}/data
+${MCS_INSTALL_DIR:?}/bin/mcs_fuse_bin_storage_fs_distribution             \
+    --file ${MCS_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT:?}/data
 ```
+
+
 
 Output shows how the file is distributed across SHMEM segments:
 ```
@@ -95,9 +100,10 @@ Output shows how the file is distributed across SHMEM segments:
 ### Step 4: Run the consumer (reads via zero-copy SHMEM access)
 
 ```bash
-${MCS_INSTALL_DIR:?}/bin/mcs_fuse_bin_storage_demo_consumer                \
-    "${MCS_FUSE_BIN_STORAGE_DEMO_PREFIX:?}"                                \
-    ${MCS_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT:?}/data
+${MCS_INSTALL_DIR:?}/bin/mcs_fuse_bin_storage_demo_consumer               \
+    --shmem-prefix                                                        \
+      "${MCS_FUSE_BIN_STORAGE_DEMO_PREFIX:?}"                             \
+    --file ${MCS_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT:?}/data
 ```
 
 Expected output:

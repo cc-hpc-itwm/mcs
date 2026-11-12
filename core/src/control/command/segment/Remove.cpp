@@ -1,9 +1,26 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/control/command/segment/Remove.hpp>
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
+#include <utility>
+
+namespace mcs::core::control::command::segment
+{
+  auto make_remove
+    ( mcs::core::storage::ID storage_id
+    , mcs::core::storage::Parameter storage_parameter
+    , mcs::core::storage::segment::ID segment_id
+    ) -> Remove
+  {
+    return Remove
+      { .storage_id = storage_id
+      , .storage_parameter = std::move (storage_parameter)
+      , .segment_id = segment_id
+      };
+  }
+}
 
 namespace mcs::serialization
 {
@@ -26,6 +43,10 @@ namespace mcs::serialization
     auto storage_parameter {load<decltype (mcs::core::control::command::segment::Remove::storage_parameter)> (ia)};
     auto segment_id {load<decltype (mcs::core::control::command::segment::Remove::segment_id)> (ia)};
 
-    return mcs::core::control::command::segment::Remove {storage_id, storage_parameter, segment_id};
+    return mcs::core::control::command::segment::make_remove
+      ( storage_id
+      , std::move (storage_parameter)
+      , segment_id
+      );
   }
 }

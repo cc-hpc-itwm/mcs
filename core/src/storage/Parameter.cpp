@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/storage/Parameter.hpp>
@@ -10,7 +10,7 @@
 namespace mcs::core::storage
 {
   Parameter::Parameter (std::vector<std::byte> blob)
-    : _blob {blob}
+    : _blob {std::move (blob)}
   {}
 }
 

@@ -1,11 +1,11 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/cast.hpp>
 #include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/STD/tuple.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/read/prefix.hpp>
-#include <mcs/util/read/uint.hpp>
 
 namespace mcs::core::memory
 {
@@ -102,17 +102,17 @@ namespace mcs::core::memory
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::memory::Offset>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::memory::Offset>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::memory::Offset>::format
       ( mcs::core::memory::Offset const& size
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
-    return fmt::format_to (ctx.out(), "of_{}", size._value);
+    return fmt::format_to (context.out(), "of_{}", size._value);
   }
 }
 

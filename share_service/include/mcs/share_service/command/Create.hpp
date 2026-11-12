@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -39,6 +39,12 @@ namespace mcs::share_service::command
     core::memory::Size size;
     typename Parameters::Variant parameters;
   };
+
+  [[nodiscard]] auto make_create
+    ( core::memory::Size
+    , Create::Parameters::Variant
+    ) -> Create
+    ;
 }
 
 namespace mcs::serialization

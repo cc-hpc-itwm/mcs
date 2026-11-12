@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 // This is the MCS-aware consumer that reads data from files on an MCS
@@ -13,7 +13,7 @@
 // This demonstrates how a consumer can benefit from MCS even when the
 // producer is a legacy application that cannot be modified.
 //
-// Usage: mcs_consumer <shmem_prefix> <file>
+// Usage: mcs_consumer --shmem-prefix PREFIX --file FILE
 //
 // Prerequisites:
 //   - The file must be on a FUSE filesystem backed by SHMEM storage
@@ -32,7 +32,9 @@
 #include <mcs/fuse/content/implementation/storage/Part.hpp>
 #include <mcs/fuse/content/implementation/storage/for_each_part.hpp>
 #include <mcs/nonstd/scope.hpp>
-#include <mcs/util/FMT/STD/filesystem/path.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
 #include <mcs/util/main.hpp>
 #include <mcs/util/string.hpp>
 #include <mcs/util/syscall/close.hpp>
@@ -43,6 +45,34 @@
 
 namespace
 {
+  namespace option
+  {
+    using mcs::util::command_line::option::Parameter;
+
+    constexpr auto file {Parameter {"file"}};
+    constexpr auto shmem_prefix {Parameter {"shmem-prefix"}};
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <PREFIX>\n"
+        "    Shared-memory object-name prefix.\n"
+        "  --{2} <PATH>\n"
+        "    File whose shared-memory contents are verified.\n"
+      , args.at (0)
+      , option::shmem_prefix
+      , option::file
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print ("{}", usage (args));
+  }
+
   struct MappedPart
   {
     [[nodiscard]] MappedPart (std::string name, std::size_t size)
@@ -103,34 +133,26 @@ namespace
     void* _data;
   };
 
-  auto mcs_fuse_bin_storage_demo_consumer (mcs::util::Args args) -> int
+  auto mcs_fuse_bin_storage_demo_consumer
+    ( mcs::util::arguments::View args
+    ) -> int
   {
-    if (args.size() != 3)
-    {
-      throw std::invalid_argument
-        { fmt::format
-          ( "Usage: {} <shmem_prefix> <file>\n"
-            "\n"
-            "Reads data from a file on an MCS FUSE filesystem by directly\n"
-            "accessing the underlying SHMEM storage (zero-copy).\n"
-            "\n"
-            "Arguments:\n"
-            "  shmem_prefix  The prefix used when starting the FUSE filesystem\n"
-            "  file          Path to a file on the MCS FUSE filesystem\n"
-            "\n"
-            "The consumer queries the file distribution using an ioctl,\n"
-            "then opens each SHMEM segment directly to verify the data\n"
-            "pattern written by the producer.\n"
-          , args[0]
-          )
-       };
-    }
-
-    auto const shmem_prefix {mcs::util::string {args[1]}};
-    auto const file_path {std::filesystem::path {args[2]}};
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::shmem_prefix)
+        . add (option::file)
+        )
+      };
+    auto const shmem_prefix
+      { mcs::util::string {options.at (option::shmem_prefix)}
+      };
+    auto const file_path
+      { std::filesystem::path {options.at (option::file)}
+      };
 
     fmt::print ( "Reading {} via SHMEM (prefix: {})\n"
-               , file_path
+               , mcs::util::FMT::STD::FILESYSTEM::Path {file_path}
                , shmem_prefix
                );
 
@@ -174,7 +196,7 @@ namespace
       throw std::runtime_error
         { fmt::format
             ( "File {} has size {}, and only {} many bytes could be verified."
-            , file_path
+            , mcs::util::FMT::STD::FILESYSTEM::Path {file_path}
             , file_size
             , bytes_verified
             )
@@ -183,7 +205,7 @@ namespace
 
     fmt::print ( "SUCCESS: Verified {} bytes of {}.\n"
                , bytes_verified
-               , file_path
+               , mcs::util::FMT::STD::FILESYSTEM::Path {file_path}
                );
 
     return EXIT_SUCCESS;
@@ -192,5 +214,10 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, mcs_fuse_bin_storage_demo_consumer);
+  return mcs::util::main
+    ( argc
+    , argv
+    , help
+    , mcs_fuse_bin_storage_demo_consumer
+    );
 }

@@ -2,7 +2,7 @@
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 find_package (PkgConfig REQUIRED)
-pkg_check_modules (fuse3 REQUIRED fuse3=3.18.2)
+pkg_check_modules (fuse3 REQUIRED fuse3=3.18.3)
 
 add_library (fuse3 INTERFACE)
 target_include_directories (fuse3 INTERFACE ${fuse3_INCLUDE_DIRS})

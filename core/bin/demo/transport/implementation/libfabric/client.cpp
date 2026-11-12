@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -32,6 +32,8 @@
 #include <mcs/rpc/access_policy/Exclusive.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
 #include <mcs/util/ASIO/is_protocol.hpp>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
 #include <mcs/util/main.hpp>
 #include <mcs/util/read/read.hpp>
 #include <mcs/util/type/List.hpp>
@@ -43,38 +45,87 @@
 
 namespace
 {
-  auto client_main (mcs::util::Args args) -> int
+  namespace option
   {
-    auto const usage
-      { [&]
-        {
-          return fmt::format
-            ( "usage: {}"
-              " transport_provider_name"
-              " transport_domain_name"
-              " provider_path"
-              " number_of_longs"
-              " repetitions"
-              " number_of_clients"
-              " number_of_threads"
-              " [get|put]"
-            , args[0]
-            )
-            ;
-        }
+    using mcs::util::command_line::option::Parameter;
+
+    constexpr auto method {Parameter {"method"}};
+    constexpr auto number_of_clients {Parameter {"number-of-clients"}};
+    constexpr auto number_of_longs {Parameter {"number-of-longs"}};
+    constexpr auto number_of_threads {Parameter {"number-of-threads"}};
+    constexpr auto provider_path {Parameter {"provider-path"}};
+    constexpr auto repetitions {Parameter {"repetitions"}};
+    constexpr auto transport_domain_name
+      { Parameter {"transport-domain-name"}
+      };
+    constexpr auto transport_provider_name
+      { Parameter {"transport-provider-name"}
+      };
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <NAME>\n"
+        "    Libfabric provider name.\n"
+        "  --{2} <NAME>\n"
+        "    Libfabric domain name.\n"
+        "  --{3} <PATH>\n"
+        "    Directory containing provider and source information.\n"
+        "  --{4} <COUNT>\n"
+        "    Number of long elements per transfer.\n"
+        "  --{5} <COUNT>\n"
+        "    Number of transfer repetitions.\n"
+        "  --{6} <COUNT>\n"
+        "    Number of concurrent clients.\n"
+        "  --{7} <COUNT>\n"
+        "    Number of RPC I/O threads.\n"
+        "  --{8} <'get'|'put'>\n"
+        "    Transfer operation.\n"
+      , args.at (0)
+      , option::transport_provider_name
+      , option::transport_domain_name
+      , option::provider_path
+      , option::number_of_longs
+      , option::repetitions
+      , option::number_of_clients
+      , option::number_of_threads
+      , option::method
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print ("{}\n", usage (args));
+  }
+
+  auto client_main (mcs::util::arguments::View args) -> int
+  {
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::transport_provider_name)
+        . add (option::transport_domain_name)
+        . add (option::provider_path)
+        . add (option::number_of_longs)
+        . add (option::repetitions)
+        . add (option::number_of_clients)
+        . add (option::number_of_threads)
+        . add (option::method)
+        )
       };
 
-    if (args.size() != 9)
-    {
-      throw std::invalid_argument {usage()};
-    }
-
-    auto const method {std::string (args[8])};
+    auto const method {options.at (option::method)};
     if (method != "get" && method != "put")
     {
-      throw std::invalid_argument {usage()};
+      throw std::invalid_argument {usage (args)};
     }
-    auto const provider_path {std::filesystem::path (args[3])};
+
+    auto const provider_path
+      { std::filesystem::path {options.at (option::provider_path)}
+      };
 
     namespace libfabric = mcs::core::transport::implementation::libfabric;
 
@@ -88,13 +139,23 @@ namespace
           (provider_path / "SOURCE")
       };
 
-    auto const number_of_longs {mcs::util::read::read<unsigned int> (args[4])};
+    auto const number_of_longs
+      { mcs::util::read::read<unsigned int>
+          ( options.at (option::number_of_longs)
+          )
+      };
     auto const size_in_bytes {number_of_longs * sizeof (long)};
     auto const size {mcs::core::memory::make_size (size_in_bytes)};
 
-    auto const repetitions {mcs::util::read::read<unsigned int> (args[5])};
+    auto const repetitions
+      { mcs::util::read::read<unsigned int>
+          ( options.at (option::repetitions)
+          )
+      };
     auto const number_of_clients
-      { mcs::util::read::read<unsigned int> (args[6])
+      { mcs::util::read::read<unsigned int>
+          ( options.at (option::number_of_clients)
+          )
       };
 
     using Storage = mcs::core::storage::implementation::Heap;
@@ -103,7 +164,9 @@ namespace
     auto io_context
       { mcs::rpc::ScopedRunningIOContext
         { mcs::rpc::ScopedRunningIOContext::NumberOfThreads
-            { mcs::util::read::read<unsigned int> (args[7])
+            { mcs::util::read::read<unsigned int>
+                ( options.at (option::number_of_threads)
+                )
             }
         , SIGINT, SIGTERM
         }
@@ -157,14 +220,14 @@ namespace
                   };
 
                 auto const destination
-                  { mcs::core::transport::Address
-                    { storage->id()
+                  { mcs::core::transport::make_address
+                    ( storage->id()
                     , mcs::core::storage::make_parameter
                         ( typename Storage::Parameter::Chunk::Description{}
                         )
                     , segment->id()
                     , mcs::core::memory::make_offset (0)
-                    }
+                    )
                   };
 
                 return libfabric::provider::run
@@ -189,8 +252,20 @@ namespace
                           { io_context
                           , connection_information
                           , libfabric::libfabric::Interface
-                              { libfabric::libfabric::Provider {args[1]}
-                              , libfabric::libfabric::Domain {args[2]}
+                              { .provider = libfabric::libfabric::Provider
+                                  { std::string
+                                      { options.at
+                                          ( option::transport_provider_name
+                                          )
+                                      }
+                                  }
+                              , .domain = libfabric::libfabric::Domain
+                                  { std::string
+                                      { options.at
+                                          ( option::transport_domain_name
+                                          )
+                                      }
+                                  }
                               }
                           , std::addressof (storages)
                           }
@@ -294,5 +369,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, client_main);
+  return mcs::util::main (argc, argv, help, client_main);
 }

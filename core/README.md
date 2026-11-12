@@ -63,6 +63,43 @@ MCS provides a couple of storage implementations:
 
 - [Trace](include/mcs/core/storage/implementation/Trace.hpp): Traces storage adds a tracer to some underlying storage. The tracer implements the [trace interface](include/mcs/core/storage/trace/Concepts.hpp) that defines an interface for all management events. Example tracers to collect trace events in memory or to write them into a file are defined in [tracer](include/mcs/core/storage/tracer).
 
+### Storage selection:
+
+Applications that accept a textual storage configuration can use
+[`storage::selection::select`](include/mcs/core/storage/select.hpp). The
+caller supplies a `util::type::List` of supported storage implementations and
+six arguments describing storage creation, size queries, segment creation and
+removal, and chunk descriptions.
+
+The selector parses the arguments according to the selected implementation and
+invokes a typed callback with
+`storage::selection::Parameters<StorageImplementation>`. Core deliberately
+does not define one global list of supported implementations. Each application
+chooses the implementations that fit its purpose.
+
+```cpp
+using SupportedStorageImplementations = mcs::util::type::List
+  < mcs::core::storage::implementation::Files
+  , mcs::core::storage::implementation::Heap
+  >;
+
+return mcs::core::storage::selection::select
+  <SupportedStorageImplementations>
+  ( arguments
+  , []<mcs::core::storage::is_implementation StorageImplementation>
+      ( mcs::core::storage::selection::Parameters<StorageImplementation>
+          parameters
+      )
+    {
+      // Construct or adapt StorageImplementation with the parsed parameters.
+    }
+  );
+```
+
+This operation selects only from storage implementations compiled into the
+caller's list. It does not provide runtime loading. Use `Virtual` when an
+implementation must be loaded from a shared object.
+
 ## Storages:
 
 A heterogeneous collection of storages. Assigns an identifier to individual storages and offers functionality to manage storages in a generic way. To manage a storage includes to create and remove segments, to retrieve sizes and chunk descriptions and to offload operations to the storage. Data transport is not part of the management interface and handled independently by the transport interface.

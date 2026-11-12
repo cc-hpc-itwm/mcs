@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -34,8 +34,8 @@ namespace fmt
       , Access{}
       , std::make_tuple
         ( chunk_description._parameter_chunk_description
-        , chunk_description._segment_id
-        , chunk_description._memory_range
+        , chunk_description.segment_id
+        , chunk_description.memory_range
         )
       );
   }

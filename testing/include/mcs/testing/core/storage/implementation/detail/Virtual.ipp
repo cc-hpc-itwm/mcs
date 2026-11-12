@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/testing/core/storage/implementation/Files.hpp>
@@ -14,25 +14,25 @@
 
 namespace mcs::testing::core::storage::implementation
 {
-  namespace
-  {
+  template<typename TestingStorage>
     template<typename T>
-      auto make_storage_parameter (T const& x)
-    {
-      auto const bytes {serialization::OArchive {x}.bytes()};
-      auto storage_parameter
-        { mcs::core::storage::implementation::Virtual::StorageParameter{}
-        };
-      auto const data
-        { util::cast<::MCS_CORE_STORAGE_BYTE const*> (bytes.data())
-        };
-      std::copy
-        ( data
-        , data + bytes.size()
-        , std::back_inserter (storage_parameter)
-        );
-      return storage_parameter;
-    }
+      auto Virtual<TestingStorage>::make_storage_parameter
+        ( T const& x
+        ) -> ::mcs::core::storage::implementation::Virtual::StorageParameter
+  {
+    auto const bytes {serialization::OArchive {x}.bytes()};
+    auto storage_parameter
+      { mcs::core::storage::implementation::Virtual::StorageParameter{}
+      };
+    auto const data
+      { util::cast<::MCS_CORE_STORAGE_BYTE const*> (bytes.data())
+      };
+    std::copy
+      ( data
+      , data + bytes.size()
+      , std::back_inserter (storage_parameter)
+      );
+    return storage_parameter;
   }
 
   template<typename TestingStorage>

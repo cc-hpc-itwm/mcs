@@ -7,7 +7,7 @@ include (FetchContent)
 
 FetchContent_Declare (asio
   GIT_REPOSITORY  https://github.com/chriskohlhoff/asio.git
-  GIT_TAG         asio-1-38-0
+  GIT_TAG         asio-1-39-0
   GIT_SHALLOW     TRUE
   SOURCE_DIR      ${CMAKE_BINARY_DIR}/3rdparty/asio
   OVERRIDE_FIND_PACKAGE

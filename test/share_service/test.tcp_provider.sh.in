@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 set -euo pipefail
@@ -17,6 +17,7 @@ MCS_TEST_SHARE_SERVICE_TESTCASE=${1:?}
 
 source "${TESTING_BASH_DIRECTORY}/cleanup"
 source "${TESTING_BASH_DIRECTORY}/TMP_DIRECTORY"
+source "${TESTING_BASH_DIRECTORY}/wait"
 
 MCS_TEST_SHARE_SERVICE_UNIQUE_ID="$(hostname).$$"
 
@@ -31,7 +32,9 @@ do
       "1"                                         &
 
   DAEMON_PATH="${MCS_TEST_SHARE_SERVICE_PATH}"
-  source "${TESTING_BASH_DIRECTORY}/daemonize"
+  wait 50 test -s "${DAEMON_PATH}/PID"
+  on_exit+=("wait 50 test ! -s ${DAEMON_PATH}/PID")
+  on_exit+=("kill $(cat "${DAEMON_PATH}/PID")")
 
   MCS_TEST_SHARE_SERVICE_TESTCASE_OUTPUT="${TMP_DIRECTORY}/${MCS_TEST_SHARE_SERVICE_TESTCASE}.${MCS_TEST_SHARE_SERVICE_UNIQUE_ID}.out"
   MCS_TEST_SHARE_SERVICE_TEST_SHMEM_PREFIX="test.tcp_provider.${MCS_TEST_SHARE_SERVICE_UNIQUE_ID}"

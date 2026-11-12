@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -30,7 +30,13 @@ namespace mcs::serialization
   template<typename T>
     auto OArchive::emplace_back (std::span<T> buffer) -> std::size_t
   {
-    auto const size {_buffers.emplace_back (std::as_bytes (buffer)).size()};
+    auto const bytes {std::as_bytes (buffer)};
+    auto const size
+      { _buffers.emplace_back
+        ( _bytes.emplace_back (std::begin (bytes), std::end (bytes))
+        )
+        .size()
+      };
 
     _sum_size_buffers += size;
 
@@ -48,7 +54,7 @@ namespace mcs::serialization
   template<typename T>
     auto OArchive::stream (std::span<T> buffer) -> OArchive&
   {
-    std::ignore = emplace_back (buffer);
+    _sum_size_buffers += _buffers.emplace_back (std::as_bytes (buffer)).size();
 
     return *this;
   }
@@ -62,18 +68,6 @@ namespace mcs::serialization
     constexpr OArchive::OArchive (T const&... xs)
   {
     (save (*this, xs), ...);
-  }
-
-  template<is_serializable... T>
-    constexpr OArchive::OArchive (T&... xs)
-  {
-    (save (*this, xs), ...);
-  }
-
-  template<is_serializable... T>
-    constexpr OArchive::OArchive (T&&... xs)
-  {
-    (save (*this, std::forward<T> (xs)), ...);
   }
 
   template<typename Fun>

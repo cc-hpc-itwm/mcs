@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Fraunhofer ITWM
+# Copyright (C) 2025-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 add_library (mcs_fuse_bin_storage_demo_data STATIC data.cpp)
@@ -14,6 +14,7 @@ add_executable (mcs_fuse_bin_storage_demo_producer producer.cpp)
 target_link_libraries (mcs_fuse_bin_storage_demo_producer
   PRIVATE fmt
   PRIVATE mcs_fuse_bin_storage_demo_data
+  PRIVATE mcs_util_command_line
   PRIVATE mcs_util
 )
 if (MCS_INSTALL)

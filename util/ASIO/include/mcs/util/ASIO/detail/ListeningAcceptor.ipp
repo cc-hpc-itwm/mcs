@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/ip/tcp.hpp>
@@ -37,6 +37,22 @@ namespace mcs::util::ASIO
     auto ListeningAcceptor<Protocol>::accept() -> typename Protocol::socket
   {
     return _acceptor.accept();
+  }
+
+  template<is_protocol Protocol>
+    auto ListeningAcceptor<Protocol>::async_accept
+      ( asio::any_io_executor executor
+      ) -> asio::awaitable<typename Protocol::socket>
+  {
+    return _acceptor.async_accept (executor, asio::use_awaitable);
+  }
+
+  template<is_protocol Protocol>
+    auto ListeningAcceptor<Protocol>::close
+      ( asio::error_code& error
+      ) -> void
+  {
+    _acceptor.close (error);
   }
 
   template<is_protocol Protocol>

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -59,14 +59,14 @@ namespace mcs::core::transport::implementation::ASIO
         , util::not_null<Storages<util::type::List<StorageImplementations...>>>
         );
 
-    auto memory_get
+    [[nodiscard]] auto memory_get
       ( Address destination
       , Address source
       , memory::Size
       ) const -> std::future<memory::Size>
       ;
 
-    auto memory_put
+    [[nodiscard]] auto memory_put
       ( Address destination
       , Address source
       , memory::Size
@@ -85,10 +85,24 @@ namespace mcs::core::transport::implementation::ASIO
         , memory::Size
         );
 
-      auto data() const -> std::span<std::byte> override;
+      [[nodiscard]] auto data() const -> std::span<std::byte> override;
 
     private:
       Chunk<chunk::access::Mutable, StorageImplementations...> _chunk;
+    };
+
+    struct Source final : public command::Put::Source
+    {
+      explicit Source
+        ( util::not_null<Storages<util::type::List<StorageImplementations...>>>
+        , Address
+        , memory::Size
+        );
+
+      [[nodiscard]] auto data() const -> std::span<std::byte const> override;
+
+    private:
+      Chunk<chunk::access::Const, StorageImplementations...> _chunk;
     };
   };
 }

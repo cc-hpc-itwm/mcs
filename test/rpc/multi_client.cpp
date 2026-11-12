@@ -6,6 +6,7 @@
 #include <asio/co_spawn.hpp>
 #include <asio/ip/tcp.hpp>
 #include <asio/local/stream_protocol.hpp>
+#include <asio/post.hpp>
 #include <asio/steady_timer.hpp>
 #include <asio/use_awaitable.hpp>
 #include <asio/use_future.hpp>
@@ -150,20 +151,20 @@ namespace
     template<typename ClientID>
       auto result (ClientID const&, Ping::Response result) noexcept
     {
-      _values.emplace (result);
+      values.emplace (result);
 
-      if (_sum.has_value())
+      if (sum.has_value())
       {
-        *_sum += result;
+        *sum += result;
       }
       else
       {
-        _sum = result;
+        sum = result;
       }
     }
 
-    std::optional<Ping::Response> _sum;
-    std::unordered_multiset<Ping::Response> _values;
+    std::optional<Ping::Response> sum;
+    std::unordered_multiset<Ping::Response> values;
   };
 
   struct NoThrowResultsSumOfSuccesses
@@ -171,13 +172,13 @@ namespace
     template<typename ClientID>
       auto result (ClientID const&, Ping::Response result) noexcept
     {
-      if (_sum.has_value())
+      if (sum.has_value())
       {
-        *_sum += result;
+        *sum += result;
       }
       else
       {
-        _sum = result;
+        sum = result;
       }
     }
     template<typename ClientID>
@@ -186,7 +187,7 @@ namespace
       // ignore error, just sum up the successful runs
     }
 
-    std::optional<Ping::Response> _sum;
+    std::optional<Ping::Response> sum;
   };
 
   using PingDispatcher = mcs::rpc::Dispatcher<Handler, Ping>;
@@ -391,7 +392,7 @@ namespace mcs::rpc
           , parallel_calls_limits
           );
 
-        ASSERT_EQ ( collector._sum
+        ASSERT_EQ ( collector.sum
                   , std::optional<unsigned int>
                     {(i + 1u) * (1u + 2u + 3u + 4u + 5u + 6u + 7u + 8u + 9u)}
                   );
@@ -418,7 +419,7 @@ namespace mcs::rpc
         , testing::assert_type<multi_client::Errors>()
         );
 
-      for (auto result : collector._values)
+      for (auto result : collector.values)
       {
         ASSERT_GE (result, initial_value);
         ASSERT_NE (result, 42u);
@@ -437,7 +438,7 @@ namespace mcs::rpc
         , parallel_calls_limits
         );
 
-      ASSERT_EQ ( collector._sum
+      ASSERT_EQ ( collector.sum
                 , std::optional<unsigned int>
                   {40u + 41u + 43u + 44u + 45u + 46u + 47u + 48u}
                 );
@@ -454,13 +455,13 @@ namespace mcs::rpc
         , parallel_calls_limits
         );
 
-      ASSERT_EQ ( collector._sum
+      ASSERT_EQ ( collector.sum
                 , std::optional<unsigned int>
                   {1u + 1u + 1u + 1u + 1u + 1u + 1u + 1u + 1u}
                 );
     }
 
-    // multiple parallel calls are possible, asio::co_spawn
+    // multiple parallel calls are possible, asio::post
     {
       auto call_io_context
         { ScopedRunningIOContext
@@ -479,20 +480,19 @@ namespace mcs::rpc
         auto& collector {collectors.emplace_back()};
 
         calls.emplace_back
-          ( asio::co_spawn
+          ( asio::post
             ( call_io_context
-            , [&]() -> asio::awaitable<void>
-              {
-                multi_client::call_and_collect<Ping>
-                  ( multi_client::command_generator::Const<Ping> {1u}
-                  , collector
-                  , clients
-                  , parallel_calls_limits
-                  );
-
-                co_return;
-              }
             , asio::use_future
+              ( [&]
+                {
+                  multi_client::call_and_collect<Ping>
+                    ( multi_client::command_generator::Const<Ping> {1u}
+                    , collector
+                    , clients
+                    , parallel_calls_limits
+                    );
+                }
+              )
             )
           );
       }
@@ -505,7 +505,7 @@ namespace mcs::rpc
       }
       for (auto const& collector : collectors)
       {
-        EXPECT_EQ ( collector._sum
+        EXPECT_EQ ( collector.sum
                   , std::optional<unsigned int>
                     {1u + 1u + 1u + 1u + 1u + 1u + 1u + 1u + 1u}
                   );
@@ -547,7 +547,7 @@ namespace mcs::rpc
       }
       for (auto const& collector : collectors)
       {
-        ASSERT_EQ ( collector._sum
+        ASSERT_EQ ( collector.sum
                   , std::optional<unsigned int>
                     {1u + 1u + 1u + 1u + 1u + 1u + 1u + 1u + 1u}
                   );
@@ -574,7 +574,7 @@ namespace mcs::rpc
         , parallel_calls_limits
         );
 
-      ASSERT_EQ ( collector._sum
+      ASSERT_EQ ( collector.sum
                 , std::optional<unsigned int>
                   {1u + 1u + 1u + 1u + 1u + 1u + 1u + 1u + 1u + 1u}
                 );
@@ -600,7 +600,7 @@ namespace mcs::rpc
         , parallel_calls_limits
         );
 
-      ASSERT_EQ ( collector._sum
+      ASSERT_EQ ( collector.sum
                 , std::optional<unsigned int>
                   {1u + 2u + 3u + 4u + 5u + 6u + 7u + 8u + 9u + 10u + 11u}
                 );
@@ -626,7 +626,7 @@ namespace mcs::rpc
         );
 
       ASSERT_EQ
-        ( collector._sum
+        ( collector.sum
         , std::optional<unsigned int>
             {std::accumulate (std::cbegin (inputs), std::cend (inputs), 0u)}
         );
@@ -660,7 +660,7 @@ namespace mcs::rpc
     ASSERT_GT (N, 0u);
 
     ASSERT_EQ
-      ( collect._sum
+      ( collect.sum
       , std::optional<unsigned int> {N * 100u + (N * (N - 1u)) / 2u}
       );
   }
@@ -840,26 +840,26 @@ namespace mcs::rpc
     {
       constexpr auto result (unsigned int, Ping::Response result) noexcept
       {
-        if (_sum.has_value())
+        if (sum.has_value())
         {
-          *_sum += result;
+          *sum += result;
         }
         else
         {
-          _sum = result;
+          sum = result;
         }
       }
       auto error (unsigned int, std::exception_ptr) noexcept
       {
-        ++_number_of_errors;
+        ++number_of_errors;
       }
       [[nodiscard]] constexpr auto start_more_calls() const noexcept
       {
-        return _number_of_errors == 0u;
+        return number_of_errors == 0u;
       }
 
-      std::optional<Ping::Response> _sum;
-      unsigned int _number_of_errors {0u};
+      std::optional<Ping::Response> sum;
+      unsigned int number_of_errors {0u};
     };
 
     auto expected_sum {0u};
@@ -889,7 +889,7 @@ namespace mcs::rpc
       );
 
     ASSERT_EQ
-      ( collect._sum
+      ( collect.sum
       , std::optional<unsigned int> {expected_sum}
       );
 
@@ -899,7 +899,7 @@ namespace mcs::rpc
 
     // not all commands were generated
     ASSERT_LT
-      ( collect._sum
+      ( collect.sum
       , std::optional<unsigned int> {N * 100u + (N * (N - 1u)) / 2u}
       );
   }
@@ -974,7 +974,7 @@ namespace mcs::rpc
         );
 
       ASSERT_EQ
-        ( collect._sum
+        ( collect.sum
         , std::optional<unsigned int> {value * servers.size()}
         );
     }
@@ -1030,7 +1030,7 @@ namespace mcs::rpc
     for (auto const& collector : collectors)
     {
       ASSERT_EQ
-        ( collector._sum
+        ( collector.sum
         , std::optional<unsigned int> {value * servers.size()}
         );
     }

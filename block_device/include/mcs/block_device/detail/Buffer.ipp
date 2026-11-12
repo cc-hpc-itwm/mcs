@@ -1,9 +1,10 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <functional>
 #include <mcs/nonstd/scope.hpp>
 #include <stdexcept>
+#include <utility>
 
 namespace mcs::block_device
 {
@@ -19,7 +20,7 @@ namespace mcs::block_device
         : _storages {storages}
         , _storage_id {storage_id}
         , _storage_parameter_chunk_description
-            {storage_parameter_chunk_description}
+            {std::move (storage_parameter_chunk_description)}
         , _segment_id {segment_id}
         , _block_size {core::memory::make_size (block_size)}
   {

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -47,20 +47,20 @@ namespace mcs::core::storage::implementation
     {
       struct Create
       {
-        ::mcs_core_storage _storage;
-        StorageParameter _parameter_create;
+        ::mcs_core_storage storage;
+        StorageParameter parameter_create;
       };
 
       struct Size
       {
         struct Max
         {
-          StorageParameter _parameter_size_max;
+          StorageParameter parameter_size_max;
         };
 
         struct Used
         {
-          StorageParameter _parameter_size_used;
+          StorageParameter parameter_size_used;
         };
       };
 
@@ -68,12 +68,12 @@ namespace mcs::core::storage::implementation
       {
         struct Create
         {
-          StorageParameter _parameter_segment_create;
+          StorageParameter parameter_segment_create;
         };
 
         struct Remove
         {
-          StorageParameter _parameter_segment_remove;
+          StorageParameter parameter_segment_remove;
         };
       };
 
@@ -81,7 +81,7 @@ namespace mcs::core::storage::implementation
       {
         struct Description
         {
-          StorageParameter _parameter_chunk_description;
+          StorageParameter parameter_chunk_description;
         };
       };
 
@@ -89,12 +89,12 @@ namespace mcs::core::storage::implementation
       {
         struct Read
         {
-          StorageParameter _parameter_file_read;
+          StorageParameter parameter_file_read;
         };
 
         struct Write
         {
-          StorageParameter _parameter_file_write;
+          StorageParameter parameter_file_write;
         };
       };
     };
@@ -373,9 +373,9 @@ namespace mcs::core::storage::implementation
 
       struct BadAlloc : public mcs::Error
       {
-        constexpr auto requested() const noexcept -> memory::Size;
-        constexpr auto used() const noexcept -> memory::Size;
-        constexpr auto max() const noexcept -> MaxSize;
+        [[nodiscard]] constexpr auto requested() const noexcept -> memory::Size;
+        [[nodiscard]] constexpr auto used() const noexcept -> memory::Size;
+        [[nodiscard]] constexpr auto max() const noexcept -> MaxSize;
 
         ~BadAlloc() override;
         BadAlloc (BadAlloc const&) = default;
@@ -407,7 +407,10 @@ namespace mcs::core::storage::implementation
         {
           explicit State (Description<Access> const&);
 
-          auto bytes() const -> typename Access::template Span<std::byte>;
+          [[nodiscard]] auto bytes
+            (
+            ) const -> typename Access::template Span<std::byte>
+            ;
 
         private:
           using ChunkState = typename c_api::Traits<Access>::ChunkState;
@@ -438,17 +441,17 @@ namespace mcs::core::storage::implementation
         util::not_null<::mcs_core_storage const> _storage;
         util::not_null<::mcs_core_storage_instance const> _instance;
 
-        template<typename> friend struct serialization::Implementation;
+        friend struct serialization::Implementation<Description<Access>>;
       };
     };
 
     explicit Import_C_API (Parameter::Create);
 
-    auto size_max
+    [[nodiscard]] auto size_max
       ( Parameter::Size::Max
       ) const -> MaxSize
       ;
-    auto size_used
+    [[nodiscard]] auto size_used
       ( Parameter::Size::Used
       ) const -> memory::Size
       ;
@@ -465,14 +468,14 @@ namespace mcs::core::storage::implementation
       ;
 
     template<chunk::is_access Access>
-      auto chunk_description
+      [[nodiscard]] auto chunk_description
         ( Parameter::Chunk::Description
         , segment::ID
         , memory::Range
         ) const -> Chunk::Description<Access>
       ;
 
-    auto file_read
+    [[nodiscard]] auto file_read
       ( Parameter::File::Read
       , segment::ID
       , memory::Offset
@@ -480,7 +483,7 @@ namespace mcs::core::storage::implementation
       , memory::Range
       ) const -> memory::Size
       ;
-    auto file_write
+    [[nodiscard]] auto file_write
       ( Parameter::File::Write
       , segment::ID
       , memory::Offset
@@ -535,8 +538,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Import_C_API::Chunk::Description<Access> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -551,8 +554,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Import_C_API::Tag const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -592,8 +595,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Import_C_API::Parameter::Size::Max const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -633,8 +636,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Import_C_API::Parameter::Size::Used const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -674,8 +677,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Create const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -715,8 +718,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Import_C_API::Parameter::Segment::Remove const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -756,8 +759,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Import_C_API::Parameter::Chunk::Description const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -797,8 +800,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Import_C_API::Parameter::File::Read const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -838,8 +841,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Import_C_API::Parameter::File::Write const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <ctime>
@@ -20,9 +20,9 @@ namespace mcs::fuse::state
       )
         : inode::Common {ino, uid, gid, nlink_t {1UL}, mode}
         , _content
-          { file._content_state
+          { file.content_state
           , this
-          , *file._write_access
+          , *file.write_access
           , ino
           }
   {}
@@ -109,17 +109,6 @@ namespace mcs::fuse::state
       ) -> bool
   {
     return resize_success (write_access, request, 0);
-  }
-
-  template<is_content Content>
-    auto Inode<Content, inode::kind::File<Content>>::fallocate
-      ( state::writing auto const& write_access
-      , int mode
-      , off_t offset
-      , off_t length
-      ) -> int
-  {
-    return _content.fallocate (write_access, mode, offset, length);
   }
 
   template<is_content Content>

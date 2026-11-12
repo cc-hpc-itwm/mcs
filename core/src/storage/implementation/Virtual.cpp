@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <exception>
@@ -10,20 +10,32 @@
 #include <mcs/serialization/STD/vector.hpp>
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
+#include <utility>
 
 namespace mcs::core::storage::implementation
 {
+  auto Virtual::Parameter::make_create
+    ( std::filesystem::path shared_object
+    , StorageParameter parameter_create
+    ) -> Create
+  {
+    return Create
+      { .shared_object = std::move (shared_object)
+      , .parameter_create = std::move (parameter_create)
+      };
+  }
+
   Virtual::Virtual (Parameter::Create create)
   try
-    : _dlhandle {create._shared_object}
+    : _dlhandle {create.shared_object}
     , _imported_c_api
       { Import_C_API::Parameter::Create
-        { std::invoke
+        { .storage = std::invoke
           ( _dlhandle.symbol<decltype (mcs_core_storage_methods)>
               ( "mcs_core_storage_methods"
               )
           )
-        , create._parameter_create
+        , .parameter_create = create.parameter_create
         }
       }
   {}
@@ -137,8 +149,8 @@ namespace mcs::serialization
     , mcs::core::storage::implementation::Virtual::Parameter::Create const& value
     ) -> OArchive&
   {
-    save (oa, value._shared_object);
-    save (oa, value._parameter_create);
+    save (oa, value.shared_object);
+    save (oa, value.parameter_create);
 
     return oa;
   }
@@ -146,9 +158,12 @@ namespace mcs::serialization
     ( IArchive& ia
     ) -> mcs::core::storage::implementation::Virtual::Parameter::Create
   {
-    auto _shared_object {load<decltype (mcs::core::storage::implementation::Virtual::Parameter::Create::_shared_object)> (ia)};
-    auto _parameter_create {load<decltype (mcs::core::storage::implementation::Virtual::Parameter::Create::_parameter_create)> (ia)};
+    auto _shared_object {load<decltype (mcs::core::storage::implementation::Virtual::Parameter::Create::shared_object)> (ia)};
+    auto _parameter_create {load<decltype (mcs::core::storage::implementation::Virtual::Parameter::Create::parameter_create)> (ia)};
 
-    return mcs::core::storage::implementation::Virtual::Parameter::Create {_shared_object, _parameter_create};
+    return mcs::core::storage::implementation::Virtual::Parameter::make_create
+      ( std::move (_shared_object)
+      , std::move (_parameter_create)
+      );
   }
 }

@@ -54,13 +54,13 @@ MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_NUMBER_OF_THREADS="2"
 #######################################################################
 
 "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER}"                     \
-  "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_ENDPOINT}"          \
-  "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"              \
-  "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_BLOCK_SIZE}"        \
-  "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_NUMBER_OF_THREADS}" &
+  --metadata-endpoint "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_ENDPOINT}" \
+  --metadata-provider-path "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}" \
+  --block-size "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_BLOCK_SIZE}" \
+  --number-of-threads "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_NUMBER_OF_THREADS}"
 
 DAEMON_PATH="${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
-source "${TESTING_BASH_DIRECTORY}/daemonize"
+source "${TESTING_BASH_DIRECTORY}/daemonized"
 
 #######################################################################
 
@@ -74,15 +74,15 @@ function expect_output()
 
 expect_output "$(make_block_size 128)"                                \
   "${MCS_TEST_BLOCK_DEVICE_BIN_BLOCK_SIZE}"                           \
-    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
+    --metadata-provider-path "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
 
 expect_output "$(make_block_count 0)"                                 \
   "${MCS_TEST_BLOCK_DEVICE_BIN_NUMBER_OF_BLOCKS}"                     \
-    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
+    --metadata-provider-path "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
 
 expect_output "[]"                                                    \
   "${MCS_TEST_BLOCK_DEVICE_BIN_BLOCKS}"                               \
-    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
+    --metadata-provider-path "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
 
 #######################################################################
 
@@ -95,22 +95,23 @@ function start_storage_provider()
   local protocol=${1:?}; shift
 
   MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PATH="${TMP_DIRECTORY}/${tag}"
-  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER}"                          \
-    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"                 \
-    "${protocol}"                                                          \
-    "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PATH}"                   \
-    "1"                                                                    \
-    "$((MCS_TEST_BLOCK_DEVICE_BIN_TEST_BLOCK_SIZE * number_of_blocks))"    \
-    "${@}"                                                                 &
+  "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER}"                     \
+    --metadata-provider-path "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}" \
+    --storage-endpoint "${protocol}"                                  \
+    --storage-provider-path "${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PATH}" \
+    --number-of-threads "1"                                           \
+    --size "$((MCS_TEST_BLOCK_DEVICE_BIN_TEST_BLOCK_SIZE * number_of_blocks))" \
+    --storage "${@}"
 
   DAEMON_PATH="${MCS_TEST_BLOCK_DEVICE_BIN_STORAGE_PROVIDER_PATH}"
-  source "${TESTING_BASH_DIRECTORY}/daemonize"
+  source "${TESTING_BASH_DIRECTORY}/daemonized"
 
   MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS=$((MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS + number_of_blocks))
 
   expect_output "$(make_block_count ${MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS})" \
-    "${MCS_TEST_BLOCK_DEVICE_BIN_NUMBER_OF_BLOCKS}"                        \
-      "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
+    "${MCS_TEST_BLOCK_DEVICE_BIN_NUMBER_OF_BLOCKS}"                   \
+      --metadata-provider-path \
+        "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"
 }
 
 function make_size()
@@ -238,16 +239,17 @@ for ((block_id=0; block_id<MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS; ++bl
 do
   echo -n $(content ${block_id})                                    | \
     "${MCS_TEST_BLOCK_DEVICE_BIN_WRITE}"                              \
-      "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"          \
-      "$(make_block_id ${block_id})"
+      --metadata-provider-path "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}" \
+      --block-id "$(make_block_id ${block_id})"
 done
 
 function read_block()
 {
   local block_id=${1:?}; shift
   "${MCS_TEST_BLOCK_DEVICE_BIN_CAT}"                                  \
-    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"            \
-    "$(make_block_id ${block_id})"
+    --metadata-provider-path                                          \
+      "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"          \
+    --block-id "$(make_block_id ${block_id})"
 }
 
 for ((block_id=0; block_id<MCS_TEST_BLOCK_DEVICE_BIN_TEST_NUMBER_OF_BLOCKS; ++block_id))
@@ -271,10 +273,10 @@ function make_local_stream_storage()
 
 expect_output "[$(make_local_stream_storage Files 4 5)]"              \
   "${MCS_TEST_BLOCK_DEVICE_BIN_REMOVE}"                               \
-    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"            \
-    "$(make_block_range 30 31)"
+    --metadata-provider-path "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}" \
+    --block-range "$(make_block_range 30 31)"
 
 expect_output "[$(make_local_stream_storage Heap 5 11), $(make_local_stream_storage Files 0 4)]" \
   "${MCS_TEST_BLOCK_DEVICE_BIN_REMOVE}"                               \
-    "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"            \
-    "$(make_block_range 20 30)"
+    --metadata-provider-path "${MCS_TEST_BLOCK_DEVICE_BIN_META_DATA_PROVIDER_PATH}"          \
+    --block-range "$(make_block_range 20 30)"

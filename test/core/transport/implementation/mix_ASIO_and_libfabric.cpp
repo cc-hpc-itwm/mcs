@@ -67,8 +67,8 @@ namespace mcs::testing::core::transport::implementation::libfabric
           { libfabric_control_io_context
           , _libfabric_protocol_state.local_endpoint()
           , mcs::core::transport::implementation::libfabric::libfabric::Interface
-            { mcs::core::transport::implementation::libfabric::libfabric::Provider {"tcp"}
-            , mcs::core::transport::implementation::libfabric::libfabric::Domain {"lo"}
+            { .provider = mcs::core::transport::implementation::libfabric::libfabric::Provider {"tcp"}
+            , .domain = mcs::core::transport::implementation::libfabric::libfabric::Domain {"lo"}
             }
           , std::addressof (_storages)
           }
@@ -155,12 +155,13 @@ namespace mcs::testing::core::transport::implementation::libfabric
         };
 
     mcs::core::transport::Address _address
-      { _storage->id()
+      { mcs::core::transport::make_address
+        ( _storage->id()
         , mcs::core::storage::make_parameter
-          ( typename Storage::Parameter::Chunk::Description{}
-          )
-      , _segment->id()
-      , mcs::core::memory::make_offset (0)
+            (typename Storage::Parameter::Chunk::Description{})
+        , _segment->id()
+        , mcs::core::memory::make_offset (0)
+        )
       };
 
     testing::RPC::ProtocolState<LibfabricControlProtocol>
@@ -213,8 +214,8 @@ namespace mcs::testing::core::transport::implementation::libfabric
           { libfabric_control_io_context
           , libfabric_connection_information
           , mcs::core::transport::implementation::libfabric::libfabric::Interface
-            { mcs::core::transport::implementation::libfabric::libfabric::Provider {"tcp"}
-            , mcs::core::transport::implementation::libfabric::libfabric::Domain {"lo"}
+            { .provider = mcs::core::transport::implementation::libfabric::libfabric::Provider {"tcp"}
+            , .domain = mcs::core::transport::implementation::libfabric::libfabric::Domain {"lo"}
             }
           , std::addressof (_storages)
           }
@@ -317,11 +318,13 @@ namespace mcs::testing::core::transport::implementation::libfabric
         };
 
     mcs::core::transport::Address _address
-      { _storage->id()
+      { mcs::core::transport::make_address
+      ( _storage->id()
       , mcs::core::storage::make_parameter
-          (_testing_storage.parameter_chunk_description())
+        (_testing_storage.parameter_chunk_description())
       , _segment->id()
       , mcs::core::memory::make_offset (0)
+      )
       };
 
     mcs::core::transport::implementation::libfabric::Client

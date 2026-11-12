@@ -1,8 +1,8 @@
-# Copyright (C) 2024-2025 Fraunhofer ITWM
+# Copyright (C) 2024-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-set (MCS_CXX_STANDARD "20" CACHE STRING "['20' | '23']")
-set_property (CACHE MCS_CXX_STANDARD PROPERTY STRINGS "20" "23")
+set (MCS_CXX_STANDARD "20" CACHE STRING "['20' | '23' | '26']")
+set_property (CACHE MCS_CXX_STANDARD PROPERTY STRINGS "20" "23" "26")
 
 option (MCS_TEST "build tests and the internal testing utilities" OFF)
 

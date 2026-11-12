@@ -1,11 +1,12 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
 
 #include <future>
 #include <mcs/rpc/Concepts.hpp>
-#include <mcs/rpc/detail/ClientState.hpp>
+#include <mcs/rpc/detail/client/Connection.hpp>
+#include <memory>
 
 namespace mcs::rpc::detail
 {
@@ -17,7 +18,7 @@ namespace mcs::rpc::detail
           >
     requires (is_one_of_the_commands<Command, Commands...>)
     auto remote_call
-      ( ClientState<Protocol, AccessPolicy, Commands...>
+      ( std::shared_ptr<client::Connection<Protocol, typename AccessPolicy::admission>>
       , std::shared_ptr<AccessPolicy>
       , CommandHolder
       ) -> std::future<typename Command::Response>

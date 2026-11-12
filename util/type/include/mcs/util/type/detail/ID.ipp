@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/serialization/IArchive.hpp>
@@ -6,8 +6,8 @@
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
 #include <mcs/util/read/Read.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/read/prefix.hpp>
-#include <mcs/util/read/uint.hpp>
 #include <mcs/util/type/detail/Run.hpp>
 
 namespace mcs::util::type

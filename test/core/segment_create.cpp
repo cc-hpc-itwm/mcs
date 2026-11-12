@@ -1,11 +1,14 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
 #include <gtest/gtest.h>
+#include <mcs/core/Chunk.hpp>
 #include <mcs/core/Storages.hpp>
 #include <mcs/core/UniqueStorage.hpp>
 #include <mcs/core/storage/ID.hpp>
+#include <mcs/core/storage/Parameter.hpp>
+#include <mcs/core/storage/UniqueSegment.hpp>
 #include <mcs/testing/core/operator==/storage/MaxSize.hpp>
 #include <mcs/testing/core/printer/memory/Size.hpp>
 #include <mcs/testing/core/random/memory/Size.hpp>
@@ -17,6 +20,7 @@
 #include <mcs/testing/random/random_device.hpp>
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/testing/require_exception.hpp>
+#include <mcs/util/not_null.hpp>
 #include <mcs/util/type/List.hpp>
 #include <memory>
 #include <stdexcept>
@@ -47,6 +51,54 @@ namespace mcs::core
       , core::storage::implementation::SHMEM
       , core::storage::implementation::Virtual
       >;
+  }
+
+  TYPED_TEST (MCSSegmentCreateT, segments_are_initialized_to_zero)
+  {
+    using TestingStorage = TypeParam;
+
+    auto storages {core::Storages<SupportedStorageImplementations>{}};
+    auto testing_storage
+      {TestingStorage {storage::MaxSize {storage::MaxSize::Unlimited{}}}};
+    auto const storage
+      { make_unique_storage<typename TestingStorage::Storage>
+        ( std::addressof (storages)
+        , testing_storage.parameter_create()
+        )
+      };
+    using RandomSize = testing::random::value<memory::Size>;
+    auto const size {std::invoke (RandomSize {RandomSize::Max {4 << 20}})};
+    auto const segment
+      { storage::make_unique_segment<typename TestingStorage::Storage>
+        ( std::addressof (storages)
+        , storage->id()
+        , size
+        , testing_storage.parameter_segment_create()
+        , testing_storage.parameter_segment_remove()
+        )
+      };
+    auto const chunk
+      { core::make_chunk<chunk::access::Const>
+        ( util::not_null {std::addressof (storages)}
+        , storage->id()
+        , storage::make_parameter
+          ( testing_storage.parameter_chunk_description()
+          )
+        , segment->id()
+        , memory::make_range (memory::make_offset (0), size)
+        )
+      };
+
+    ASSERT_EQ (memory::make_size (chunk.data().size()), size);
+    EXPECT_TRUE
+      ( std::ranges::all_of
+        ( chunk.data()
+        , [] (std::byte value) noexcept
+          {
+            return value == std::byte {0};
+          }
+        )
+      );
   }
 
   TYPED_TEST
@@ -98,8 +150,8 @@ namespace mcs::core
 
     struct SegmentIDWithSize
     {
-      storage::segment::ID _segment_id;
-      memory::Size _size;
+      storage::segment::ID segment_id;
+      memory::Size size;
     };
 
     auto segment_ids_with_sizes {std::vector<SegmentIDWithSize>{}};

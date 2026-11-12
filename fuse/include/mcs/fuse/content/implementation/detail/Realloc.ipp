@@ -1,11 +1,10 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
 #include <cstdlib>
 #include <functional>
 #include <iterator>
-#include <linux/falloc.h>
 #include <mcs/util/FMT/STD/exception.hpp>
 #include <mcs/util/FMT/print_noexcept.hpp>
 #include <mcs/util/cast.hpp>
@@ -62,133 +61,119 @@ namespace mcs::fuse::content::implementation
 
 namespace mcs::fuse::content::implementation
 {
-  Realloc::Capacity::Capacity
-    ( util::not_null<state::inode::Common> inode
-    , state::writing auto const& write_access
-    )
-      : _inode {inode}
-  {
-    set (write_access, 0UL, XATTR_CREATE);
-  }
-
-  auto Realloc::Capacity::set
-    ( state::writing auto const& write_access
-    , size_t size
-    ) -> void
-  {
-    set (write_access, size, XATTR_REPLACE);
-  }
-  auto Realloc::Capacity::set
-    ( state::writing auto const& write_access
-    , size_t size
-    , int flags
-    ) -> void
-  {
-    _inode->setxattr (write_access, _xattr_key, _value = size, flags);
-  }
-}
-
-namespace mcs::fuse::content::implementation
-{
   Realloc::Realloc
     ( util::not_null<State>
-    , util::not_null<state::inode::Common> inode
-    , state::writing auto const& write_access
+    , util::not_null<state::inode::Common>
+    , state::writing auto const&
     , ::fuse_ino_t
     )
-      : _capacity {inode, write_access}
   {}
 
-  Realloc::~Realloc()
-  {
-    std::free (_data);
-  }
-
   auto Realloc::resize
-    ( state::writing auto const& write_access
+    ( state::writing auto const&
     , size_t size
     ) -> content::result::Resize
   {
-    _size = size;
-
-    if (_size == 0UL)
+    if (size == 0UL)
     {
       std::free (_data);
 
       _data = nullptr;
+      _size = 0UL;
+      _capacity = 0UL;
 
-      _capacity.set (write_access, 0UL);
+      return content::result::resize::Success {size};
     }
-    else if (_capacity < _size)
-    {
-      auto const new_capacity {std::max (_size, grow (_capacity))};
 
-      _data = mcs::util::cast<std::byte*>
-        ( util::syscall::realloc (_data, new_capacity)
-        );
+    auto const new_capacity
+      { std::invoke
+        ( [&]() noexcept -> std::optional<std::size_t>
+          {
+            if (_capacity < size)
+            {
+              return std::max (size, grow (_capacity));
+            }
 
-      std::ranges::fill
-        ( std::span {_data + _capacity, _data + new_capacity}
-        , std::byte {0}
-        );
-
-      _capacity.set (write_access, new_capacity);
-    }
-    else if (grow (_size) < _capacity)
-    {
-      auto const new_capacity
-        { std::invoke
-          ( [&]() noexcept
+            if (grow (size) < _capacity)
             {
               auto _new_capacity {shrink (_capacity)};
 
-              while (grow (_size) < _new_capacity)
+              while (grow (size) < _new_capacity)
               {
                 _new_capacity = shrink (_new_capacity);
               }
 
               return _new_capacity;
             }
-          )
-        };
 
+            return {};
+          }
+        )
+      };
+
+    if (new_capacity)
+    {
       _data = mcs::util::cast<std::byte*>
-        ( util::syscall::realloc (_data, new_capacity)
+        ( util::syscall::realloc (_data, *new_capacity)
         );
 
-      _capacity.set (write_access, new_capacity);
+      _capacity = *new_capacity;
     }
+
+    if (_size < size)
+    {
+      std::ranges::fill
+        ( std::span {_data + _size, _data + size}
+        , std::byte {0}
+        );
+    }
+
+    _size = size;
 
     return content::result::resize::Success {size};
   }
 
   auto Realloc::write
-    ( state::writing auto const& write_access
+    ( state::writing auto const&
     , content::Data const& data
     , off_t offset
     ) -> content::result::Write
   try
   {
-    auto new_size {std::optional<size_t>{}};
+    auto const write_offset {mcs::util::cast<size_t> (offset)};
+    auto const new_size
+      { std::invoke
+        ( [&]() -> std::optional<size_t>
+          {
+            if ( auto const size {write_offset + data.size()}
+               ; _size < size
+               )
+            {
+              if (size > _capacity)
+              {
+                auto const new_capacity {std::max (size, grow (_capacity))};
 
-    if ( auto const size {mcs::util::cast<size_t> (offset) + data.size()}
-       ; _size < size
-       )
+                _data = mcs::util::cast<std::byte*>
+                  ( util::syscall::realloc (_data, new_capacity)
+                  );
+
+                _capacity = new_capacity;
+              }
+
+              return size;
+            }
+
+            return {};
+          }
+        )
+      };
+
+    if (_size < write_offset)
     {
-      _size = size;
-
-      if (size > _capacity)
-      {
-        auto const new_capacity {std::max (_size, grow (_capacity))};
-
-        _data = mcs::util::cast<std::byte*>
-          ( util::syscall::realloc (_data, new_capacity)
-          );
-
-        _capacity.set (write_access, new_capacity);
-      }
-
-      new_size.emplace (_size);
+      std::ranges::fill
+        ( std::span {_data + _size, _data + write_offset}
+        , std::byte {0}
+        );
     }
 
     data.for_each_chunk
@@ -200,6 +185,11 @@ namespace mcs::fuse::content::implementation
           std::advance (destination, chunk.size());
         }
       );
+
+    if (new_size)
+    {
+      _size = *new_size;
+    }
 
     return content::result::write::Success {new_size};
   }
@@ -259,56 +249,6 @@ namespace mcs::fuse::content::implementation
     return content::Data{};
   }
 
-  auto Realloc::fallocate
-    ( state::writing auto const& write_access
-    , int mode
-    , off_t offset
-    , off_t length
-    ) -> int
-  {
-    if (mode & FALLOC_FL_PUNCH_HOLE)
-    {
-      return EOPNOTSUPP;
-    }
-    if (mode & FALLOC_FL_NO_HIDE_STALE)
-    {
-      return EOPNOTSUPP;
-    }
-    if (mode & FALLOC_FL_COLLAPSE_RANGE)
-    {
-      return EOPNOTSUPP;
-    }
-    if (mode & FALLOC_FL_INSERT_RANGE)
-    {
-      return EOPNOTSUPP;
-    }
-    if (mode & FALLOC_FL_UNSHARE_RANGE)
-    {
-      return EOPNOTSUPP;
-    }
-
-    auto const size {this->size (write_access)};
-    auto const min_size {util::cast<size_t> (offset + length)};
-
-    if (mode & FALLOC_FL_KEEP_SIZE)
-    {
-      if (std::cmp_less (size, min_size))
-      {
-        return EOPNOTSUPP;
-      }
-    }
-
-    resize (write_access, min_size);
-
-    std::fill
-      ( _data + offset
-      , _data + std::min (size, min_size)
-      , std::byte {0}
-      );
-
-    return 0;
-  }
-
   auto Realloc::cleanup
     ( state::writing auto const&
     ) -> void
@@ -331,6 +271,6 @@ namespace mcs::fuse::content::implementation
     ) noexcept -> std::size_t
   {
     // n * 2/3
-    return ((n + 1UL) >> 1UL) / 3UL;
+    return n - n / 3UL;
   }
 }

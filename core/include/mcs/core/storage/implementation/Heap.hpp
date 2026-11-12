@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -68,9 +68,9 @@ namespace mcs::core::storage::implementation
     {
       struct BadAlloc : public mcs::Error
       {
-        constexpr auto requested() const noexcept -> memory::Size;
-        constexpr auto used() const noexcept -> memory::Size;
-        constexpr auto max() const noexcept -> MaxSize;
+        [[nodiscard]] constexpr auto requested() const noexcept -> memory::Size;
+        [[nodiscard]] constexpr auto used() const noexcept -> memory::Size;
+        [[nodiscard]] constexpr auto max() const noexcept -> MaxSize;
 
         ~BadAlloc() override;
         BadAlloc (BadAlloc const&) = default;
@@ -94,12 +94,18 @@ namespace mcs::core::storage::implementation
 
       struct ChunkDescription : public mcs::Error
       {
-        constexpr auto parameter
+        [[nodiscard]] constexpr auto parameter
           (
           ) const noexcept -> Parameter::Chunk::Description const&
           ;
-        constexpr auto segment_id() const noexcept -> segment::ID;
-        constexpr auto memory_range() const noexcept -> memory::Range;
+        [[nodiscard]] constexpr auto segment_id
+          (
+          ) const noexcept -> segment::ID
+          ;
+        [[nodiscard]] constexpr auto memory_range
+          (
+          ) const noexcept -> memory::Range
+          ;
 
         ~ChunkDescription() override;
         ChunkDescription (ChunkDescription const&) = default;
@@ -146,7 +152,10 @@ namespace mcs::core::storage::implementation
         {
           explicit State (Description<Access> const&);
 
-          auto bytes() const -> typename Access::template Span<std::byte>;
+          [[nodiscard]] auto bytes
+            (
+            ) const -> typename Access::template Span<std::byte>
+            ;
 
         private:
           typename Access::template Span<std::byte> _bytes;
@@ -164,8 +173,8 @@ namespace mcs::core::storage::implementation
         std::size_t _size;
         memory::Range _range;
 
-        template<typename> friend struct serialization::Implementation;
-        template<typename, typename, typename> friend struct fmt::formatter;
+        friend struct serialization::Implementation<Description<Access>>;
+        friend struct fmt::formatter<Description<Access>>;
 
         template<chunk::is_access Access_>
           friend constexpr auto operator==
@@ -262,8 +271,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Chunk::Description<Access> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -278,8 +287,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Tag const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -319,8 +328,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Parameter::Create const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -360,8 +369,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Parameter::Size::Max const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -401,8 +410,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Parameter::Size::Used const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -442,8 +451,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -483,8 +492,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Parameter::Segment::Create const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -524,8 +533,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Parameter::Segment::Remove const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -565,8 +574,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Parameter::Chunk::Description const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -606,8 +615,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Parameter::File::Read const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -647,8 +656,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Heap::Parameter::File::Write const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

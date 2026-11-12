@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include "Dispatcher.hpp"
@@ -14,13 +14,55 @@
 #include <mcs/rpc/multi_client/call.hpp>
 #include <mcs/rpc/multi_client/command_generator/Reference.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
 #include <mcs/util/main.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/read/read.hpp>
-#include <mcs/util/read/uint.hpp>
 #include <stdexcept>
 
 namespace
 {
+  namespace option
+  {
+    using mcs::util::command_line::option::Parameter;
+
+    constexpr auto message_size {Parameter {"message-size"}};
+    constexpr auto number_of_clients {Parameter {"number-of-clients"}};
+    constexpr auto number_of_threads {Parameter {"number-of-threads"}};
+    constexpr auto ping_service_path {Parameter {"ping-service-path"}};
+    constexpr auto repetitions {Parameter {"repetitions"}};
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <PATH>\n"
+        "    Directory containing ping-server information.\n"
+        "  --{2} <SIZE_IN_BYTES>\n"
+        "    Size of each ping payload.\n"
+        "  --{3} <COUNT>\n"
+        "    Number of ping repetitions.\n"
+        "  --{4} <COUNT>\n"
+        "    Number of clients.\n"
+        "  --{5} <COUNT>\n"
+        "    Number of RPC I/O threads.\n"
+      , args.at (0)
+      , option::ping_service_path
+      , option::message_size
+      , option::repetitions
+      , option::number_of_clients
+      , option::number_of_threads
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print ("{}\n", usage (args));
+  }
+
   template<mcs::rpc::is_command Command>
     struct DroppingCollector
   {
@@ -35,21 +77,32 @@ namespace
 
 namespace
 {
-  auto client_main (mcs::util::Args args) -> int
+  auto client_main (mcs::util::arguments::View args) -> int
   {
-    if (args.size() != 6)
-    {
-      throw std::invalid_argument
-        {fmt::format ( "usage: {} ping_service_path message_size repetitions number_of_clients number_of_threads"
-                     , args[0]
-                     )
-        };
-    }
-
-    auto const ping_service_path {std::filesystem::path (args[1])};
-    auto const message_size {mcs::util::read::read<unsigned> (args[2])};
-    auto const repetitions {mcs::util::read::read<unsigned> (args[3])};
-    auto const number_of_clients {mcs::util::read::read<unsigned> (args[4])};
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::ping_service_path)
+        . add (option::message_size)
+        . add (option::repetitions)
+        . add (option::number_of_clients)
+        . add (option::number_of_threads)
+        )
+      };
+    auto const ping_service_path
+      { std::filesystem::path {options.at (option::ping_service_path)}
+      };
+    auto const message_size
+      { mcs::util::read::read<unsigned> (options.at (option::message_size))
+      };
+    auto const repetitions
+      { mcs::util::read::read<unsigned> (options.at (option::repetitions))
+      };
+    auto const number_of_clients
+      { mcs::util::read::read<unsigned>
+          ( options.at (option::number_of_clients)
+          )
+      };
 
     return mcs::util::ASIO::run
       ( mcs::util::read::from_file<mcs::util::ASIO::AnyConnectable>
@@ -60,7 +113,10 @@ namespace
           auto io_context
             { mcs::rpc::ScopedRunningIOContext
               { mcs::rpc::ScopedRunningIOContext::NumberOfThreads
-                  {mcs::util::read::read<unsigned> (args[5])}
+                  { mcs::util::read::read<unsigned>
+                      ( options.at (option::number_of_threads)
+                      )
+                  }
               , SIGINT, SIGTERM
               }
             };
@@ -91,7 +147,8 @@ namespace
           auto end = Clock::now();
           {
             auto const duration
-              {std::chrono::duration_cast<Ticks> (end - start)};
+              { std::chrono::duration_cast<Ticks> (end - start)
+              };
 
             fmt::print ( "create {} clients: {} -> {} per client\n"
                        , number_of_clients
@@ -140,5 +197,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, client_main);
+  return mcs::util::main (argc, argv, help, client_main);
 }

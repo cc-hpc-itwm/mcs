@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -34,7 +34,7 @@ namespace mcs::block_device
           , core::memory::Range
           );
 
-    auto address() const -> core::transport::Address;
+    [[nodiscard]] auto address() const -> core::transport::Address;
 
     template<core::chunk::is_access Access>
       using CoreChunk = typename SupportedStorageImplementations::template wrap

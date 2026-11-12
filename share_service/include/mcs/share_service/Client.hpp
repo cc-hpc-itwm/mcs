@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -40,7 +40,7 @@ namespace mcs::share_service
     // Returns: The chunk.
     //
     template<is_supported_storage_implementation StorageImplementation>
-      auto create
+      [[nodiscard]] auto create
         ( core::memory::Size
         , command::create::Parameters<StorageImplementation>
         ) const -> Chunk
@@ -56,7 +56,7 @@ namespace mcs::share_service
     template< core::chunk::is_access Access
             , is_supported_storage_implementation StorageImplementation
             >
-      auto attach
+      [[nodiscard]] auto attach
         ( Chunk
         , command::attach::Parameters<StorageImplementation>
         ) const -> SupportedStorageImplementations::template wrap< core::Chunk

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 namespace fmt
@@ -19,7 +19,7 @@ namespace fmt
     return fmt::format_to
       ( context.out()
       , "trace::event::size::used::Result = {}"
-      , size_used_result._size_used
+      , size_used_result.size_used
       );
   }
 }

@@ -1,6 +1,9 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
+#include <concepts>
+#include <cstdint>
+#include <fmt/format.h>
 #include <functional>
 #include <gtest/gtest.h>
 #include <limits>
@@ -15,7 +18,26 @@ namespace mcs::util
 {
   namespace
   {
+    static_assert (std::derived_from<CastOutOfRange, mcs::Error>);
+
     struct UtilCastF : public testing::random::Test{};
+  }
+
+  TEST (UtilCast, integer_casts_remain_constant_expressions)
+  {
+    constexpr auto maximum {std::numeric_limits<int>::max()};
+    constexpr auto unsigned_maximum {static_cast<unsigned> (maximum)};
+    constexpr auto unsigned_to_unsigned
+      { util::cast<unsigned long> (unsigned_maximum)
+      };
+    constexpr auto signed_to_unsigned {util::cast<unsigned> (maximum)};
+    constexpr auto unsigned_to_signed {util::cast<int> (unsigned_maximum)};
+    constexpr auto signed_to_signed {util::cast<long> (maximum)};
+
+    static_assert (std::cmp_equal (unsigned_to_unsigned, maximum));
+    static_assert (std::cmp_equal (signed_to_unsigned, maximum));
+    static_assert (std::cmp_equal (unsigned_to_signed, maximum));
+    static_assert (std::cmp_equal (signed_to_signed, maximum));
   }
 
   TEST_F (UtilCastF, casting_a_negative_signed_to_an_unsigned_throws)
@@ -28,8 +50,33 @@ namespace mcs::util
         {
           std::ignore = util::cast<unsigned> (i);
         }
-      , testing::assert_type_and_what<std::invalid_argument>
+      , testing::assert_type_and_what<CastOutOfRange>
           ( fmt::format ("cast signed to unsigned: {} < 0", i)
+          )
+      );
+  }
+
+  TEST (UtilCast, casting_a_too_large_signed_to_an_unsigned_throws)
+  {
+    using Small = std::uint32_t;
+    using Large = std::int64_t;
+    static_assert (std::unsigned_integral<Small>);
+    static_assert (std::signed_integral<Large>);
+    static_assert (sizeof (Small) < sizeof (Large));
+
+    auto const value {std::numeric_limits<Large>::max()};
+
+    testing::require_exception
+      ( [&]
+        {
+          std::ignore = util::cast<Small> (value);
+        }
+      , testing::assert_type_and_what<CastOutOfRange>
+          ( fmt::format
+            ( "cast signed to unsigned: {} > {}"
+            , value
+            , std::numeric_limits<Small>::max()
+            )
           )
       );
   }
@@ -57,6 +104,78 @@ namespace mcs::util
     auto const u {util::cast<unsigned> (i)};
 
     ASSERT_TRUE (std::cmp_equal (i, u));
+  }
+
+  TEST_F (UtilCastF, casting_an_unsigned_to_itself_works)
+  {
+    auto const value {std::invoke (testing::random::value<unsigned>{})};
+
+    EXPECT_EQ (util::cast<unsigned> (value), value);
+  }
+
+  TEST_F (UtilCastF, casting_an_unsigned_to_a_larger_unsigned_works)
+  {
+    using Small = std::uint8_t;
+    using Large = std::uint64_t;
+    static_assert (std::unsigned_integral<Small>);
+    static_assert (std::unsigned_integral<Large>);
+    static_assert (sizeof (Small) < sizeof (Large));
+
+    auto const value {std::invoke (testing::random::value<Small>{})};
+
+    EXPECT_TRUE (std::cmp_equal (util::cast<Large> (value), value));
+  }
+
+  TEST_F (UtilCastF, casting_a_fitting_unsigned_to_a_smaller_unsigned_works)
+  {
+    using Small = std::uint8_t;
+    using Large = std::uint64_t;
+    static_assert (std::unsigned_integral<Small>);
+    static_assert (std::unsigned_integral<Large>);
+    static_assert (sizeof (Small) < sizeof (Large));
+
+    using RandomLarge = testing::random::value<Large>;
+    auto const value
+      { std::invoke
+        ( RandomLarge {RandomLarge::Max {std::numeric_limits<Small>::max()}}
+        )
+      };
+
+    EXPECT_TRUE (std::cmp_equal (util::cast<Small> (value), value));
+  }
+
+  TEST_F (UtilCastF, casting_a_non_fitting_unsigned_to_unsigned_throws)
+  {
+    using Small = std::uint8_t;
+    using Large = std::uint64_t;
+    static_assert (std::unsigned_integral<Small>);
+    static_assert (std::unsigned_integral<Large>);
+    static_assert (sizeof (Small) < sizeof (Large));
+
+    using RandomLarge = testing::random::value<Large>;
+    auto const value
+      { std::invoke
+        ( RandomLarge
+          { RandomLarge::Min
+            { util::cast<Large> (std::numeric_limits<Small>::max()) + Large {1}
+            }
+          }
+        )
+      };
+
+    testing::require_exception
+      ( [&]
+        {
+          std::ignore = util::cast<Small> (value);
+        }
+      , testing::assert_type_and_what<CastOutOfRange>
+          ( fmt::format
+            ( "cast unsigned to unsigned: {} > {}"
+            , value
+            , std::numeric_limits<Small>::max()
+            )
+          )
+      );
   }
 
   TEST (UtilCast, casting_a_signed_to_itself_works)
@@ -108,12 +227,33 @@ namespace mcs::util
         {
           std::ignore = util::cast<int> (l);
         }
-      , testing::assert_type_and_what<std::invalid_argument>
+      , testing::assert_type_and_what<CastOutOfRange>
          ( fmt::format ( "cast signed to signed: {} > {}"
                        , l
                        , std::numeric_limits<int>::max()
                        )
          )
+      );
+  }
+
+  TEST (UtilCast, casting_a_too_small_signed_to_a_smaller_signed_throws)
+  {
+    auto const value
+      { util::cast<long> (std::numeric_limits<int>::min()) - 1L
+      };
+
+    testing::require_exception
+      ( [&]
+        {
+          std::ignore = util::cast<int> (value);
+        }
+      , testing::assert_type_and_what<CastOutOfRange>
+          ( fmt::format
+            ( "cast signed to signed: {} < {}"
+            , value
+            , std::numeric_limits<int>::min()
+            )
+          )
       );
   }
 
@@ -131,7 +271,7 @@ namespace mcs::util
         {
           std::ignore = util::cast<int> (u);
         }
-      , testing::assert_type_and_what<std::invalid_argument>
+      , testing::assert_type_and_what<CastOutOfRange>
          ( fmt::format ( "cast unsigned to signed: {} > {}"
                        , u
                        , std::numeric_limits<int>::max()

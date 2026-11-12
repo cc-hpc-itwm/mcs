@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -23,6 +23,13 @@ namespace mcs::core::control::command::segment
     mcs::core::storage::Parameter storage_parameter;
     mcs::core::memory::Size memory_size;
   };
+
+  [[nodiscard]] auto make_create
+    ( mcs::core::storage::ID
+    , mcs::core::storage::Parameter
+    , mcs::core::memory::Size
+    ) -> Create
+    ;
 }
 
 namespace fmt
@@ -36,8 +43,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::control::command::segment::Create const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

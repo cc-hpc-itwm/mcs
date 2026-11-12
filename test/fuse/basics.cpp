@@ -3,6 +3,7 @@
 
 #include "MCSFuseT.hpp"
 #include <algorithm>
+#include <array>
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
@@ -24,10 +25,14 @@
 #include <mcs/testing/random/value/STD/string.hpp>
 #include <mcs/testing/random/value/STD/vector.hpp>
 #include <mcs/testing/random/value/integral.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/fopen.hpp>
+#include <mcs/util/select.hpp>
 #include <mcs/util/syscall/copy_file_range_with_fallback_to_sendfile.hpp>
 #include <mcs/util/syscall/fileno.hpp>
+#include <mcs/util/syscall/ftruncate.hpp>
+#include <mcs/util/syscall/pwrite.hpp>
 #include <mcs/util/syscall/read.hpp>
 #include <mcs/util/syscall/write.hpp>
 #include <mcs/util/touch.hpp>
@@ -65,7 +70,7 @@ namespace mcs::fuse
         throw std::runtime_error
           { fmt::format
             ( "Could not write all bytes from '{}': read = {}, size = {}"
-            , file_path
+            , util::FMT::STD::FILESYSTEM::Path {file_path}
             , bytes_written
             , data.size()
             )
@@ -106,7 +111,7 @@ namespace mcs::fuse
         throw std::runtime_error
           { fmt::format
             ( "Could not read all bytes from '{}': read = {}, size = {}"
-            , file_path
+            , util::FMT::STD::FILESYSTEM::Path {file_path}
             , bytes_read
             , buffer.size()
             )
@@ -520,6 +525,106 @@ namespace mcs::fuse
 
   TYPED_TEST
     ( MCSFuseT
+    , rename_ancestry_rejects_directory_into_itself
+    )
+  {
+    auto const source_path {this->_path / "source"};
+    auto const target_path {source_path / "moved"};
+    auto const file_path {source_path / "data"};
+
+    ASSERT_TRUE (std::filesystem::create_directory (source_path));
+    auto const data {generate_and_write_random_data (file_path)};
+
+    MCS_TEST_FUSE_BASICS_ASSERT_RENAME_ERRNO
+      ( source_path
+      , target_path
+      , EINVAL
+      );
+
+    ASSERT_TRUE (std::filesystem::is_directory (source_path));
+    ASSERT_FALSE (std::filesystem::exists (target_path));
+    ASSERT_EQ (data, read (file_path));
+  }
+
+  TYPED_TEST
+    ( MCSFuseT
+    , rename_ancestry_rejects_directory_into_descendant
+    )
+  {
+    auto const source_path {this->_path / "source"};
+    auto const descendant_path {source_path / "child" / "grandchild"};
+    auto const target_path {descendant_path / "moved"};
+    auto const source_file_path {source_path / "source_data"};
+    auto const descendant_file_path {descendant_path / "descendant_data"};
+
+    ASSERT_TRUE (std::filesystem::create_directories (descendant_path));
+    auto const source_data
+      { generate_and_write_random_data (source_file_path)
+      };
+    auto const descendant_data
+      { generate_and_write_random_data (descendant_file_path)
+      };
+
+    MCS_TEST_FUSE_BASICS_ASSERT_RENAME_ERRNO
+      ( source_path
+      , target_path
+      , EINVAL
+      );
+
+    ASSERT_TRUE (std::filesystem::is_directory (source_path));
+    ASSERT_TRUE (std::filesystem::is_directory (descendant_path));
+    ASSERT_FALSE (std::filesystem::exists (target_path));
+    ASSERT_EQ (source_data, read (source_file_path));
+    ASSERT_EQ (descendant_data, read (descendant_file_path));
+  }
+
+  TYPED_TEST
+    ( MCSFuseT
+    , rename_ancestry_allows_directory_move_between_siblings
+    )
+  {
+    auto const source_parent {this->_path / "left"};
+    auto const target_parent {this->_path / "right"};
+    auto const source_path {source_parent / "source"};
+    auto const target_path {target_parent / "moved"};
+
+    ASSERT_TRUE (std::filesystem::create_directories (source_path));
+    ASSERT_TRUE (std::filesystem::create_directory (target_parent));
+    auto const data {generate_and_write_random_data (source_path / "data")};
+
+    std::filesystem::rename (source_path, target_path);
+
+    ASSERT_TRUE (std::filesystem::is_directory (source_parent));
+    ASSERT_TRUE (std::filesystem::is_empty (source_parent));
+    ASSERT_FALSE (std::filesystem::exists (source_path));
+    ASSERT_TRUE (std::filesystem::is_directory (target_path));
+    ASSERT_EQ (data, read (target_path / "data"));
+  }
+
+  TYPED_TEST
+    ( MCSFuseT
+    , rename_ancestry_allows_directory_move_between_unrelated_trees
+    )
+  {
+    auto const source_path {this->_path / "left" / "source"};
+    auto const target_parent {this->_path / "right" / "nested"};
+    auto const target_path {target_parent / "moved"};
+    auto const source_child {source_path / "child"};
+
+    ASSERT_TRUE (std::filesystem::create_directories (source_child));
+    ASSERT_TRUE (std::filesystem::create_directories (target_parent));
+    auto const data {generate_and_write_random_data (source_child / "data")};
+
+    std::filesystem::rename (source_path, target_path);
+
+    ASSERT_FALSE (std::filesystem::exists (source_path));
+    ASSERT_TRUE (std::filesystem::is_empty (this->_path / "left"));
+    ASSERT_TRUE (std::filesystem::is_directory (target_path / "child"));
+    ASSERT_EQ (data, read (target_path / "child" / "data"));
+  }
+
+  TYPED_TEST
+    ( MCSFuseT
     , dir_can_not_overwrite_another_file_with_rename
     )
   {
@@ -848,6 +953,144 @@ namespace mcs::fuse
 #if defined (MCS_CONFIG_HAS_RENAMEAT2)
   TYPED_TEST
     ( MCSFuseT
+    , rename_ancestry_rejects_directory_exchange_with_descendant
+    )
+  {
+    auto const ancestor_path {this->_path / "ancestor"};
+    auto const descendant_path {ancestor_path / "child" / "grandchild"};
+    auto const ancestor_file_path {ancestor_path / "ancestor_data"};
+    auto const descendant_file_path {descendant_path / "descendant_data"};
+
+    ASSERT_TRUE (std::filesystem::create_directories (descendant_path));
+    auto const ancestor_data
+      { generate_and_write_random_data (ancestor_file_path)
+      };
+    auto const descendant_data
+      { generate_and_write_random_data (descendant_file_path)
+      };
+
+    std::ranges::for_each
+      ( std::array {ancestor_path, descendant_path}
+      , [&] (auto const& source_path)
+        {
+          auto const& target_path
+            { source_path == ancestor_path ? descendant_path : ancestor_path
+            };
+          SCOPED_TRACE (fmt::format ("source: {}", source_path.string()));
+
+          auto const result
+            { ::renameat2
+              ( AT_FDCWD
+              , source_path.c_str()
+              , AT_FDCWD
+              , target_path.c_str()
+              , RENAME_EXCHANGE
+              )
+            };
+          auto const error_code {errno};
+
+          ASSERT_EQ (result, -1);
+          ASSERT_EQ (error_code, EINVAL);
+          ASSERT_TRUE (std::filesystem::is_directory (ancestor_path));
+          ASSERT_TRUE (std::filesystem::is_directory (descendant_path));
+          ASSERT_EQ (ancestor_data, read (ancestor_file_path));
+          ASSERT_EQ (descendant_data, read (descendant_file_path));
+        }
+      );
+  }
+
+  TYPED_TEST
+    ( MCSFuseT
+    , rename_ancestry_rejects_directory_exchange_with_descendant_file
+    )
+  {
+    auto const ancestor_path {this->_path / "ancestor"};
+    auto const descendant_path {ancestor_path / "child"};
+    auto const ancestor_file_path {ancestor_path / "ancestor_data"};
+    auto const descendant_file_path {descendant_path / "descendant_data"};
+
+    ASSERT_TRUE (std::filesystem::create_directories (descendant_path));
+    auto const ancestor_data
+      { generate_and_write_random_data (ancestor_file_path)
+      };
+    auto const descendant_data
+      { generate_and_write_random_data (descendant_file_path)
+      };
+
+    std::ranges::for_each
+      ( std::array {ancestor_path, descendant_file_path}
+      , [&] (auto const& source_path)
+        {
+          auto const& target_path
+            { source_path == ancestor_path
+                ? descendant_file_path
+                : ancestor_path
+            };
+          SCOPED_TRACE (fmt::format ("source: {}", source_path.string()));
+
+          auto const result
+            { ::renameat2
+              ( AT_FDCWD
+              , source_path.c_str()
+              , AT_FDCWD
+              , target_path.c_str()
+              , RENAME_EXCHANGE
+              )
+            };
+          auto const error_code {errno};
+
+          ASSERT_EQ (result, -1);
+          ASSERT_EQ (error_code, EINVAL);
+          ASSERT_TRUE (std::filesystem::is_directory (ancestor_path));
+          ASSERT_TRUE (std::filesystem::is_directory (descendant_path));
+          ASSERT_TRUE
+            ( std::filesystem::is_regular_file (descendant_file_path)
+            );
+          ASSERT_EQ (ancestor_data, read (ancestor_file_path));
+          ASSERT_EQ (descendant_data, read (descendant_file_path));
+        }
+      );
+  }
+
+  TYPED_TEST
+    ( MCSFuseT
+    , rename_ancestry_allows_directory_exchange_between_unrelated_trees
+    )
+  {
+    auto const source_path {this->_path / "left" / "source"};
+    auto const target_path {this->_path / "right" / "nested" / "target"};
+
+    ASSERT_TRUE (std::filesystem::create_directories (source_path / "child"));
+    ASSERT_TRUE (std::filesystem::create_directories (target_path));
+    auto const source_data
+      { generate_and_write_random_data (source_path / "child" / "source_data")
+      };
+    auto const target_data
+      { generate_and_write_random_data (target_path / "target_data")
+      };
+
+    auto const result
+      { ::renameat2
+        ( AT_FDCWD
+        , source_path.c_str()
+        , AT_FDCWD
+        , target_path.c_str()
+        , RENAME_EXCHANGE
+        )
+      };
+    auto const error_code {errno};
+
+    ASSERT_EQ (result, 0) << strerror (error_code);
+    ASSERT_TRUE (std::filesystem::is_directory (source_path));
+    ASSERT_TRUE (std::filesystem::is_directory (target_path / "child"));
+    ASSERT_FALSE (std::filesystem::exists (source_path / "child"));
+    ASSERT_FALSE (std::filesystem::exists (target_path / "target_data"));
+    ASSERT_EQ (target_data, read (source_path / "target_data"));
+    ASSERT_EQ (source_data, read (target_path / "child" / "source_data"));
+  }
+
+  TYPED_TEST
+    ( MCSFuseT
     , rename_exchange_swaps_two_files
     )
   {
@@ -1138,7 +1381,10 @@ namespace mcs::fuse
             { std::string {"user."}
             + std::invoke
               ( testing::random::value<std::string>
-                { testing::random::value<std::string>::Length {1, 10}
+                { testing::random::value<std::string>::Length
+                  { .min = 1
+                  , .max = 10
+                  }
                 , 'a'
                 , 'z'
                 }
@@ -1153,7 +1399,10 @@ namespace mcs::fuse
           return std::string
             { std::invoke
               ( testing::random::value<std::string>
-                { testing::random::value<std::string>::Length {1, 10}
+                { testing::random::value<std::string>::Length
+                  { .min = 1
+                  , .max = 10
+                  }
                 , 'a'
                 , 'z'
                 }
@@ -1552,7 +1801,7 @@ namespace mcs::fuse
       throw std::runtime_error
         { fmt::format
           ( "Could not read all bytes from '{}': read = {}, size = {}"
-          , file_path
+          , util::FMT::STD::FILESYSTEM::Path {file_path}
           , bytes_read
           , data_read.size()
           )
@@ -1560,5 +1809,169 @@ namespace mcs::fuse
     }
 
     ASSERT_EQ (data_written, data_read);
+  }
+
+  TYPED_TEST (MCSFuseT, grow_after_shrink_keep_prefix_data_and_zeros_suffix)
+  {
+    auto const file_path {this->_path / std::invoke (testing::UniqID {""})};
+
+    using RandomData = testing::random::value<std::vector<std::byte>>;
+
+    // minimum size 2 to be able to shrink to non zero size
+    //
+    auto const data
+      { write
+        ( file_path
+        , std::invoke (RandomData {RandomData::Length {.min = 2UL}})
+        )
+      };
+    ASSERT_GT (data.size(), 1);
+
+    using RandomOffset = testing::random::value<std::size_t>;
+    auto const smaller_size
+      { std::invoke (RandomOffset {1UL, data.size() - 1UL})
+      };
+    auto const larger_size
+      { std::invoke (RandomOffset {smaller_size + 1UL, 2 * data.size()})
+      };
+    ASSERT_LT (0UL, smaller_size);
+    ASSERT_LT (smaller_size, data.size());
+    ASSERT_LT (smaller_size, larger_size);
+
+    {
+      auto const open_file {util::fopen (file_path, "rb+")};
+      auto const file_descriptor {util::syscall::fileno (open_file.get())};
+
+      util::syscall::ftruncate
+        ( file_descriptor
+        , util::cast<off_t> (smaller_size)
+        );
+      util::syscall::ftruncate
+        ( file_descriptor
+        , util::cast<off_t> (larger_size)
+        );
+    }
+
+    auto const expected_data
+      { std::invoke
+        ( [&]
+          {
+            auto _expected {std::vector<std::byte>{}};
+
+            std::ranges::copy
+              ( util::select (std::span (data), 0, smaller_size)
+              , std::back_inserter (_expected)
+              );
+            std::generate_n
+              ( std::back_inserter (_expected)
+              , larger_size - smaller_size
+              , []
+                {
+                  return std::byte {0};
+                }
+              );
+
+            return _expected;
+          }
+        )
+      };
+
+    ASSERT_EQ (read (file_path), expected_data);
+  }
+
+  TYPED_TEST (MCSFuseT, no_stale_bytes_must_be_exposed)
+  {
+    auto const file_path {this->_path / std::invoke (testing::UniqID {""})};
+
+    using RandomData = testing::random::value<std::vector<std::byte>>;
+
+    // minimum size 3 to be able to create a non-empty gap
+    //
+    auto const data
+      { write
+        ( file_path
+        , std::invoke (RandomData {RandomData::Length {.min = 3UL}})
+        )
+      };
+    ASSERT_GT (data.size(), 2);
+
+    // minimum size 1 to make sure the pwrite modifies the size
+    //
+    auto const data_after_gap
+      { std::invoke (RandomData {RandomData::Length {.min = 1UL}})
+      };
+
+    using RandomOffset = testing::random::value<std::size_t>;
+    auto const gap_begin
+      { std::invoke (RandomOffset {1UL, data.size() - 2UL})
+      };
+    auto const gap_end
+      { std::invoke (RandomOffset {gap_begin + 1UL, data.size() - 1UL})
+      };
+    ASSERT_LT (0UL, gap_begin);
+    ASSERT_LT (gap_begin, gap_end);
+    ASSERT_LT (gap_end, data.size());
+
+    {
+      auto const open_file {util::fopen (file_path, "rb+")};
+      auto const file_descriptor {util::syscall::fileno (open_file.get())};
+
+      util::syscall::ftruncate
+        ( file_descriptor
+        , util::cast<off_t> (gap_begin)
+        );
+
+      ASSERT_EQ
+        ( util::syscall::pwrite
+          ( file_descriptor
+          , data_after_gap.data()
+          , data_after_gap.size()
+          , util::cast<off_t> (gap_end)
+          )
+        , data_after_gap.size()
+        );
+    }
+
+    // data            [----------------------------------------)
+    //                 :          :            :                :
+    //                 :          gap_begin    :                :
+    //                 :          :            gap_end          :
+    //                 :          :            :                :
+    // data_after_gap  :          :            [·········)      :
+    // expected        [----------0000000000000··········-------)
+    // data_after_gap             :            [················)
+    // expected        [----------0000000000000·················)
+    // data_after_gap             :            [·····················)
+    // expected        [----------0000000000000······················)
+
+    auto const expected_data
+      { std::invoke
+        ( [&]
+          {
+            auto _expected {std::vector<std::byte>{}};
+
+            std::ranges::copy
+              ( util::select (std::span (data), 0, gap_begin)
+              , std::back_inserter (_expected)
+              );
+            std::generate_n
+              ( std::back_inserter (_expected)
+              , gap_end - gap_begin
+              , []
+                {
+                  return std::byte {0};
+                }
+              );
+            std::ranges::copy
+             ( data_after_gap
+             , std::back_inserter (_expected)
+             );
+
+            return _expected;
+          }
+        )
+      };
+
+    ASSERT_EQ (read (file_path), expected_data);
   }
 }

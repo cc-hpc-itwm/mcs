@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -15,11 +15,11 @@ namespace mcs::core::storage::trace::event::file
   template<core::storage::is_implementation Storage>
     struct Write
   {
-    typename Storage::Parameter::File::Write _parameter_file_write;
-    core::storage::segment::ID _segment_id;
-    core::memory::Offset _offset;
-    std::filesystem::path _path;
-    core::memory::Range _range;
+    typename Storage::Parameter::File::Write parameter_file_write;
+    core::storage::segment::ID segment_id;
+    core::memory::Offset offset;
+    std::filesystem::path path;
+    core::memory::Range range;
   };
 }
 
@@ -34,8 +34,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::trace::event::file::Write<Storage> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

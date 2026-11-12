@@ -1,18 +1,26 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
 
+#include <concepts>
+#include <mcs/Error.hpp>
+#include <mcs/config.hpp>
+
 namespace mcs::util
 {
+  struct CastOutOfRange : public mcs::Error
+  {
+    using mcs::Error::Error;
+  };
+
   template<typename To, typename From> struct Cast;
 
+  // Throws CastOutOfRange if an integer does not fit the destination type.
+  //
   template<typename To, typename From>
     constexpr auto cast (From const&) -> To;
 }
-
-#include <concepts>
-#include <mcs/config.hpp>
 
 #if not defined (MCS_CONFIG_GCC_WORKAROUND_BROKEN_TEMPLATE_FORWARD_DECLARATION)
 namespace mcs::util
@@ -22,6 +30,9 @@ namespace mcs::util
   // time.
   //
   template<std::unsigned_integral To, std::signed_integral From>
+    struct Cast<To, From>;
+
+  template<std::unsigned_integral To, std::unsigned_integral From>
     struct Cast<To, From>;
 
   template<std::signed_integral To, std::unsigned_integral From>

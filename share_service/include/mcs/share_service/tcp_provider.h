@@ -1,4 +1,4 @@
-/* Copyright (C) 2023-2025 Fraunhofer ITWM */
+/* Copyright (C) 2023-2026 Fraunhofer ITWM */
 /* License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE */
 
 #ifndef MCS_SHARE_SERVICE_TCP_PROVIDER_H
@@ -44,6 +44,8 @@ extern "C"
     );
 
   // Destroys an tcp_provider and cleans up used resources.
+  // Stop the provider and join any thread calling run before
+  // destruction.
   //
   // Expects: provider != NULL
   // Expects: *provider != NULL

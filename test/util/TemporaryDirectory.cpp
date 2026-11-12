@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <filesystem>
@@ -8,7 +8,7 @@
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/testing/require_exception.hpp>
-#include <mcs/util/FMT/STD/filesystem/path.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/TemporaryDirectory.hpp>
 
 namespace mcs::util
@@ -153,7 +153,7 @@ namespace mcs::util
                 ASSERT_STREQ
                   ( caught.what()
                   , fmt::format ( "NonExistingPath: '{}' already exists."
-                                , path
+                                , FMT::STD::FILESYSTEM::Path {path}
                                 ).c_str()
                   );
               }
@@ -190,7 +190,7 @@ namespace mcs::util
                 ASSERT_STREQ
                   ( caught.what()
                   , fmt::format ( "NonExistingPath: '{}' already exists."
-                                , path
+                                , FMT::STD::FILESYSTEM::Path {path}
                                 ).c_str()
                   );
               }

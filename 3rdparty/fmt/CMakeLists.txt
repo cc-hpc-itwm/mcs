@@ -1,11 +1,11 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 include (FetchContent)
 
 FetchContent_Declare (fmt
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG        12.1.0
+  GIT_TAG        12.2.1
   GIT_SHALLOW    TRUE
   SOURCE_DIR     ${CMAKE_BINARY_DIR}/3rdparty/fmt
   OVERRIDE_FIND_PACKAGE

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -71,13 +71,6 @@ namespace mcs::fuse::content::implementation
       ) -> content::result::Write
       ;
 
-    [[nodiscard]] auto fallocate
-      ( state::writing auto const&
-      , int mode
-      , off_t offset
-      , off_t size
-      ) -> int
-      ;
 
     auto cleanup ( state::writing auto const&) -> void;
 
@@ -88,34 +81,9 @@ namespace mcs::fuse::content::implementation
     ~Realloc();
 
   private:
-    struct Capacity
-    {
-      constexpr static auto const _xattr_key
-        { "user.mcs.content.Realloc.capacity"
-        };
-
-      [[nodiscard]] Capacity
-        ( mcs::util::not_null<state::inode::Common>
-        , state::writing auto const&
-        );
-
-      auto set (state::writing auto const&, size_t) -> void;
-
-      [[nodiscard]] constexpr operator size_t() const noexcept
-      {
-        return _value;
-      }
-
-    private:
-      auto set (state::writing auto const&, size_t, int flags) -> void;
-
-      mcs::util::not_null<state::inode::Common> _inode;
-      size_t _value {0UL};
-    };
-
     std::byte* _data {nullptr};
     size_t _size {0UL};
-    Capacity _capacity;
+    size_t _capacity {0UL};
 
     [[nodiscard]] static constexpr auto grow
       ( std::size_t

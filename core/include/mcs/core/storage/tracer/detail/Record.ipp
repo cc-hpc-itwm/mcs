@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/execute_and_die_on_exception.hpp>
@@ -8,7 +8,7 @@ namespace mcs::core::storage::tracer
 {
   template<is_implementation Storage>
     Record<Storage>::Record (Parameter::Create create)
-      : _events {create._events}
+      : _events {create.events}
   {}
 }
 

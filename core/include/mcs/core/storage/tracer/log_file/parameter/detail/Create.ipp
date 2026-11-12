@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/serialization/IArchive.hpp>
@@ -14,7 +14,7 @@ namespace mcs::serialization
       , core::storage::tracer::log_file::parameter::Create<Storage> const& create
       ) -> OArchive&
   {
-    save (oa, create._path);
+    save (oa, create.path);
 
     return oa;
   }
@@ -28,8 +28,8 @@ namespace mcs::serialization
       = core::storage::tracer::log_file::parameter::Create<Storage>
       ;
 
-    auto _path {load<decltype (Create::_path)> (ia)};
+    auto path {load<decltype (Create::path)> (ia)};
 
-    return Create {_path};
+    return Create {path};
   }
 }

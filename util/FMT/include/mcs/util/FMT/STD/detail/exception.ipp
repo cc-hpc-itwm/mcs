@@ -1,20 +1,20 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<std::exception>::parse (ParseContext& ctx)
+    constexpr auto formatter<std::exception>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<std::exception>::format
       ( std::exception const& error
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
-    fmt::format_to (ctx.out(), "{}", error.what());
+    fmt::format_to (context.out(), "{}", error.what());
 
     try
     {
@@ -22,26 +22,26 @@ namespace fmt
     }
     catch (std::exception const& rethrown_exception)
     {
-      fmt::format_to (ctx.out(), ": {}", rethrown_exception);
+      fmt::format_to (context.out(), ": {}", rethrown_exception);
     }
     catch (...)
     {
-      fmt::format_to (ctx.out(), "UNKNOWN");
+      fmt::format_to (context.out(), "UNKNOWN");
     }
 
-    return ctx.out();
+    return context.out();
   }
 
   template<typename ParseContext>
-    constexpr auto formatter<std::exception_ptr>::parse (ParseContext& ctx)
+    constexpr auto formatter<std::exception_ptr>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<std::exception_ptr>::format
       ( std::exception_ptr const& error
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     try
     {
@@ -49,13 +49,13 @@ namespace fmt
     }
     catch (std::exception const& rethrown_exception)
     {
-      fmt::format_to (ctx.out(), "{}", rethrown_exception);
+      fmt::format_to (context.out(), "{}", rethrown_exception);
     }
     catch (...)
     {
-      fmt::format_to (ctx.out(), "UNKNOWN");
+      fmt::format_to (context.out(), "UNKNOWN");
     }
 
-    return ctx.out();
+    return context.out();
   }
 }

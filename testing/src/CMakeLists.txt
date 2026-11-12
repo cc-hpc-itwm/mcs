@@ -13,6 +13,23 @@ target_sources (mcs_testing
   PRIVATE random/value/UTIL/string.cpp
 )
 
+target_sources (mcs_testing_syscall
+  PRIVATE syscall/_exit.cpp
+  PRIVATE syscall/eventfd.cpp
+  PRIVATE syscall/getrlimit.cpp
+  PRIVATE syscall/kill.cpp
+  PRIVATE syscall/setrlimit.cpp
+  PRIVATE syscall/sigaction.cpp
+  PRIVATE syscall/sigemptyset.cpp
+  PRIVATE syscall/waitpid.cpp
+  PRIVATE syscall/waitpid_retrying_on_interrupt.cpp
+)
+target_link_libraries (mcs_testing_syscall
+  PUBLIC mcs_util_syscall_Error
+  PRIVATE mcs_util
+  PRIVATE mcs_util_syscall
+)
+
 add_subdirectory (RPC)
 
 add_library (mcs_testing_block_device)

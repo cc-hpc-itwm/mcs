@@ -47,7 +47,7 @@ namespace
   struct SharedCounter
   {
     int value {0};
-    std::mutex _guard;
+    std::mutex guard;
   };
 
   struct Handler
@@ -81,7 +81,7 @@ namespace
     struct SynchronizedInc { using Response = int; };
     auto operator() (SynchronizedInc) const -> int
     {
-      auto const lock {std::scoped_lock {_counter->_guard}};
+      auto const lock {std::scoped_lock {_counter->guard}};
       auto const old {_counter->value};
       sleep();
       return _counter->value = old + 1;
@@ -101,7 +101,7 @@ namespace
   {
     using Dispatcher = mcs::rpc::Dispatcher<Handler, Command>;
 
-    auto io_context_server
+    auto io_context_provider
       { mcs::rpc::ScopedRunningIOContext
           {mcs::rpc::ScopedRunningIOContext::NumberOfThreads {server_threads}}
       };
@@ -113,7 +113,7 @@ namespace
     auto const provider
       { mcs::rpc::make_provider<Protocol, Dispatcher>
         ( typename Protocol::endpoint{}
-        , io_context_server
+        , io_context_provider
         , std::forward<decltype (shared_state)> (shared_state)...
         )
       };

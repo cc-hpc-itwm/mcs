@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/buffer.hpp>
@@ -63,7 +63,7 @@ namespace mcs::core::transport::implementation::ASIO::provider
         , Socket& socket
         ) const -> command::Put::Response
   {
-    auto const size {std::get<std::size_t> (put.bytes_or_size)};
+    auto const size {std::get<std::size_t> (put.source_or_size)};
     auto const chunk
       { make_chunk<chunk::access::Mutable>
         ( _storages

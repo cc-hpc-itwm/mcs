@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -12,7 +12,7 @@ namespace mcs::fuse::state::inode::kind
   template<is_content Content>
     struct File
   {
-    mcs::util::not_null<typename Content::State> _content_state;
-    mcs::util::not_null<access::Write const> _write_access;
+    mcs::util::not_null<typename Content::State> content_state;
+    mcs::util::not_null<access::Write const> write_access;
   };
 }

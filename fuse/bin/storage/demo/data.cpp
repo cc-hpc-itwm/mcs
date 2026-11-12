@@ -1,9 +1,10 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include "data.hpp"
 #include <algorithm>
 #include <fmt/format.h>
+#include <fmt/std.h>
 #include <stdexcept>
 
 namespace

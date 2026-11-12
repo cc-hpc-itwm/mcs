@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Fraunhofer ITWM
+// Copyright (C) 2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -22,7 +22,7 @@ namespace mcs::util
     {
       struct PathAlreadyExists : public mcs::Error
       {
-        auto path() const -> std::filesystem::path;
+        [[nodiscard]] auto path() const -> std::filesystem::path;
 
         ~PathAlreadyExists() override;
         PathAlreadyExists (PathAlreadyExists const&) = default;

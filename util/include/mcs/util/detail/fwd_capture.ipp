@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <functional>
@@ -19,9 +19,18 @@ namespace mcs::util
       // NOLINTNEXTLINE (bugprone-forwarding-reference-overload)
       by_value (T&& x) : _x {std::forward<T> (x)} {}
 
-      auto get() & -> T& { return _x; }
-      auto get() const& -> T const& { return _x; }
-      auto get() && -> T&& { return std::move (_x); }
+      [[nodiscard]] auto get() & -> T&
+      {
+        return _x;
+      }
+      [[nodiscard]] auto get() const& -> T const&
+      {
+        return _x;
+      }
+      [[nodiscard]] auto get() && -> T&&
+      {
+        return std::move (_x);
+      }
     };
 
     template<typename T>
@@ -33,9 +42,18 @@ namespace mcs::util
     public:
       by_ref (T& x) : _x {x} {}
 
-      auto get() & -> T& { return _x.get(); }
-      auto get() const& -> T const& { return _x.get(); }
-      auto get() && -> T&& { return std::move (_x.get()); }
+      [[nodiscard]] auto get() & -> T&
+      {
+        return _x.get();
+      }
+      [[nodiscard]] auto get() const& -> T const&
+      {
+        return _x.get();
+      }
+      [[nodiscard]] auto get() && -> T&&
+      {
+        return std::move (_x.get());
+      }
     };
   }
 

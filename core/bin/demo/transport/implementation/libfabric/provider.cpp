@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <csignal>
@@ -27,39 +27,96 @@
 #include <mcs/util/ASIO/is_protocol.hpp>
 #include <mcs/util/TemporaryDirectory.hpp>
 #include <mcs/util/TemporaryFile.hpp>
-#include <mcs/util/main.hpp>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
+#include <mcs/util/daemon.hpp>
+#include <mcs/util/daemon/option.hpp>
 #include <mcs/util/read/read.hpp>
 #include <mcs/util/syscall/getpid.hpp>
 #include <mcs/util/type/List.hpp>
 #include <memory>
 #include <numeric>
 #include <stdexcept>
+#include <string>
 
 namespace
 {
-  auto provider_main (mcs::util::Args args) -> int
+  namespace option
   {
-    if (args.size() != 7)
-    {
-      throw std::invalid_argument
-        { fmt::format
-          ( "usage: {}"
-            " control_endpoint"
-            " transport_provider_name"
-            " transport_domain_name"
-            " provider_path"
-            " number_of_longs"
-            " number_of_threads"
-          , args[0]
-          )
-        };
-    }
+    using mcs::util::command_line::option::Parameter;
 
+    constexpr auto control_endpoint {Parameter {"control-endpoint"}};
+    constexpr auto number_of_longs {Parameter {"number-of-longs"}};
+    constexpr auto number_of_threads {Parameter {"number-of-threads"}};
+    constexpr auto provider_path {Parameter {"provider-path"}};
+    constexpr auto transport_domain_name
+      { Parameter {"transport-domain-name"}
+      };
+    constexpr auto transport_provider_name
+      { Parameter {"transport-provider-name"}
+      };
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <ENDPOINT>\n"
+        "    RPC control listening endpoint.\n"
+        "  --{2} <NAME>\n"
+        "    Libfabric provider name.\n"
+        "  --{3} <NAME>\n"
+        "    Libfabric domain name.\n"
+        "  --{4} <PATH>\n"
+        "    Directory for publishing provider and source information.\n"
+        "  --{5} <COUNT>\n"
+        "    Number of long elements to provide.\n"
+        "  --{6} <COUNT>\n"
+        "    Number of RPC I/O threads.\n"
+      , args.at (0)
+      , option::control_endpoint
+      , option::transport_provider_name
+      , option::transport_domain_name
+      , option::provider_path
+      , option::number_of_longs
+      , option::number_of_threads
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print
+      ( "{0}\nOptional settings:\n"
+        "  {1}  Run in foreground (default: background)\n"
+      , usage (args)
+      , mcs::util::daemon::option::foreground
+      );
+  }
+
+  auto provider_main
+    ( mcs::util::arguments::View args
+    , mcs::util::Daemon& daemon
+    ) -> int
+  {
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::control_endpoint)
+        . add (option::transport_provider_name)
+        . add (option::transport_domain_name)
+        . add (option::provider_path)
+        . add (option::number_of_longs)
+        . add (option::number_of_threads)
+        )
+      };
     using Element = long;
 
     // prepare some data to provide
     auto const number_of_elements
-      { mcs::util::read::read<unsigned int> (args[5])
+      { mcs::util::read::read<unsigned int>
+          ( options.at (option::number_of_longs)
+          )
       };
     auto const size
       { mcs::core::memory::make_size (number_of_elements * sizeof (Element))
@@ -119,14 +176,18 @@ namespace
     auto io_context
       { mcs::rpc::ScopedRunningIOContext
         { mcs::rpc::ScopedRunningIOContext::NumberOfThreads
-          { mcs::util::read::read<unsigned int> (args[6])
-          }
+            { mcs::util::read::read<unsigned int>
+                ( options.at (option::number_of_threads)
+                )
+            }
         , SIGINT, SIGTERM
         }
       };
 
     return mcs::util::ASIO::run
-      ( mcs::util::read::read<mcs::util::ASIO::Endpoint> (args[1])
+      ( mcs::util::read::read<mcs::util::ASIO::Endpoint>
+          ( options.at (option::control_endpoint)
+          )
       , [&]<mcs::util::ASIO::is_protocol Protocol>
            (typename Protocol::endpoint endpoint)
         {
@@ -148,8 +209,14 @@ namespace
                 { io_context
                 , endpoint
                 , libfabric::libfabric::Interface
-                    { libfabric::libfabric::Provider {args[2]}
-                    , libfabric::libfabric::Domain {args[3]}
+                    { .provider = libfabric::libfabric::Provider
+                        { std::string
+                            {options.at (option::transport_provider_name)}
+                        }
+                    , .domain = libfabric::libfabric::Domain
+                        { std::string
+                            {options.at (option::transport_domain_name)}
+                        }
                     }
                 , std::addressof (storages)
                 }
@@ -157,20 +224,22 @@ namespace
 
           // publish information for clients
           auto const temporary_directory
-            { mcs::util::TemporaryDirectory {args[4]}
+            { mcs::util::TemporaryDirectory
+              { options.at (option::provider_path)
+              }
             };
 
           auto const address_information
             { mcs::util::TemporaryFile
               { temporary_directory.path() / "SOURCE"
               , "{}"
-              , mcs::core::transport::Address
-                  { storage->id()
+                , mcs::core::transport::make_address
+                  ( storage->id()
                   , mcs::core::storage::make_parameter
                       (typename Storage::Parameter::Chunk::Description{})
                   , segment->id()
                   , mcs::core::memory::make_offset (0)
-                  }
+                  )
               }
             };
 
@@ -190,11 +259,9 @@ namespace
               }
             };
 
-          // run "for ever"
-          io_context.join();
+          daemon.ready();
 
-          // \todo daemonize and proper return once the connection
-          // information has been written
+          io_context.join();
 
           return EXIT_SUCCESS;
         }
@@ -204,5 +271,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, provider_main);
+  return mcs::util::daemonize (argc, argv, help, provider_main);
 }

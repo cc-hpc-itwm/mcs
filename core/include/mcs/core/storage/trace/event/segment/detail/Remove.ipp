@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -25,8 +25,8 @@ namespace fmt
       ( context.out()
       , "trace::event::segment::Remove {}"
       , std::make_tuple
-        ( segment_remove._parameter_segment_remove
-        , segment_remove._segment_id
+        ( segment_remove.parameter_segment_remove
+        , segment_remove.segment_id
         )
       );
   }

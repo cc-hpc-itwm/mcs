@@ -1,6 +1,8 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
+#include <asio/post.hpp>
+#include <asio/use_awaitable.hpp>
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -18,7 +20,7 @@ namespace mcs::rpc
       requires (std::is_constructible_v<Handler, HandlerArgs...>)
       Dispatcher<Handler, Commands...>::Dispatcher
         ( HandlerArgs&&... handler_args
-        )
+        ) noexcept (std::is_nothrow_constructible_v<Handler, HandlerArgs...>)
           : _handler {std::forward<HandlerArgs> (handler_args)...}
   {}
 
@@ -36,20 +38,20 @@ namespace mcs::rpc
     requires (is_handler_for_commands<Handler, Commands...>)
     template<is_protocol Protocol>
       auto Dispatcher<Handler, Commands...>::dispatch
-        ( std::tuple<Header, detail::Buffer> command
-        , typename Protocol::socket& socket
+        ( detail::ReceivedFrame<Header> command
+        , RequestContext<Protocol> context
         ) -> asio::awaitable<detail::ResultHolder>
   {
     return handle_by_index<Protocol, 0, Commands...>
-      (std::move (command), socket);
+      (std::move (command), std::move (context));
   }
 
   template<typename Handler, is_command... Commands>
     requires (is_handler_for_commands<Handler, Commands...>)
     template<is_protocol Protocol, std::size_t I>
       auto Dispatcher<Handler, Commands...>::handle_by_index
-        ( std::tuple<Header, detail::Buffer>
-        , typename Protocol::socket&
+        ( detail::ReceivedFrame<Header>
+        , RequestContext<Protocol>
         ) -> asio::awaitable<detail::ResultHolder>
   {
     throw error::internal::UnknownCommand{};
@@ -63,22 +65,27 @@ namespace mcs::rpc
             , typename... Tail
             >
       auto Dispatcher<Handler, Commands...>::handle_by_index
-        ( std::tuple<Header, detail::Buffer> command
-        , typename Protocol::socket& socket
+        ( detail::ReceivedFrame<Header> command
+        , RequestContext<Protocol> context
         ) -> asio::awaitable<detail::ResultHolder>
   {
-    auto& header {std::get<Header> (command)};
+    auto& header {command.header};
 
     if (header.index == detail::CommandIndex{})
     {
-      return handle<Protocol, Command> (std::move (command), socket);
+      return handle<Protocol, Command>
+        ( std::move (command)
+        , std::move (context)
+        );
     }
     else
     {
       --header.index;
 
       return handle_by_index<Protocol, I + 1, Tail...>
-        (std::move (command), socket);
+        ( std::move (command)
+        , std::move (context)
+        );
     }
   }
 
@@ -87,15 +94,19 @@ namespace mcs::rpc
     template<is_protocol Protocol, is_command Command>
       requires (is_one_of_the_commands<Command, Commands...>)
       auto Dispatcher<Handler, Commands...>::handle
-        ( std::tuple<Header, detail::Buffer> command
-        , typename Protocol::socket& socket
+        ( detail::ReceivedFrame<Header> command
+        , RequestContext<Protocol> context
         ) -> asio::awaitable<detail::ResultHolder>
   {
-    auto const& header {std::get<Header> (command)};
-    auto& buffer {std::get<detail::Buffer> (command)};
+    auto const& header {command.header};
+    auto& buffer {command.buffer};
 
     auto result_or_error
-      {co_await invoke<Protocol> (buffer.template load<Command>(), socket)};
+      { co_await invoke<Protocol>
+          ( buffer.template load<Command>()
+          , std::move (context)
+          )
+      };
 
     co_return detail::ResultHolder
       {header.call_id, std::move (result_or_error)};
@@ -107,24 +118,26 @@ namespace mcs::rpc
       requires (is_one_of_the_commands<Command, Commands...>)
       auto Dispatcher<Handler, Commands...>::invoke
         ( Command command
-        , typename Protocol::socket& socket
+        , RequestContext<Protocol> context
         ) -> asio::awaitable<detail::ResultOrError<typename Command::Response>>
   try
   {
     using Socket = typename Protocol::socket&;
+    auto& handler {context.dispatcher->_handler};
+    auto& socket {*context.socket};
 
     if constexpr (handler::provides_response<Handler, Command, Socket>)
     {
       if constexpr (std::is_same_v<typename Command::Response, void>)
       {
-        std::invoke (_handler, std::move (command), socket);
+        std::invoke (handler, std::move (command), socket);
 
         co_return detail::make_result();
       }
       else
       {
         co_return detail::make_result
-          ( std::invoke (_handler, std::move (command), socket)
+          ( std::invoke (handler, std::move (command), socket)
           );
       }
     }
@@ -133,30 +146,38 @@ namespace mcs::rpc
     {
       if constexpr (std::is_same_v<typename Command::Response, void>)
       {
-        co_await std::invoke (_handler, std::move (command), socket);
+        co_await std::invoke (handler, std::move (command), socket);
 
         co_return detail::make_result();
       }
       else
       {
         co_return detail::make_result
-          ( co_await std::invoke (_handler, std::move (command), socket)
+          ( co_await std::invoke (handler, std::move (command), socket)
           );
       }
     }
+
+    // Queue this coroutine's continuation on its executor: co_spawn
+    // may start inline, and a blocking handler would otherwise stall
+    // the receive loop. Socket-taking handlers return above and
+    // deferring them could let the receive loop consume their
+    // streaming payload as the next RPC frame.
+    //
+    co_await asio::post (asio::use_awaitable);
 
     if constexpr (handler::provides_response<Handler, Command>)
     {
       if constexpr (std::is_same_v<typename Command::Response, void>)
       {
-        std::invoke (_handler, std::move (command));
+        std::invoke (handler, std::move (command));
 
         co_return detail::make_result();
       }
       else
       {
         co_return detail::make_result
-          ( std::invoke (_handler, std::move (command))
+          ( std::invoke (handler, std::move (command))
           );
       }
     }
@@ -165,14 +186,14 @@ namespace mcs::rpc
     {
       if constexpr (std::is_same_v<typename Command::Response, void>)
       {
-        co_await std::invoke (_handler, std::move (command));
+        co_await std::invoke (handler, std::move (command));
 
         co_return detail::make_result();
       }
       else
       {
         co_return detail::make_result
-          ( co_await std::invoke (_handler, std::move (command))
+          ( co_await std::invoke (handler, std::move (command))
           );
       }
     }

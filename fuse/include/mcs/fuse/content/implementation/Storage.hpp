@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -133,14 +133,6 @@ namespace mcs::fuse::content::implementation
       ) -> content::result::Write
       ;
 
-    [[nodiscard]] auto fallocate
-      ( state::writing auto const&
-      , int mode
-      , off_t offset
-      , off_t size
-      ) -> int
-      ;
-
     auto ioctl
       ( state::reading auto const&
       , ::fuse_req_t request
@@ -162,13 +154,6 @@ namespace mcs::fuse::content::implementation
 
   private:
     mcs::util::not_null<State> _state;
-    constexpr static auto const _xattr_key_capacity
-      { "user.mcs.inode.Storage.capacity"
-      };
-    util::not_null<state::inode::Common> _inode;
-
-    auto xattr_set_capacity (state::writing auto const&, int flags) -> void;
-
     std::size_t _size {0UL};
     std::size_t _capacity {0UL};
 
@@ -191,13 +176,13 @@ namespace mcs::fuse::content::implementation
       ( core::memory::Offset begin
       ) -> Parts::iterator
       ;
-    auto lower_bound
+    [[nodiscard]] auto lower_bound
       ( core::memory::Offset begin
       ) const -> Parts::const_iterator
       ;
 
     template<core::chunk::is_access Access>
-      auto make_chunk
+      [[nodiscard]] auto make_chunk
         ( state::reading auto const&
         , storage::Part const&
         , core::memory::Range

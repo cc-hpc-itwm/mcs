@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -73,9 +73,9 @@ namespace mcs::block_device::block
   private:
     underlying_type _value {0u};
 
-    template<typename, typename, typename> friend struct fmt::formatter;
-    template<typename> friend struct serialization::Implementation;
-    template<typename> friend struct util::read::Read;
+    friend struct fmt::formatter<Size>;
+    friend struct serialization::Implementation<Size>;
+    friend struct util::read::Read<Size>;
   };
 
   template<std::integral I>
@@ -104,8 +104,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::block_device::block::Size const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 add_library (mcs_rpc_bin_ping_Dispatcher
@@ -19,6 +19,8 @@ target_link_libraries (mcs_rpc_bin_ping_server
   PRIVATE mcs_rpc
   PRIVATE mcs_rpc_bin_ping_Dispatcher
   PRIVATE mcs_util
+  PRIVATE mcs_util_command_line
+  PRIVATE mcs_util_daemon
   PRIVATE mcs_util_syscall
   PRIVATE mcs_util_read
 )
@@ -32,6 +34,7 @@ target_link_libraries (mcs_rpc_bin_ping_client
   PRIVATE mcs_rpc
   PRIVATE mcs_rpc_bin_ping_Dispatcher
   PRIVATE mcs_util
+  PRIVATE mcs_util_command_line
   PRIVATE mcs_util_syscall
   PRIVATE mcs_util_read
 )

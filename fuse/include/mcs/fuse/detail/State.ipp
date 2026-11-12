@@ -460,10 +460,10 @@ namespace mcs::fuse
 
     auto const write_access {_write_access()};
 
-    // \todo Check for ancestor: If source is a directory, then
-    // target_parent must not be a descendant of source. This requires
-    // parent traversal which the current data structure does not
-    // efficiently support.
+    // Rely on Linux VFS ancestry checks before this FUSE callback:
+    // directory moves and exchanges that would create a cycle are
+    // rejected before reaching this handler. The rename_ancestry
+    // integration tests cover rejection and preservation of the tree.
 
     auto const move_to_nonexisting
       { [&] ( auto source_directory, auto source
@@ -1316,37 +1316,6 @@ namespace mcs::fuse
       );
 
     return reply::none (request);
-  }
-}
-
-namespace mcs::fuse
-{
-  template<is_content Content>
-    auto State<Content>::fallocate
-      ( ::fuse_req_t request
-      , ::fuse_ino_t ino
-      , int mode
-      , off_t offset
-      , off_t length
-      , ::fuse_file_info* fi
-      ) -> void
-  {
-    std::ignore = fi;
-
-    auto const write_access {_write_access()};
-
-    return with_file
-      ( write_access
-      , request
-      , ino
-      , [&] (auto file)
-        {
-          return reply::error
-            ( request
-            , file->fallocate (write_access, mode, offset, length)
-            );
-        }
-      );
   }
 }
 

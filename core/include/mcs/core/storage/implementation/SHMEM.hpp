@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -88,9 +88,9 @@ namespace mcs::core::storage::implementation
     {
       struct BadAlloc : public mcs::Error
       {
-        constexpr auto requested() const noexcept -> memory::Size;
-        constexpr auto used() const noexcept -> memory::Size;
-        constexpr auto max() const noexcept -> MaxSize;
+        [[nodiscard]] constexpr auto requested() const noexcept -> memory::Size;
+        [[nodiscard]] constexpr auto used() const noexcept -> memory::Size;
+        [[nodiscard]] constexpr auto max() const noexcept -> MaxSize;
 
         ~BadAlloc() override;
         BadAlloc (BadAlloc const&) = default;
@@ -114,12 +114,18 @@ namespace mcs::core::storage::implementation
 
       struct ChunkDescription : public mcs::Error
       {
-        constexpr auto parameter
+        [[nodiscard]] constexpr auto parameter
           (
           ) const noexcept -> Parameter::Chunk::Description const&
           ;
-        constexpr auto segment_id() const noexcept -> segment::ID;
-        constexpr auto memory_range() const noexcept -> memory::Range;
+        [[nodiscard]] constexpr auto segment_id
+          (
+          ) const noexcept -> segment::ID
+          ;
+        [[nodiscard]] constexpr auto memory_range
+          (
+          ) const noexcept -> memory::Range
+          ;
 
         ~ChunkDescription() override;
         ChunkDescription (ChunkDescription const&) = default;
@@ -159,15 +165,25 @@ namespace mcs::core::storage::implementation
 
     struct Unmap
     {
-      auto operator() (void* ptr) const -> void;
+      [[nodiscard]] explicit Unmap
+        ( std::size_t
+        , std::optional<Parameter::Segment::MLOCKed> = {}
+        ) noexcept;
+
+      auto operator() (void*) const -> void;
+
+    private:
       std::size_t _size;
-      bool _unlock {false};
+      bool _unlock;
     };
 
     template<chunk::is_access Access>
       struct CacheImpl
     {
-      auto data() const -> typename Access::template Span<std::byte>;
+      [[nodiscard]] auto data
+        (
+        ) const -> typename Access::template Span<std::byte>
+        ;
 
     private:
       friend struct SHMEM;
@@ -188,7 +204,7 @@ namespace mcs::core::storage::implementation
       Prefix _prefix;
       segment::ID _segment_id;
       using Name = std::string;
-      auto name() const -> Name;
+      [[nodiscard]] auto name() const -> Name;
       std::optional<Name> _unlink{};
       util::Buffer<void, Unmap> _buffer;
       auto shm_open (Name, std::size_t) -> decltype (_buffer);
@@ -220,7 +236,10 @@ namespace mcs::core::storage::implementation
         {
           explicit State (Description<Access> const&);
 
-          auto bytes() const -> typename Access::template Span<std::byte>;
+          [[nodiscard]] auto bytes
+            (
+            ) const -> typename Access::template Span<std::byte>
+            ;
 
         private:
           Cache<Access> _cache;
@@ -315,8 +334,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Chunk::Description<Access> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -331,8 +350,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Tag const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -372,8 +391,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Prefix const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -413,8 +432,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Parameter::Create const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -454,8 +473,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Parameter::Size::Max const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -495,8 +514,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Parameter::Size::Used const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -536,8 +555,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -577,8 +596,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -618,8 +637,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -659,8 +678,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -700,8 +719,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -741,8 +760,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Parameter::File::Read const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -782,8 +801,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::SHMEM::Parameter::File::Write const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <csignal>
@@ -23,7 +23,10 @@
 #include <mcs/util/ASIO/is_protocol.hpp>
 #include <mcs/util/TemporaryDirectory.hpp>
 #include <mcs/util/TemporaryFile.hpp>
-#include <mcs/util/main.hpp>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
+#include <mcs/util/daemon.hpp>
+#include <mcs/util/daemon/option.hpp>
 #include <mcs/util/read/read.hpp>
 #include <mcs/util/syscall/getpid.hpp>
 #include <mcs/util/type/List.hpp>
@@ -34,23 +37,68 @@
 
 namespace
 {
-  auto provider_main (mcs::util::Args args) -> int
+  namespace option
   {
-    if (args.size() != 5)
-    {
-      throw std::invalid_argument
-        { fmt::format
-          ( "usage: {} endpoint provider_path number_of_longs number_of_threads"
-          , args[0]
-          )
-        };
-    }
+    using mcs::util::command_line::option::Parameter;
 
+    constexpr auto endpoint {Parameter {"endpoint"}};
+    constexpr auto number_of_longs {Parameter {"number-of-longs"}};
+    constexpr auto number_of_threads {Parameter {"number-of-threads"}};
+    constexpr auto provider_path {Parameter {"provider-path"}};
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <ENDPOINT>\n"
+        "    Transport listening endpoint.\n"
+        "  --{2} <PATH>\n"
+        "    Directory for publishing provider and source information.\n"
+        "  --{3} <COUNT>\n"
+        "    Number of long elements to provide.\n"
+        "  --{4} <COUNT>\n"
+        "    Number of RPC I/O threads.\n"
+      , args.at (0)
+      , option::endpoint
+      , option::provider_path
+      , option::number_of_longs
+      , option::number_of_threads
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print
+      ( "{0}\nOptional settings:\n"
+        "  {1}  Run in foreground (default: background)\n"
+      , usage (args)
+      , mcs::util::daemon::option::foreground
+      );
+  }
+
+  auto provider_main
+    ( mcs::util::arguments::View args
+    , mcs::util::Daemon& daemon
+    ) -> int
+  {
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::endpoint)
+        . add (option::provider_path)
+        . add (option::number_of_longs)
+        . add (option::number_of_threads)
+        )
+      };
     using Element = long;
 
     // prepare some data to provide
     auto const number_of_elements
-      { mcs::util::read::read<unsigned int> (args[3])
+      { mcs::util::read::read<unsigned int>
+          ( options.at (option::number_of_longs)
+          )
       };
     auto const size
       {mcs::core::memory::make_size (number_of_elements * sizeof (Element))};
@@ -110,14 +158,18 @@ namespace
     auto io_context
       { mcs::rpc::ScopedRunningIOContext
         { mcs::rpc::ScopedRunningIOContext::NumberOfThreads
-            { mcs::util::read::read<unsigned int> (args[4])
+            { mcs::util::read::read<unsigned int>
+                ( options.at (option::number_of_threads)
+                )
             }
         , SIGINT, SIGTERM
         }
       };
 
     return mcs::util::ASIO::run
-      ( mcs::util::read::read<mcs::util::ASIO::Endpoint> (args[1])
+      ( mcs::util::read::read<mcs::util::ASIO::Endpoint>
+          ( options.at (option::endpoint)
+          )
       , [&]<mcs::util::ASIO::is_protocol Protocol>
            (typename Protocol::endpoint provider_endpoint)
         {
@@ -138,20 +190,22 @@ namespace
 
           // publish information for clients
           auto const temporary_directory
-            { mcs::util::TemporaryDirectory {args[2]}
+            { mcs::util::TemporaryDirectory
+              { options.at (option::provider_path)
+              }
             };
 
           auto const address_information
             { mcs::util::TemporaryFile
               { temporary_directory.path() / "SOURCE"
               , "{}"
-              , mcs::core::transport::Address
-                  { storage->id()
+                , mcs::core::transport::make_address
+                  ( storage->id()
                   , mcs::core::storage::make_parameter
                       (typename Storage::Parameter::Chunk::Description{})
                   , segment->id()
                   , mcs::core::memory::make_offset (0)
-                  }
+                  )
               }
             };
 
@@ -171,11 +225,9 @@ namespace
               }
             };
 
-          // run "for ever"
-          io_context.join();
+          daemon.ready();
 
-          // \todo daemonize and proper return once the connection
-          // information has been written
+          io_context.join();
 
           return EXIT_SUCCESS;
         }
@@ -185,5 +237,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, provider_main);
+  return mcs::util::daemonize (argc, argv, help, provider_main);
 }

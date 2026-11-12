@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -42,11 +42,11 @@ namespace mcs::util::type
 
     constexpr explicit ID (std::size_t);
 
-    std::size_t _id;
+    std::size_t _id{};
 
-    template<typename, typename, typename> friend struct fmt::formatter;
-    template<typename> friend struct serialization::Implementation;
-    template<typename> friend struct util::read::Read;
+    friend struct fmt::formatter<ID>;
+    friend struct serialization::Implementation<ID>;
+    friend struct util::read::Read<ID>;
   };
 }
 
@@ -61,8 +61,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::util::type::ID<Ts...> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Fraunhofer ITWM
+// Copyright (C) 2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/control/command/file/Write.hpp>
@@ -13,12 +13,12 @@ namespace mcs::serialization
     , mcs::core::control::command::file::Write const& value
     ) -> OArchive&
   {
-    save (oa, value._storage_id);
-    save (oa, value._parameter_file_write);
-    save (oa, value._segment_id);
-    save (oa, value._offset);
-    save (oa, value._file);
-    save (oa, value._range);
+    save (oa, value.storage_id);
+    save (oa, value.parameter_file_write);
+    save (oa, value.segment_id);
+    save (oa, value.offset);
+    save (oa, value.file);
+    save (oa, value.range);
 
     return oa;
   }
@@ -26,13 +26,20 @@ namespace mcs::serialization
     ( IArchive& ia
     ) -> mcs::core::control::command::file::Write
   {
-    auto _storage_id {load<decltype (mcs::core::control::command::file::Write::_storage_id)> (ia)};
-    auto _parameter_file_write {load<decltype (mcs::core::control::command::file::Write::_parameter_file_write)> (ia)};
-    auto _segment_id {load<decltype (mcs::core::control::command::file::Write::_segment_id)> (ia)};
-    auto _offset {load<decltype (mcs::core::control::command::file::Write::_offset)> (ia)};
-    auto _file {load<decltype (mcs::core::control::command::file::Write::_file)> (ia)};
-    auto _range {load<decltype (mcs::core::control::command::file::Write::_range)> (ia)};
+    auto storage_id {load<decltype (mcs::core::control::command::file::Write::storage_id)> (ia)};
+    auto parameter_file_write {load<decltype (mcs::core::control::command::file::Write::parameter_file_write)> (ia)};
+    auto segment_id {load<decltype (mcs::core::control::command::file::Write::segment_id)> (ia)};
+    auto offset {load<decltype (mcs::core::control::command::file::Write::offset)> (ia)};
+    auto file {load<decltype (mcs::core::control::command::file::Write::file)> (ia)};
+    auto range {load<decltype (mcs::core::control::command::file::Write::range)> (ia)};
 
-    return mcs::core::control::command::file::Write {_storage_id, _parameter_file_write, _segment_id, _offset, _file, _range};
+    return mcs::core::control::command::file::Write
+      { .storage_id = storage_id
+      , .parameter_file_write = parameter_file_write
+      , .segment_id = segment_id
+      , .offset = offset
+      , .file = file
+      , .range = range
+      };
   }
 }

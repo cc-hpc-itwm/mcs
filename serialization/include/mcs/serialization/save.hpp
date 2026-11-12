@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -10,10 +10,6 @@ namespace mcs::serialization
 {
   template<is_serializable T>
     constexpr auto save (OArchive&, T const&) -> OArchive&;
-  template<is_serializable T>
-    constexpr auto save (OArchive&, T&) -> OArchive&;
-  template<is_serializable T>
-    auto save (OArchive&, T&&) -> OArchive&;
 }
 
 #include "detail/save.ipp"

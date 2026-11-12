@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <compare>
@@ -9,9 +9,9 @@
 #include <mcs/testing/read_of_fmt_is_identity.hpp>
 #include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/State.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/read/parse.hpp>
 #include <mcs/util/read/prefix.hpp>
-#include <mcs/util/read/uint.hpp>
 
 namespace
 {
@@ -30,7 +30,7 @@ namespace
   private:
     unsigned int _value;
 
-    template<typename, typename, typename> friend struct fmt::formatter;
+    friend struct fmt::formatter<UDT>;
   };
 
   template<typename Char>
@@ -54,22 +54,22 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( UDT const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 
   template<typename ParseContext>
-    constexpr auto formatter<UDT>::parse (ParseContext& ctx)
+    constexpr auto formatter<UDT>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<UDT>::format
       ( UDT const& x
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
-    return fmt::format_to (ctx.out(), "udt {}", x._value);
+    return fmt::format_to (context.out(), "udt {}", x._value);
   }
 }
 

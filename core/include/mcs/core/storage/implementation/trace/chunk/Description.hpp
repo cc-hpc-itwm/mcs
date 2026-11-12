@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -20,7 +20,7 @@ namespace mcs::core::storage::implementation::trace::chunk
     struct Description : public Storage::Chunk::template Description<Access>
     {
       using Base = typename Storage::Chunk::template Description<Access>;
-      Description (Base&& base) : Base {std::forward<Base> (base)} {}
+      Description (Base&& base) : Base {std::move (base)} {}
 
       struct State : public Storage::Chunk::template Description<Access>::State
       {
@@ -65,8 +65,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::trace::chunk::Description<Tracer, Storage, Access> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -28,12 +28,12 @@ namespace mcs::fuse::content::implementation
       , typename Parameter::Segment::Remove parameter_segment_remove
       , typename Parameter::Chunk::Description parameter_chunk_description
       )
-    : _storage {parameter_create}
-    , _parameter_size_max {parameter_size_max}
-    , _parameter_size_used {parameter_size_used}
-    , _parameter_segment_create {parameter_segment_create}
-    , _parameter_segment_remove {parameter_segment_remove}
-    , _parameter_chunk_description {parameter_chunk_description}
+    : _storage {std::move (parameter_create)}
+    , _parameter_size_max {std::move (parameter_size_max)}
+    , _parameter_size_used {std::move (parameter_size_used)}
+    , _parameter_segment_create {std::move (parameter_segment_create)}
+    , _parameter_segment_remove {std::move (parameter_segment_remove)}
+    , _parameter_chunk_description {std::move (parameter_chunk_description)}
   {}
 
   template<core::storage::is_implementation StorageImplementation>
@@ -156,15 +156,12 @@ namespace mcs::fuse::content::implementation
   template<core::storage::is_implementation StorageImplementation>
     Storage<StorageImplementation>::Storage
       ( util::not_null<State> state
-      , util::not_null<state::inode::Common> inode
-      , state::writing auto const& write_access
+      , util::not_null<state::inode::Common>
+      , state::writing auto const&
       , ::fuse_ino_t
       )
         : _state {state}
-        , _inode {inode}
-  {
-    xattr_set_capacity (write_access, XATTR_CREATE);
-  }
+  {}
 
   template<core::storage::is_implementation StorageImplementation>
     auto Storage<StorageImplementation>::cleanup
@@ -216,13 +213,10 @@ namespace mcs::fuse::content::implementation
       ) -> content::result::Resize
   try
   {
-    // Finally update the xattr.
-    //
     auto const resized
       { [&]
         {
           _size = new_size;
-          xattr_set_capacity (write_access, XATTR_REPLACE);
 
           return content::result::resize::Success {new_size};
         }
@@ -256,13 +250,7 @@ namespace mcs::fuse::content::implementation
               )
             };
 
-          // \todo retrieve the information from the storage about
-          // whether or not the new segment is initialized to zero,
-          // e.g. SHMEM and Files do initialize to zero while Heap
-          // does not.
-          //
-          // overwrite_with_zero (part, range);
-          std::ignore = part;
+          overwrite_with_zero (part, range);
 
           _capacity = offset_cast<std::size_t> (core::memory::end (range));
         }
@@ -549,17 +537,6 @@ namespace mcs::fuse::content::implementation
   }
 
   template<core::storage::is_implementation StorageImplementation>
-    auto Storage<StorageImplementation>::fallocate
-      ( state::writing auto const&
-      , int
-      , off_t
-      , off_t
-      ) -> int
-  {
-    return EOPNOTSUPP;
-  }
-
-  template<core::storage::is_implementation StorageImplementation>
     auto Storage<StorageImplementation>::ioctl
       ( state::reading auto const&
       , ::fuse_req_t request
@@ -690,23 +667,6 @@ namespace mcs::fuse::content::implementation
         , make_chunk<Access> (access_token, *part, intersection)
         );
     }
-  }
-}
-
-namespace mcs::fuse::content::implementation
-{
-  template<core::storage::is_implementation StorageImplementation>
-    auto Storage<StorageImplementation>::xattr_set_capacity
-      ( state::writing auto const& write_access
-      , int flags
-      ) -> void
-  {
-    _inode->setxattr
-      ( write_access
-      , _xattr_key_capacity
-      , _capacity
-      , flags
-      );
   }
 }
 

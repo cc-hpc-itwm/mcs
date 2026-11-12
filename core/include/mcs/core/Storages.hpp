@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -44,7 +44,7 @@ namespace mcs::core
   //        // untyped access
   //        read_access.visit
   //          ( storage->id()
-  //          , [&]<storage::is_implementation StorageImplemenation>
+  //          , [&]<storage::is_implementation StorageImplementation>
   //              ( StorageImplementation const& storage_implementation
   //              )
   //            {

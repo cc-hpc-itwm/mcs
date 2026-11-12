@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 set (MCS_TEST_SHARE_SERVICE_BIN_DIR "${PROJECT_BINARY_DIR}/share_service/bin")
@@ -44,5 +44,6 @@ target_link_libraries (mcs_test_share_service_shmem_client
   PRIVATE mcs_testing_RPC
   PRIVATE mcs_share_service
   PRIVATE mcs_share_service_shmem_client
+  PRIVATE mcs_share_service_tcp_provider
 )
 gtest_discover_tests (mcs_test_share_service_shmem_client)

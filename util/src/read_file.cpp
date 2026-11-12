@@ -1,11 +1,11 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <cerrno>
 #include <fmt/format.h>
 #include <fstream>
 #include <iterator>
-#include <mcs/util/FMT/STD/filesystem/path.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/read_file.hpp>
 #include <stdexcept>
 #include <string>
@@ -18,7 +18,11 @@ namespace mcs::util
     {
       // \todo specific exception
       throw std::invalid_argument
-        {fmt::format ("read::State: '{}' does not exists", file)};
+        { fmt::format
+            ( "read::State: '{}' does not exists"
+            , FMT::STD::FILESYSTEM::Path {file}
+            )
+        };
     }
 
     auto ifs {std::ifstream {file}};
@@ -27,7 +31,12 @@ namespace mcs::util
     {
       // \todo specific exception
       throw std::runtime_error
-        {fmt::format ("could not open '{}': ", file, strerror (errno))};
+        { fmt::format
+            ( "could not open '{}': "
+            , FMT::STD::FILESYSTEM::Path {file}
+            , strerror (errno)
+            )
+        };
     }
 
     ifs >> std::noskipws;

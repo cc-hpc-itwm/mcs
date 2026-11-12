@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <utility>
@@ -45,7 +45,7 @@ namespace mcs::core::control::provider
       ) const -> command::file::Read::Response
   {
     return _storages->read_access().visit
-      ( file_read._storage_id
+      ( file_read.storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation const& implementation
           )
@@ -53,12 +53,12 @@ namespace mcs::core::control::provider
           using Parameter = StorageImplementation::Parameter;
 
           return implementation.file_read
-            ( file_read._parameter_file_read
+            ( file_read.parameter_file_read
               .template as<typename Parameter::File::Read>()
-            , file_read._segment_id
-            , file_read._offset
-            , file_read._file
-            , file_read._range
+            , file_read.segment_id
+            , file_read.offset
+            , file_read.file
+            , file_read.range
             );
         }
       );
@@ -70,7 +70,7 @@ namespace mcs::core::control::provider
       ) const -> command::file::Write::Response
   {
     return _storages->read_access().visit
-      ( file_write._storage_id
+      ( file_write.storage_id
       , [&]<storage::is_implementation StorageImplementation>
           ( StorageImplementation const& implementation
           )
@@ -78,12 +78,12 @@ namespace mcs::core::control::provider
           using Parameter = StorageImplementation::Parameter;
 
           return implementation.file_write
-            ( file_write._parameter_file_write
+            ( file_write.parameter_file_write
               .template as<typename Parameter::File::Write>()
-            , file_write._segment_id
-            , file_write._offset
-            , file_write._file
-            , file_write._range
+            , file_write.segment_id
+            , file_write.offset
+            , file_write.file
+            , file_write.range
             );
         }
       );

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/buffer.hpp>
@@ -10,6 +10,8 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <iterator>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
 #include <mcs/util/main.hpp>
 #include <numeric>
 #include <stdexcept>
@@ -17,18 +19,48 @@
 
 namespace
 {
-  auto client_main (mcs::util::Args args) -> int
+  namespace option
   {
-    if (args.size() != 3)
-    {
-      throw std::invalid_argument
-        {fmt::format ("usage: {} host port", args[0])};
-    }
+    using mcs::util::command_line::option::Parameter;
+
+    constexpr auto host {Parameter {"host"}};
+    constexpr auto port {Parameter {"port"}};
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <HOST>\n"
+        "    Server hostname or IP address.\n"
+        "  --{2} <PORT>\n"
+        "    Server port number or resolver service name.\n"
+      , args.at (0)
+      , option::host
+      , option::port
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print ("{}\n", usage (args));
+  }
+
+  auto client_main (mcs::util::arguments::View args) -> int
+  {
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::host)
+        . add (option::port)
+        )
+      };
 
     auto io_context {asio::io_context{}};
     auto socket {asio::ip::tcp::socket {io_context}};
-    auto const host {args[1]};
-    auto const port {args[2]};
+    auto const host {options.at (option::host)};
+    auto const port {options.at (option::port)};
 
     fmt::print ("connecting to {}, {}...\n", host, port);
 
@@ -53,5 +85,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, client_main);
+  return mcs::util::main (argc, argv, help, client_main);
 }

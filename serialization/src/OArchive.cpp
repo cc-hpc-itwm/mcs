@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -9,23 +9,6 @@
 
 namespace mcs::serialization
 {
-  auto OArchive::store (OArchive const& other) -> OArchive&
-  {
-    other.for_each_data_buffer
-      ( [&] (auto const& buffer)
-        {
-          this->append
-            ( std::span { _bytes_for_temporaries.emplace_back
-                           ( std::begin (buffer), std::end (buffer)
-                           )
-                        }
-            );
-        }
-      );
-
-    return *this;
-  }
-
   auto OArchive::bytes() const -> std::vector<std::byte>
   {
     std::vector<std::byte> bytes;

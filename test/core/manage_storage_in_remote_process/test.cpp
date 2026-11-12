@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include "SupportedStorageImplementations.hpp"
@@ -25,6 +25,7 @@
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/require_exception.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/read/read.hpp>
 #include <string>
 
@@ -84,7 +85,7 @@ namespace mcs::core
           , MCS_TEST_CORE_TEST_MANAGE_STORAGE_IN_REMOTE_PROCESS_STORAGE_CREATE
           , util::ASIO::make_connectable (provider.local_endpoint())
           , max_size
-          , storage_id_file
+          , util::FMT::STD::FILESYSTEM::Path {storage_id_file}
           ).c_str()
         )
       );

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -22,17 +22,26 @@ namespace mcs::block_device
   //
   struct Storage
   {
-    util::ASIO::AnyConnectable _provider_connectable;
-    core::storage::ID _storage_id;
-    core::storage::Parameter _storage_parameter_chunk_description;
-    core::storage::segment::ID _segment_id;
-    core::memory::Range _range;
+    util::ASIO::AnyConnectable provider_connectable;
+    core::storage::ID storage_id;
+    core::storage::Parameter storage_parameter_chunk_description;
+    core::storage::segment::ID segment_id;
+    core::memory::Range range;
 
 #ifdef _cpp_lib_constexpr_vector
     constexpr
 #endif
               auto operator<=> (Storage const&) const = default;
   };
+
+  [[nodiscard]] auto make_storage
+    ( util::ASIO::AnyConnectable
+    , core::storage::ID
+    , core::storage::Parameter
+    , core::storage::segment::ID
+    , core::memory::Range
+    ) -> Storage
+    ;
 
   // \note one could, in principle, detect whether or not storages
   // - are the same
@@ -58,8 +67,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::block_device::Storage const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

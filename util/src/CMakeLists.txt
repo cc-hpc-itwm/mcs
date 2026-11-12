@@ -1,10 +1,10 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 target_sources (mcs_util
+  PRIVATE AbsolutePath.cpp
   PRIVATE Copy.cpp
   PRIVATE DLHandle.cpp
-  PRIVATE ExistingPath.cpp
   PRIVATE NonExistingPath.cpp
   PRIVATE OpenFile.cpp
   PRIVATE TemporaryDirectory.cpp

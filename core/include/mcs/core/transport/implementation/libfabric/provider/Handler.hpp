@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -44,8 +44,8 @@ namespace mcs::core::transport::implementation::libfabric::provider
           std::size_t value;
         };
 
-        constexpr auto wanted() const noexcept -> Wanted;
-        constexpr auto read() const noexcept -> Read;
+        [[nodiscard]] constexpr auto wanted() const noexcept -> Wanted;
+        [[nodiscard]] constexpr auto read() const noexcept -> Read;
 
         ~CouldNotReadAllData() override;
         CouldNotReadAllData (CouldNotReadAllData const&) = default;

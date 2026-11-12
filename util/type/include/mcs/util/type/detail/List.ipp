@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/type/Index.hpp>
@@ -76,7 +76,7 @@ namespace mcs::util::type
             , typename... Args
             >
       auto List<Ts...>::parse_id_and_run
-        ( std::string input
+        ( std::string_view input
         , Runner&& runner
         , Args&&... args
         )

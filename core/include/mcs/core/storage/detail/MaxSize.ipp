@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/overloaded.hpp>
@@ -122,25 +122,25 @@ namespace mcs::core::storage
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::MaxSize>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::MaxSize>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::MaxSize>::format
       ( mcs::core::storage::MaxSize const& max_size
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return std::visit
       ( mcs::util::overloaded
       ( [&] (mcs::core::storage::MaxSize::Unlimited)
           {
-            return fmt::format_to (ctx.out(), "Unlimited");
+            return fmt::format_to (context.out(), "Unlimited");
           }
         , [&] (mcs::core::storage::MaxSize::Limit limit)
           {
-            return fmt::format_to (ctx.out(), "Limit {}", limit.size);
+            return fmt::format_to (context.out(), "Limit {}", limit.size);
           }
         )
       , max_size._limit

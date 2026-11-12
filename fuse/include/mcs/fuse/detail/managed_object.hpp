@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -28,7 +28,7 @@ namespace mcs::fuse::detail
       {
         try
         {
-          std::invoke (_destroy, x);
+          std::invoke (destroy, x);
         }
         catch (...)
         {
@@ -41,7 +41,7 @@ namespace mcs::fuse::detail
 
         std::default_delete<T>{} (x);
       }
-      void (*_destroy) (T*);
+      void (*destroy) (T*);
     };
 
     return std::unique_ptr<T, Deleter>

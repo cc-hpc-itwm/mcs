@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/control/command/storage/Size.hpp>
@@ -49,6 +49,10 @@ namespace mcs::serialization
     auto storage_parameter_size_max {load<decltype (mcs::core::control::command::storage::Size::storage_parameter_size_max)> (ia)};
     auto storage_parameter_size_used {load<decltype (mcs::core::control::command::storage::Size::storage_parameter_size_used)> (ia)};
 
-    return mcs::core::control::command::storage::Size {storage_id, storage_parameter_size_max, storage_parameter_size_used};
+    return mcs::core::control::command::storage::Size
+      { .storage_id = storage_id
+      , .storage_parameter_size_max = storage_parameter_size_max
+      , .storage_parameter_size_used = storage_parameter_size_used
+      };
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/buffer.hpp>
@@ -21,6 +21,8 @@
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/util/buffer/Bytes.hpp>
+#include <mcs/util/not_null.hpp>
+#include <memory>
 #include <variant>
 #include <vector>
 
@@ -111,14 +113,14 @@ namespace
 
   struct Handler
   {
-    Handler (Bytes const& expected)
+    Handler (mcs::util::not_null<Bytes const> expected)
       : _expected {expected}
     {}
 
     auto operator() (Copy copy) const -> bool
     {
       // The command includes the bytes.
-      return copy.xs == _expected;
+      return copy.xs == *_expected;
     }
 
     // The handler tells the Dispatcher that it wants to stream data
@@ -135,11 +137,11 @@ namespace
       auto const num_bytes {size * sizeof (int)};
       auto const bytes_read
         {asio::read (socket, asio::buffer (xs.data(), num_bytes))};
-      return bytes_read == num_bytes && xs == _expected;
+      return bytes_read == num_bytes && xs == *_expected;
     }
 
   private:
-    Bytes const& _expected;
+    mcs::util::not_null<Bytes const> _expected;
   };
 
   using Protocols = ::testing::Types
@@ -188,7 +190,7 @@ namespace mcs::rpc
       { rpc::make_provider<Protocol, Dispatcher>
           ( protocol_state.local_endpoint()
           , io_context_provider
-          , xs
+          , std::addressof (xs)
           )
       };
 

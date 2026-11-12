@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -55,6 +55,13 @@ namespace mcs::testing::core::storage::implementation
     [[nodiscard]] auto parameter_file_write
       (
       ) const -> typename Storage::Parameter::File::Write
+      ;
+
+  private:
+    template<typename T>
+      static auto make_storage_parameter
+        ( T const&
+        ) -> ::mcs::core::storage::implementation::Virtual::StorageParameter
       ;
   };
 }

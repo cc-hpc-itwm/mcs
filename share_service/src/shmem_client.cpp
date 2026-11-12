@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/ip/tcp.hpp>
@@ -87,7 +87,7 @@ namespace mcs::share_service
 
   struct shmem_client::NumberOfThreads::Implementation
   {
-    std::uint32_t _value;
+    std::uint32_t value;
   };
 
   MCS_SHARE_SERVICE_PIMPL (shmem_client::NumberOfThreads, NumberOfThreads);
@@ -100,7 +100,7 @@ namespace mcs::share_service
 
   struct shmem_client::Size::Implementation
   {
-    std::uint_least64_t _value;
+    std::uint_least64_t value;
   };
 
   MCS_SHARE_SERVICE_PIMPL (shmem_client::Size, Size);
@@ -112,7 +112,7 @@ namespace mcs::share_service
   // ----------------------------------------------------------------------
 
 #define MCS_SHARE_SERVICE_IMPLEMENRATION_FROM_ERROR()   \
-  Implementation (std::exception_ptr error) noexcept    \
+  Implementation (std::exception_ptr error)             \
     : _error {fmt::format ("{}", error)}                \
   {}
 #define MCS_SHARE_SERVICE_IMPLEMENTATION_OK(_name)      \
@@ -142,7 +142,7 @@ namespace mcs::share_service
       auto implementation_create (Args&&... args) noexcept -> Impl*
     try
     {
-      return new_noexcept<Impl> (std::forward<Args> (args)...);
+      return new Impl {std::forward<Args> (args)...};
     }
     catch (...)
     {
@@ -180,9 +180,10 @@ namespace mcs::share_service
     std::optional<mcs::share_service::Chunk> _chunk{};
     std::optional<std::string> _data;
 
-    Implementation (mcs::share_service::Chunk chunk) noexcept
-      : _chunk {chunk}
-      , _data {fmt::format ("{}", *_chunk)}
+    template<std::invocable Fun>
+      Implementation (Fun&& fun)
+        : _chunk {std::invoke (std::forward<Fun> (fun))}
+        , _data {fmt::format ("{}", *_chunk)}
     {}
     MCS_SHARE_SERVICE_IMPLEMENRATION_FROM_ERROR()
   };
@@ -209,7 +210,13 @@ namespace mcs::share_service
     ) noexcept
       : Chunk
         { implementation_create<Implementation>
-            ( util::read::read<mcs::share_service::Chunk> (text, text_size)
+            ( [&]
+              {
+                return util::read::read<mcs::share_service::Chunk>
+                  ( text
+                  , text_size
+                  );
+              }
             )
         }
   {}
@@ -368,38 +375,42 @@ namespace mcs::share_service
     ) const noexcept -> Chunk
   {
     return implementation_create<Chunk::Implementation>
-      ( std::visit
-        ( [&] (auto const& client)
-          {
-            using SHMEM = mcs::core::storage::implementation::SHMEM;
-            namespace Command = mcs::share_service::command;
-            using MaybeMLOCKed
-              = std::optional<SHMEM::Parameter::Segment::MLOCKed>
-              ;
+      ( [&]
+        {
+          return std::visit
+            ( [&] (auto const& client)
+              {
+                using SHMEM = mcs::core::storage::implementation::SHMEM;
+                namespace Command = mcs::share_service::command;
+                using MaybeMLOCKed
+                  = std::optional<SHMEM::Parameter::Segment::MLOCKed>
+                  ;
 
-            return client.create
-              ( mcs::core::memory::make_size
-                  ( not_null (size._implementation)->_value
-                  )
-              , Command::create::Parameters<SHMEM>
-                { SHMEM::Parameter::Create
-                  { SHMEM::Prefix {util::string {prefix}}
-                  , mcs::core::storage::MaxSize::Limit
-                      { mcs::core::memory::make_size
-                        (not_null (size._implementation)->_value)
+                return client.create
+                  ( mcs::core::memory::make_size
+                      ( not_null (size._implementation)->value
+                      )
+                  , Command::create::Parameters<SHMEM>
+                    { .create = SHMEM::Parameter::Create
+                      { .prefix = SHMEM::Prefix {util::string {prefix}}
+                      , .max_size = mcs::core::storage::MaxSize::Limit
+                          { mcs::core::memory::make_size
+                            (not_null (size._implementation)->value)
+                          }
                       }
-                  }
-                , SHMEM::Parameter::Segment::Create
-                  { SHMEM::Parameter::Segment::AccessMode {access_mode}
-                  , mlocked
-                    ? MaybeMLOCKed {SHMEM::Parameter::Segment::MLOCKed{}}
-                    : MaybeMLOCKed{}
-                  }
-                }
-              );
-          }
-          , not_null (not_null (_implementation)->_client)
-        )
+                    , .segment_create = SHMEM::Parameter::Segment::Create
+                      { .access_mode =
+                          SHMEM::Parameter::Segment::AccessMode {access_mode}
+                      , .mlocked = mlocked
+                        ? MaybeMLOCKed {SHMEM::Parameter::Segment::MLOCKed{}}
+                        : MaybeMLOCKed{}
+                      }
+                    }
+                  );
+              }
+            , not_null (not_null (_implementation)->_client)
+            );
+        }
       );
   }
 
@@ -494,7 +505,7 @@ namespace mcs::share_service
     ) noexcept -> shmem_client
   {
     return implementation_create<shmem_client::Implementation>
-      ( not_null (number_of_threads._implementation)->_value
+      ( not_null (number_of_threads._implementation)->value
       , socket
       );
   }
@@ -505,7 +516,7 @@ namespace mcs::share_service
     ) noexcept -> shmem_client
   {
     return implementation_create<shmem_client::Implementation>
-      ( not_null (number_of_threads._implementation)->_value
+      ( not_null (number_of_threads._implementation)->value
       , socket
       , signal
       );
@@ -518,7 +529,7 @@ namespace mcs::share_service
     ) noexcept -> shmem_client
   {
     return implementation_create<shmem_client::Implementation>
-      ( not_null (number_of_threads._implementation)->_value
+      ( not_null (number_of_threads._implementation)->value
       , socket
       , signal1
       , signal2
@@ -533,7 +544,7 @@ namespace mcs::share_service
     ) noexcept -> shmem_client
   {
     return implementation_create<shmem_client::Implementation>
-      ( not_null (number_of_threads._implementation)->_value
+      ( not_null (number_of_threads._implementation)->value
       , socket
       , signal1
       , signal2
@@ -549,7 +560,7 @@ namespace mcs::share_service
   {
     return implementation_create<shmem_client::Implementation>
       ( asio::ip::tcp::v4()
-      , not_null (number_of_threads._implementation)->_value
+      , not_null (number_of_threads._implementation)->value
       , port
       );
   }
@@ -562,7 +573,7 @@ namespace mcs::share_service
   {
     return implementation_create<shmem_client::Implementation>
       ( asio::ip::tcp::v4()
-      , not_null (number_of_threads._implementation)->_value
+      , not_null (number_of_threads._implementation)->value
       , port
       , signal
       );
@@ -577,7 +588,7 @@ namespace mcs::share_service
   {
     return implementation_create<shmem_client::Implementation>
       ( asio::ip::tcp::v4()
-      , not_null (number_of_threads._implementation)->_value
+      , not_null (number_of_threads._implementation)->value
       , port
       , signal1
       , signal2
@@ -594,7 +605,7 @@ namespace mcs::share_service
   {
     return implementation_create<shmem_client::Implementation>
       ( asio::ip::tcp::v4()
-      , not_null (number_of_threads._implementation)->_value
+      , not_null (number_of_threads._implementation)->value
       , port
       , signal1
       , signal2
@@ -610,7 +621,7 @@ namespace mcs::share_service
   {
     return implementation_create<shmem_client::Implementation>
       ( asio::ip::tcp::v6()
-      , not_null (number_of_threads._implementation)->_value
+      , not_null (number_of_threads._implementation)->value
       , port
       );
   }
@@ -623,7 +634,7 @@ namespace mcs::share_service
   {
     return implementation_create<shmem_client::Implementation>
       ( asio::ip::tcp::v6()
-      , not_null (number_of_threads._implementation)->_value
+      , not_null (number_of_threads._implementation)->value
       , port
       , signal
       );
@@ -638,7 +649,7 @@ namespace mcs::share_service
   {
     return implementation_create<shmem_client::Implementation>
       ( asio::ip::tcp::v6()
-      , not_null (number_of_threads._implementation)->_value
+      , not_null (number_of_threads._implementation)->value
       , port
       , signal1
       , signal2
@@ -655,7 +666,7 @@ namespace mcs::share_service
   {
     return implementation_create<shmem_client::Implementation>
       ( asio::ip::tcp::v6()
-      , not_null (number_of_threads._implementation)->_value
+      , not_null (number_of_threads._implementation)->value
       , port
       , signal1
       , signal2

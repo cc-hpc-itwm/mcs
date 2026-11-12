@@ -270,16 +270,6 @@ namespace mcs::fuse
       ) -> void
       ;
 
-    auto fallocate
-      ( ::fuse_req_t
-      , ::fuse_ino_t
-      , int mode
-      , off_t offset
-      , off_t length
-      , ::fuse_file_info*
-      ) -> void
-      ;
-
     auto readdirplus
       ( ::fuse_req_t
       , ::fuse_ino_t

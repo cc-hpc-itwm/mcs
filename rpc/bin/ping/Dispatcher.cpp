@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include "Dispatcher.hpp"
@@ -9,7 +9,7 @@
 namespace mcs::rpc::ping
 {
   Ping::Ping (std::vector<std::byte> data_)
-    : data {data_}
+    : data {std::move (data_)}
   {}
   Ping::Ping (unsigned int message_size)
     : data {message_size}

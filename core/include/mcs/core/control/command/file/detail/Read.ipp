@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Fraunhofer ITWM
+// Copyright (C) 2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -9,27 +9,27 @@
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::control::command::file::Read>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::control::command::file::Read>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::control::command::file::Read>::format
       ( mcs::core::control::command::file::Read const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "control::provider::file::Read "
       , std::make_tuple 
-          ( value._storage_id
-          , value._parameter_file_read
-          , value._segment_id
-          , value._offset
-          , value._file
-          , value._range
+          ( value.storage_id
+          , value.parameter_file_read
+          , value.segment_id
+          , value.offset
+          , value.file
+          , value.range
           )
       );
   }
@@ -47,12 +47,12 @@ namespace mcs::util::read
     using Read = mcs::core::control::command::file::Read;
     return std::make_from_tuple<Read>
       ( parse< std::tuple
-               < decltype (Read::_storage_id)
-               , decltype (Read::_parameter_file_read)
-               , decltype (Read::_segment_id)
-               , decltype (Read::_offset)
-               , decltype (Read::_file)
-               , decltype (Read::_range)
+               < decltype (Read::storage_id)
+               , decltype (Read::parameter_file_read)
+               , decltype (Read::segment_id)
+               , decltype (Read::offset)
+               , decltype (Read::file)
+               , decltype (Read::range)
                >
              > (state)
       );

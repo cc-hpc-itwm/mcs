@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <utility>
@@ -10,8 +10,9 @@ namespace mcs::share_service
       Provider<Protocol>::Provider
         ( Executor& executor
         , typename Protocol::endpoint endpoint
+        , util::not_null<Storages> storages
         )
-          : _provider {endpoint, executor, _storages}
+          : _provider {endpoint, executor, storages}
   {}
 
   template<rpc::is_protocol Protocol>

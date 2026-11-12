@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/format.h>
@@ -31,13 +31,15 @@
 #include <mcs/testing/core/storage/implementation/SHMEM.hpp>
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/value/integral.hpp>
-#include <mcs/util/FMT/STD/variant.hpp>
+#include <mcs/util/FMT/STD/Variant.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/not_null.hpp>
 #include <mcs/util/read_file.hpp>
 #include <mcs/util/type/List.hpp>
 #include <memory>
+#include <ranges>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace mcs::core
@@ -104,7 +106,7 @@ namespace mcs::core
           )
             : _storages {storages}
             , _size {size}
-            , _tracer_parameter_create {tracer_parameter_create}
+            , _tracer_parameter_create {std::move (tracer_parameter_create)}
             , _testing_storage {tag}
       {}
 
@@ -203,9 +205,16 @@ namespace mcs::core
           ( ChunkDescription chunk_description
           ) const
       {
+        auto const expected_events_value {expected_events (chunk_description)};
+        auto const formatted_expected_events
+          { expected_events_value | std::views::transform
+            ( util::FMT::STD::VARIANT::format{}
+            )
+          };
+
         return fmt::format
           ( "{}\n"
-          , fmt::join (expected_events (chunk_description), "\n")
+          , fmt::join (formatted_expected_events, "\n")
           );
       }
 

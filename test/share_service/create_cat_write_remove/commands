@@ -1,11 +1,18 @@
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-chunk=$(${MCS_TEST_SHARE_SERVICE_BIN_CREATE} "${MCS_TEST_SHARE_SERVICE_PATH}" 16 "SHMEM (Prefix \"${MCS_TEST_SHARE_SERVICE_TEST_SHMEM_PREFIX}\", Limit 16)")
+chunk=$(
+  ${MCS_TEST_SHARE_SERVICE_BIN_CREATE}                               \
+    --share-service-path "${MCS_TEST_SHARE_SERVICE_PATH}"            \
+    --size 16                                                        \
+    --storage "SHMEM (Prefix \"${MCS_TEST_SHARE_SERVICE_TEST_SHMEM_PREFIX}\", Limit 16)"
+)
 
-${MCS_TEST_SHARE_SERVICE_BIN_CAT} "${chunk}" | xxd -p
-echo ".123456789.1234" | ${MCS_TEST_SHARE_SERVICE_BIN_WRITE} "${chunk}"
-${MCS_TEST_SHARE_SERVICE_BIN_CAT} "${chunk}"
+${MCS_TEST_SHARE_SERVICE_BIN_CAT} --chunk "${chunk}" | xxd -p
+echo ".123456789.1234" |
+  ${MCS_TEST_SHARE_SERVICE_BIN_WRITE} --chunk "${chunk}"
+${MCS_TEST_SHARE_SERVICE_BIN_CAT} --chunk "${chunk}"
 
-${MCS_TEST_SHARE_SERVICE_BIN_REMOVE} "${chunk}"
-${MCS_TEST_SHARE_SERVICE_BIN_REMOVE} "${chunk}" && exit 1 || echo "^ expected error"
+${MCS_TEST_SHARE_SERVICE_BIN_REMOVE} --chunk "${chunk}"
+${MCS_TEST_SHARE_SERVICE_BIN_REMOVE} --chunk "${chunk}"              \
+  && exit 1 || echo "^ expected error"

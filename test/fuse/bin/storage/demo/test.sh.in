@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (C) 2025 Fraunhofer ITWM
+# Copyright (C) 2025-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 
@@ -7,10 +7,11 @@ set -euo pipefail
 
 TESTING_BASH_DIRECTORY="@TESTING_BASH_DIRECTORY@"
 
-MCS_TEST_FUSE_BIN_STORAGE_FS="@MCS_TEST_FUSE_BIN_STORAGE_FS@"
+MCS_TEST_FUSE_BIN_FS="@MCS_TEST_FUSE_BIN_FS@"
 MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER="@MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER@"
 MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER="@MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER@"
 
+source "${TESTING_BASH_DIRECTORY}/wait"
 source "${TESTING_BASH_DIRECTORY}/cleanup"
 source "${TESTING_BASH_DIRECTORY}/TMP_DIRECTORY"
 
@@ -25,19 +26,20 @@ mkdir -p "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}"
 # Start the FUSE filesystem with SHMEM backend
 #######################################################################
 
-"${MCS_TEST_FUSE_BIN_STORAGE_FS}"                                            \
-    "SHMEM (Prefix \"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}\", Unlimited)"  \
-    'SHMEM::Size::Max()'                                                     \
-    'SHMEM::Size::Used()'                                                    \
-    'SHMEM::Segment::Create (SHMEM::Segment::AccessMode (384), Nothing)'     \
-    'SHMEM::Segment::Remove()'                                               \
-    'SHMEM::Chunk::Description()'                                            \
-    "mcs_test_demo_$$"                                                       \
-    -o auto_unmount                                                          \
-    -f                                                                       \
-    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}" &
+"${MCS_TEST_FUSE_BIN_FS}"                                             \
+  --content 'Storage'                                                 \
+    --storage "SHMEM (Prefix \"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}\", Unlimited)" \
+  --storage-size-max 'SHMEM::Size::Max()'                             \
+  --storage-size-used 'SHMEM::Size::Used()'                           \
+    --storage-segment-create 'SHMEM::Segment::Create (SHMEM::Segment::AccessMode (384), Nothing)' \
+  --storage-segment-remove 'SHMEM::Segment::Remove()'                 \
+  --storage-chunk-description 'SHMEM::Chunk::Description()'           \
+  --name "mcs_test_demo_$$"                                           \
+  --mountpoint "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}"         \
+  '[[FUSE' -o auto_unmount -f 'FUSE]]' &
 
 MCS_TEST_FUSE_BIN_STORAGE_DEMO_FS_PID=$!
+on_exit+=("wait 50 test -e ${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}")
 on_exit+=("kill ${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FS_PID} 2>/dev/null || true")
 on_exit+=("fusermount -u ${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT} 2>/dev/null || true")
 
@@ -53,9 +55,9 @@ MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE="${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT
 MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE=$((1024 * 1024))  # 1 MiB
 
 # Run producer
-"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER}"      \
-    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"      \
-    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE}"      \
+"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER}"                          \
+    --file "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"                   \
+    --size "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE}"                   \
     > "${TMP_DIRECTORY}/producer.out"
 
 # Verify producer output
@@ -66,9 +68,9 @@ grep -q "SUCCESS: Wrote ${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE} bytes to" "${TMP_
 }
 
 # Run consumer
-"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER}"             \
-    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}"           \
-    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"             \
+"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER}"                          \
+    --shmem-prefix "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}"         \
+    --file "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"                   \
     > "${TMP_DIRECTORY}/consumer.out"
 
 # Verify consumer output
@@ -86,15 +88,15 @@ for chunk_size in 512 4096 65536
 do
   MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE="${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}/test_chunk_${chunk_size}"
 
-  "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER}"      \
-      "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"      \
-      "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE}"      \
-      "${chunk_size}"                               \
+  "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER}"                        \
+      --file "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"                 \
+      --size "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE}"                 \
+      --chunk-size "${chunk_size}"                                    \
       > "${TMP_DIRECTORY}/producer_${chunk_size}.out"
 
-  "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER}"      \
-      "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}"    \
-      "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"      \
+  "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER}"                        \
+      --shmem-prefix "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}"       \
+      --file "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"                 \
       > "${TMP_DIRECTORY}/consumer_${chunk_size}.out"
 
   grep -q "SUCCESS: Verified ${MCS_TEST_FUSE_BIN_STORAGE_DEMO_SIZE} bytes of" "${TMP_DIRECTORY}/consumer_${chunk_size}.out" || {
@@ -110,14 +112,14 @@ done
 
 MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE="${MCS_TEST_FUSE_BIN_STORAGE_DEMO_MOUNTPOINT}/test_empty"
 
-"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER}"      \
-    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"      \
-    0                                             \
+"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER}"                          \
+    --file "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"                   \
+    --size 0                                                          \
     > "${TMP_DIRECTORY}/producer_empty.out"
 
-"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER}"      \
-    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}"    \
-    "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"      \
+"${MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER}"                          \
+    --shmem-prefix "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_PREFIX}"         \
+    --file "${MCS_TEST_FUSE_BIN_STORAGE_DEMO_FILE}"                   \
     > "${TMP_DIRECTORY}/consumer_empty.out"
 
 grep -q "SUCCESS: Verified 0 bytes of" "${TMP_DIRECTORY}/consumer_empty.out" || {

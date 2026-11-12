@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -26,7 +26,7 @@ namespace mcs::rpc::error
 
     // Returns the concrete error received by the completion handler.
     //
-    auto reason() const noexcept -> std::exception_ptr;
+    [[nodiscard]] auto reason() const noexcept -> std::exception_ptr;
 
   private:
     std::exception_ptr _reason;

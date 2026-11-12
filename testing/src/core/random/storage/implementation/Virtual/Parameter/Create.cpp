@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <filesystem>
@@ -10,9 +10,9 @@ namespace mcs::testing::random
 
   auto value<Create>::operator()() -> Create
   {
-    return Create
-      { std::filesystem::path {_shared_object()}
+    return core::storage::implementation::Virtual::Parameter::make_create
+      ( std::filesystem::path {_shared_object()}
       , _parameter_create()
-      };
+      );
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Fraunhofer ITWM
+// Copyright (C) 2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/format.h>
@@ -16,6 +16,7 @@
 #include <mcs/testing/random/value/STD/string.hpp>
 #include <mcs/testing/require_exception.hpp>
 #include <mcs/testing/until.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/FMT/write_file.hpp>
 #include <mcs/util/read/read.hpp>
 #include <mcs/util/type/List.hpp>
@@ -74,8 +75,8 @@ namespace mcs::core
 
     auto const parameter_create
       { Files::Parameter::Create
-          { prefix
-          , storage::MaxSize {storage::MaxSize::Unlimited{}}
+          { .prefix = prefix
+          , .max_size = storage::MaxSize {storage::MaxSize::Unlimited{}}
           }
       };
 
@@ -113,7 +114,7 @@ namespace mcs::core
                 ( "storage::implementation::Files::PrefixContainsNonSegmentFile"
                 ": prefix '{}', file '{}'"
                 , prefix
-                , non_segment_file
+                , util::FMT::STD::FILESYSTEM::Path {non_segment_file}
                 ).c_str()
               );
           }

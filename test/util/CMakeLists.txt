@@ -8,6 +8,7 @@ function (mcs_test_util_executable name)
   target_link_libraries (mcs_test_util_${name}
     PRIVATE mcs_config
     PRIVATE mcs_testing
+    PRIVATE mcs_util_command_line
     PRIVATE mcs_util
     ${ARGN}
   )
@@ -25,15 +26,20 @@ function (mcs_performance_test_util name)
   )
 endfunction()
 
+mcs_test_util (AbsolutePath)
+mcs_test_util (Arguments)
 mcs_test_util (Buffer)
 mcs_test_util (HeterogeneousMap PRIVATE mcs_util_HeterogeneousMap)
 mcs_test_util (Lock PRIVATE mcs_util_concurrency)
-mcs_test_util (MapWithHitMissCallbacks)
 mcs_test_util (RangesIterator)
 mcs_test_util (TaggedRange)
 mcs_test_util (TemporaryDirectory PRIVATE mcs_util_FMT)
 mcs_test_util (TemporaryFile)
 mcs_test_util (cast)
+mcs_test_util (daemon
+  PRIVATE mcs_util_daemon
+  PRIVATE mcs_testing_syscall
+)
 mcs_test_util (divru)
 mcs_test_util (fwd_capture)
 mcs_test_util (member_AUTO)
@@ -45,7 +51,7 @@ mcs_performance_test_util (LockPerformance PRIVATE mcs_util_concurrency)
 
 add_subdirectory (ASIO)
 add_subdirectory (FMT)
-add_subdirectory (distribution)
 add_subdirectory (dlhandle)
 add_subdirectory (read)
+add_subdirectory (syscall)
 add_subdirectory (type)

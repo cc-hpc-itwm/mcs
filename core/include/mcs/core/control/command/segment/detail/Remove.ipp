@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -9,18 +9,18 @@
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::control::command::segment::Remove>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::control::command::segment::Remove>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::control::command::segment::Remove>::format
       ( mcs::core::control::command::segment::Remove const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "control::provider::segment::Remove "
       , std::make_tuple (value.storage_id, value.storage_parameter, value.segment_id)

@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -10,9 +10,10 @@
 #include <mcs/rpc/access_policy/Concurrent.hpp>
 #include <mcs/rpc/access_policy/Exclusive.hpp>
 #include <mcs/rpc/access_policy/Sequential.hpp>
-#include <mcs/rpc/detail/ClientState.hpp>
 #include <mcs/rpc/detail/CommandIndex.hpp>
+#include <mcs/rpc/detail/client/Connection.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
+#include <memory>
 #include <type_traits>
 
 namespace mcs::rpc
@@ -21,12 +22,12 @@ namespace mcs::rpc
   // at client side, at most one concurrent command per client at
   // server side.
   //
-  // Costs: No lock. No storage. Cheapest.
+  // Costs: One pending-call slot, no waiting queue or call-ID map.
   //
   // The asynchronous calls are never blocking, the synchronous calls
   // are always blocking. The application must ensure there are no
   // concurrent calls! Note: NO CONCURRENT CALLS! That includes all
-  // asynchrounous and synchronous calls.
+  // asynchronous and synchronous calls.
   //
   static_assert (is_access_policy<access_policy::Exclusive>);
 
@@ -34,15 +35,14 @@ namespace mcs::rpc
   // commands at client side are executed in sequence in unspecified
   // order, at most one concurrent command per client at server side.
   //
-  // Costs: One local lock per remote call. No storage.
+  // Costs: One active-call slot and a queue for waiting calls.
   //
-  // The asynchronous calls may block, the sychronous calls are always
-  // blocking. The application may do concurrent calls. The Client
-  // makes sure only one call enters the critical section at the same
-  // time. The order of execution of multiple calls is not
-  // specified. The result of a late synchronous or asynchronous call
-  // can be requested and might be available before the result of an
-  // early asynchronous call has been retrieved.
+  // Asynchronous calls enqueue without waiting for earlier
+  // calls. Synchronous calls wait for their own result. The next
+  // request is admitted only after the previous response is
+  // handled. Simultaneous callers have unspecified ordering.
+  // Sequential submissions preserve their order. Retrieving a future
+  // is not required to admit the next request.
   //
   static_assert (is_access_policy<access_policy::Sequential>);
 
@@ -51,7 +51,6 @@ namespace mcs::rpc
   // client may reach the server side.
   //
   // Costs:
-  // - some locks per remote call.
   // - Space: O(number_of_parallel_operations)
   // - Time: O(log (number_of_parallel_operations)) per remote call
   //
@@ -63,6 +62,19 @@ namespace mcs::rpc
   // been retrieved.
   //
   static_assert (is_access_policy<access_policy::Concurrent>);
+
+  // All policies use a shared connection that serializes asynchronous
+  // sends and owns a single response reader. Serialization,
+  // transport, and streaming errors reach the call's
+  // future. Construction and handshake still run synchronously, as
+  // does construction of commands passed to async_call(). Allocation
+  // and submission errors may throw directly. Synchronous calls
+  // rethrow errors while waiting for their result. A synchronous
+  // command.stream (socket) hook runs on the connection's executor
+  // and must return before shutdown can finish. The shared
+  // connection, strand, and coroutine scheduling are common costs.
+  // Client handles retain their policy and the shared connection;
+  // observed handles wrap the policy without creating a new connection.
 
   template< is_protocol Protocol
           , is_access_policy AccessPolicy
@@ -77,7 +89,7 @@ namespace mcs::rpc
     //
     template<is_command Command>
       requires (is_one_of_the_commands<Command, Commands...>)
-        auto get_future
+        [[nodiscard]] auto get_future
           ( std::reference_wrapper<Command const>
           ) const -> std::future<typename Command::Response>;
 
@@ -95,7 +107,7 @@ namespace mcs::rpc
       requires ( std::is_constructible_v<Command, CommandArgs...>
               && is_one_of_the_commands<Command, Commands...>
                )
-      auto async_call
+      [[nodiscard]] auto async_call
         ( CommandArgs&&...
         ) const -> std::future<typename Command::Response>;
 
@@ -103,7 +115,7 @@ namespace mcs::rpc
       requires ( std::is_constructible_v<Command, CommandArgs...>
               && is_one_of_the_commands<Command, Commands...>
                )
-      auto call
+      [[nodiscard]] auto call
         ( CommandArgs&&...
         ) const -> typename Command::Response;
 
@@ -112,7 +124,7 @@ namespace mcs::rpc
     //
     template<is_command Command>
       requires (is_one_of_the_commands<Command, Commands...>)
-      auto get_future
+      [[nodiscard]] auto get_future
         ( Command&&
         ) const -> std::future<typename Command::Response>;
 
@@ -147,12 +159,34 @@ namespace mcs::rpc
         , std::shared_ptr<AccessPolicy>
         );
 
-    constexpr explicit Client
-      ( detail::ClientState<Protocol, AccessPolicy, Commands...>
-      ) noexcept;
+    // Closes the shared connection and fails outstanding calls. The
+    // executor must keep running until the returned future is
+    // ready. Do not wait for that future on an IO worker. Destroying
+    // a client handle alone does not cancel its calls. Copies and
+    // observed clients share shutdown. Repeated shutdown is safe and
+    // later calls fail with the connection's error. An open
+    // connection is stopped with error::Completion whose reason is
+    // operation_aborted. Existing failures retain their
+    // reason. Read/write completions are drained before the future
+    // becomes ready. This does not cancel remote handlers or shut
+    // down the provider. Destroying the execution context instead of
+    // draining shutdown abandons pending work.
+    //
+    [[nodiscard]] auto shutdown() const -> std::future<void>;
 
   private:
-    detail::ClientState<Protocol, AccessPolicy, Commands...> _state;
+    using Connection = detail::client::Connection<Protocol, typename AccessPolicy::admission>;
+
+    template<is_protocol, is_access_policy, is_command...>
+      friend struct Client;
+
+    constexpr explicit Client
+      ( std::shared_ptr<AccessPolicy>
+      , std::shared_ptr<Connection>
+      ) noexcept;
+
+    std::shared_ptr<AccessPolicy> _access_policy;
+    std::shared_ptr<Connection> _connection;
   };
 
   template< is_protocol Protocol

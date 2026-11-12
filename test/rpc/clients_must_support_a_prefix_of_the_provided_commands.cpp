@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/ip/tcp.hpp>
@@ -54,7 +54,7 @@ TYPED_TEST ( RPCClientT
   using Protocol = typename TypeParam::Protocol;
   using AccessPolicy = typename TypeParam::AccessPolicy;
 
-  auto io_context_server
+  auto io_context_provider
     { mcs::rpc::ScopedRunningIOContext
         {mcs::rpc::ScopedRunningIOContext::NumberOfThreads {1u}}
     };
@@ -66,7 +66,7 @@ TYPED_TEST ( RPCClientT
   auto const provider
     { mcs::rpc::make_provider< Protocol
                         , mcs::rpc::Dispatcher<Handler, A, B, C>
-                        > ({}, io_context_server)
+                        > ({}, io_context_provider)
     };
 
 #define MCS_TEST_RPC_MAKE_CLIENT(_dispatcher...)                     \

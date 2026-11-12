@@ -1,9 +1,26 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/control/command/segment/Create.hpp>
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
+#include <utility>
+
+namespace mcs::core::control::command::segment
+{
+  auto make_create
+    ( mcs::core::storage::ID storage_id
+    , mcs::core::storage::Parameter storage_parameter
+    , mcs::core::memory::Size memory_size
+    ) -> Create
+  {
+    return Create
+      { .storage_id = storage_id
+      , .storage_parameter = std::move (storage_parameter)
+      , .memory_size = memory_size
+      };
+  }
+}
 
 namespace mcs::serialization
 {
@@ -26,6 +43,10 @@ namespace mcs::serialization
     auto storage_parameter {load<decltype (mcs::core::control::command::segment::Create::storage_parameter)> (ia)};
     auto memory_size {load<decltype (mcs::core::control::command::segment::Create::memory_size)> (ia)};
 
-    return mcs::core::control::command::segment::Create {storage_id, storage_parameter, memory_size};
+    return mcs::core::control::command::segment::make_create
+      ( storage_id
+      , std::move (storage_parameter)
+      , memory_size
+      );
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <gtest/gtest.h>
@@ -102,21 +102,6 @@ namespace mcs::serialization
     static_assert (!std::is_trivially_copyable_v<S>);
     static_assert (std::is_default_constructible_v<S>);
     static_assert (!is_serializable<S>);
-  }
-  TEST ( SerializationConcepts
-       , nontrivial_with_default_ctor_and_intrusive_serialize_is_serializable
-       )
-  {
-    struct S
-    {
-      std::string s;
-      auto serialize (IArchive&, unsigned int) -> void;
-      auto serialize (OArchive&, unsigned int) -> void;
-    };
-    static_assert (!std::is_empty_v<S>);
-    static_assert (!std::is_trivially_copyable_v<S>);
-    static_assert (std::is_default_constructible_v<S>);
-    static_assert (is_serializable<S>);
   }
   TEST ( SerializationConcepts
        , nontrivial_with_default_ctor_and_intrusive_ctor_and_save_is_serializable

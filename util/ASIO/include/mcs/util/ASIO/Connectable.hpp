@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -11,6 +11,7 @@
 #include <mcs/serialization/Concepts.hpp>
 #include <mcs/serialization/STD/variant.hpp>
 #include <mcs/util/ASIO/is_protocol.hpp>
+#include <mcs/util/is_visitor.hpp>
 #include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/State.hpp>
 #include <mcs/util/string.hpp>
@@ -81,13 +82,66 @@ namespace mcs::util::ASIO
 
 namespace mcs::util::ASIO
 {
-  using AnyConnectable = std::variant
-    < Connectable<asio::ip::tcp>
-    , Connectable<asio::local::stream_protocol>
-    >;
+  struct AnyConnectable
+  {
+    [[nodiscard]] AnyConnectable (Connectable<asio::ip::tcp>) noexcept;
+    [[nodiscard]] AnyConnectable (Connectable<asio::local::stream_protocol>) noexcept;
+
+    template<typename Visitor>
+      requires ( util::is_visitor
+                 < Visitor
+                 , Connectable<asio::ip::tcp> const&
+                 , Connectable<asio::local::stream_protocol> const&
+                 >
+               )
+    constexpr auto visit (Visitor&&) const;
+
+    constexpr auto operator<=> (AnyConnectable const&) const = default;
+
+  private:
+    friend struct fmt::formatter<AnyConnectable>;
+    friend struct mcs::util::read::Read<AnyConnectable>;
+    friend struct mcs::serialization::Implementation<AnyConnectable>;
+    friend struct std::hash<AnyConnectable>;
+
+    using Value = std::variant
+      < Connectable<asio::ip::tcp>
+      , Connectable<asio::local::stream_protocol>
+      >;
+
+    Value _value;
+
+    [[nodiscard]] AnyConnectable (Value) noexcept;
+  };
 
   template<typename Runner, typename... Args>
     auto run (AnyConnectable, Runner&&, Args&&...);
+}
+
+namespace fmt
+{
+  template<>
+    struct formatter<mcs::util::ASIO::AnyConnectable>
+    {
+      template<typename ParseContext>
+        constexpr auto parse (ParseContext&);
+
+      template<typename FormatContext>
+        constexpr auto format
+          ( mcs::util::ASIO::AnyConnectable const&
+          , FormatContext& context
+          ) const -> decltype (context.out());
+    };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::util::ASIO::AnyConnectable>
+    {
+      template<typename Char>
+        static auto read (State<Char>&) -> mcs::util::ASIO::AnyConnectable;
+    };
 }
 
 namespace fmt
@@ -101,8 +155,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::util::ASIO::Connectable<asio::ip::tcp> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   }
   ;
   template<>
@@ -114,8 +168,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::util::ASIO::Connectable<asio::ip::tcp>::Address const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   }
   ;
   template<>
@@ -127,8 +181,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::util::ASIO::Connectable<asio::ip::tcp>::Hostname const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   }
   ;
 }
@@ -175,8 +229,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::util::ASIO::Connectable<asio::local::stream_protocol> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   }
   ;
 }
@@ -241,10 +295,30 @@ namespace std
   private:
     hash<decltype (Connectable::path)> _hash;
   };
+
+  template<>
+    struct hash<mcs::util::ASIO::AnyConnectable>
+    {
+      using AnyConnectable = mcs::util::ASIO::AnyConnectable;
+
+      auto operator() (AnyConnectable const&) const noexcept -> size_t;
+
+    private:
+      hash<typename AnyConnectable::Value> _hash;
+    };
 }
 
 namespace mcs::serialization
 {
+  template<>
+    struct Implementation<util::ASIO::AnyConnectable>
+    {
+      using Type = util::ASIO::AnyConnectable;
+
+      static auto output (OArchive&, Type const&) -> OArchive&;
+      static auto input (IArchive&) -> Type;
+    };
+
   template<>
     struct Implementation<util::ASIO::Connectable<asio::ip::tcp>>
   {

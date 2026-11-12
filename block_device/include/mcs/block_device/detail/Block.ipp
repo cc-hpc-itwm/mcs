@@ -1,5 +1,7 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+#include <utility>
 
 namespace mcs::block_device
 {
@@ -14,7 +16,7 @@ namespace mcs::block_device
         : _storages {storages}
         , _storage_id {storage_id}
         , _storage_parameter_chunk_description
-            {storage_parameter_chunk_description}
+            {std::move (storage_parameter_chunk_description)}
         , _segment_id {segment_id}
         , _range {range}
   {}
@@ -24,12 +26,12 @@ namespace mcs::block_device
       (
       ) const -> core::transport::Address
   {
-    return core::transport::Address
-      { _storage_id
+    return core::transport::make_address
+      ( _storage_id
       , _storage_parameter_chunk_description
       , _segment_id
       , begin (_range)
-      };
+      );
   }
 
   template<core::storage::is_implementation... StorageImplementations>

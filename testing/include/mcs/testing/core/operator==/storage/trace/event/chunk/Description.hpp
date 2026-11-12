@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -21,8 +21,8 @@ namespace mcs::core::storage::trace::event::chunk
       { [&] (auto const& x)
         {
           return std::tie ( x._parameter_chunk_description
-                          , x._segment_id
-                          , x._memory_range
+                          , x.segment_id
+                          , x.memory_range
                           );
         }
       };

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/buffer.hpp>
@@ -9,9 +9,11 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 #include <functional>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
 #include <mcs/util/main.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/read/read.hpp>
-#include <mcs/util/read/uint.hpp>
 #include <mcs/util/syscall/hostname.hpp>
 #include <stdexcept>
 #include <string>
@@ -19,38 +21,69 @@
 
 namespace
 {
-  auto provider_main (mcs::util::Args args) -> int
+  namespace option
   {
-    if (args.size() != 3)
-    {
-      throw std::invalid_argument
-        {fmt::format ("usage: {} port {{'v4','v6'}}", args[0])};
-    }
+    using mcs::util::command_line::option::Parameter;
+
+    constexpr auto ip_version {Parameter {"ip-version"}};
+    constexpr auto port {Parameter {"port"}};
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <PORT>\n"
+        "    TCP listening port number.\n"
+        "  --{2} <'v4'|'v6'>\n"
+        "    IP protocol version.\n"
+      , args.at (0)
+      , option::port
+      , option::ip_version
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print ("{}\n", usage (args));
+  }
+
+  auto provider_main (mcs::util::arguments::View args) -> int
+  {
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::port)
+        . add (option::ip_version)
+        )
+      };
+    auto const port_text {options.at (option::port)};
 
     auto endpoint
       { std::invoke
         ( [&]() -> asio::ip::tcp::endpoint
           {
-            if (args[2] == std::string {"v4"})
+            if (options.at (option::ip_version) == std::string {"v4"})
             {
               return asio::ip::tcp::endpoint
-                { asio::ip::tcp::v6()
-                , mcs::util::read::read<asio::ip::port_type> (args[1])
+                { asio::ip::tcp::v4()
+                , mcs::util::read::read<asio::ip::port_type> (port_text)
                 };
             }
 
-            if (args[2] == std::string {"v6"})
+            if (options.at (option::ip_version) == std::string {"v6"})
             {
               return asio::ip::tcp::endpoint
                 { asio::ip::tcp::v6()
-                , mcs::util::read::read<asio::ip::port_type> (args[1])
+                , mcs::util::read::read<asio::ip::port_type> (port_text)
                 };
             }
 
             throw std::invalid_argument
               { fmt::format
                   ( "Unknown protocol '{}'. Expected one of {{'v4','v6'}}"
-                  , args[2]
+                  , options.at (option::ip_version)
                   )
               };
           }
@@ -90,5 +123,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, provider_main);
+  return mcs::util::main (argc, argv, help, provider_main);
 }

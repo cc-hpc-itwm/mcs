@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/core/memory/Offset.hpp>
@@ -11,7 +11,7 @@ namespace mcs::share_service::provider
 {
   template<is_supported_storage_implementation... StorageImplementations>
     Handler<util::type::List<StorageImplementations...>>::Handler
-      ( core::Storages<util::type::List<StorageImplementations...>>& storages
+      ( util::not_null<Storages> storages
       )
         : _storages {storages}
   {}
@@ -69,7 +69,7 @@ namespace mcs::share_service::provider
           )
         {
           return create<StorageImplementation>
-            ( _storages
+            ( *_storages.get()
             , parameters
             , command_create.size
             );
@@ -90,7 +90,7 @@ namespace mcs::share_service::provider
         {
           using Parameters = std::remove_cvref_t<decltype (parameters)>;
 
-          auto const read_write_access {_storages.read_write_access()};
+          auto const read_write_access {_storages->read_write_access()};
 
           read_write_access.template modify<typename Parameters::Storage>
             ( chunk.storage_id
@@ -125,7 +125,7 @@ namespace mcs::share_service::provider
         {
           using Parameters = std::remove_cvref_t<decltype (parameters)>;
 
-          return _storages.read_access()
+          return _storages->read_access()
             . template invoke<typename Parameters::Storage>
               ( chunk.storage_id
               , [&] (auto const& storage_implementation)

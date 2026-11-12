@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -19,7 +19,7 @@ namespace mcs::core::transport::implementation::ASIO::command
     core::memory::Size size;
     struct Destination
     {
-      virtual auto data() const -> std::span<std::byte> = 0;
+      [[nodiscard]] virtual auto data() const -> std::span<std::byte> = 0;
       virtual ~Destination() = default;
     };
     std::unique_ptr<Destination> destination;
@@ -42,8 +42,8 @@ namespace mcs::core::transport::implementation::ASIO::command
           core::memory::Size value;
         };
 
-        constexpr auto wanted() const noexcept -> Wanted;
-        constexpr auto read() const noexcept -> Read;
+        [[nodiscard]] constexpr auto wanted() const noexcept -> Wanted;
+        [[nodiscard]] constexpr auto read() const noexcept -> Read;
 
         ~CouldNotReadAllData() override;
         CouldNotReadAllData (CouldNotReadAllData const&) = default;

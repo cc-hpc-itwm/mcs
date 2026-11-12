@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 Fraunhofer ITWM
+/* Copyright (C) 2025-2026 Fraunhofer ITWM
    License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 */
 
@@ -65,7 +65,7 @@ static struct mcs_core_storage_instance
   struct mcs_core_storage_instance instance;
   instance.state = (void *) 0;
 
-  MCS_CORE_STORAGE_SIZE size_max;
+  MCS_CORE_STORAGE_SIZE size_max = 0;
 
   if (parameter_create.size != sizeof (size_max))
   {
@@ -305,8 +305,8 @@ struct mcs_core_storage_chunk_const_state
     return chunk_const_state;
   }
 
-  MCS_CORE_STORAGE_SIZE size;
-  MCS_CORE_STORAGE_BYTE value;
+  MCS_CORE_STORAGE_SIZE size = 0;
+  MCS_CORE_STORAGE_BYTE value = 0;
 
   if (chunk_const_description.size != sizeof (size) + sizeof (value))
   {

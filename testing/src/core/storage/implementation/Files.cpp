@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/testing/core/storage/implementation/Files.hpp>
@@ -21,7 +21,10 @@ namespace mcs::testing::core::storage::implementation
     (
     ) const -> typename Storage::Parameter::Create
   {
-    return {typename Storage::Prefix {_temp.path()}, _max_size};
+    return
+      { .prefix = typename Storage::Prefix {_temp.path()}
+      , .max_size = _max_size
+      };
   }
 
   auto Files::parameter_size_max

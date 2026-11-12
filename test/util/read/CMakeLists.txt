@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 function (mcs_test_util_read name)
@@ -16,10 +16,10 @@ function (mcs_test_util_read name)
 endfunction()
 
 mcs_test_util_read (State)
+mcs_test_util_read (integer)
 mcs_test_util_read (intrusive PRIVATE mcs_util_FMT)
 mcs_test_util_read (one_of)
 mcs_test_util_read (prefix)
 mcs_test_util_read (string PRIVATE mcs_util_string)
-mcs_test_util_read (uint)
 
 add_subdirectory (STD)

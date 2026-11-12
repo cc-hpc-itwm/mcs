@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <functional>
@@ -30,13 +30,13 @@ namespace
   template<typename T>
     struct S
   {
-    T _x;
-    MCS_UTIL_MEMBER_AUTO (_y, std::invoke (F<decltype (_x)>{}, _x));
+    T x;
+    MCS_UTIL_MEMBER_AUTO (y, std::invoke (F<decltype (x)>{}, x));
   };
 
   TEST (UtilMemberAUTO, documentation_example_works)
   {
-    static_assert (std::is_same_v<decltype (S<int>::_y), int>);
-    static_assert (std::is_same_v<decltype (S<long>::_y), char const*>);
+    static_assert (std::is_same_v<decltype (S<int>::y), int>);
+    static_assert (std::is_same_v<decltype (S<long>::y), char const*>);
   }
 }

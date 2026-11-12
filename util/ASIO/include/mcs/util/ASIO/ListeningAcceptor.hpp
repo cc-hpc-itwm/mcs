@@ -1,9 +1,11 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
 
+#include <asio/any_io_executor.hpp>
 #include <asio/awaitable.hpp>
+#include <asio/error_code.hpp>
 #include <mcs/util/ASIO/is_protocol.hpp>
 
 namespace mcs::util::ASIO
@@ -20,6 +22,10 @@ namespace mcs::util::ASIO
     auto local_endpoint() const -> typename Protocol::endpoint;
     auto accept() -> typename Protocol::socket;
     auto async_accept() -> asio::awaitable<typename Protocol::socket>;
+    [[nodiscard]] auto async_accept
+      ( asio::any_io_executor
+      ) -> asio::awaitable<typename Protocol::socket>;
+    auto close (asio::error_code&) -> void;
 
     // \note Protocol::acceptor _is_ moveable but to move it leads to crashes
     ListeningAcceptor (ListeningAcceptor const&) = delete;

@@ -1,7 +1,9 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <csignal>
+#include <cstring>
+#include <filesystem>
 #include <functional>
 #include <future>
 #include <gmock/gmock.h>
@@ -12,14 +14,20 @@
 #include <mcs/rpc/ScopedRunningIOContext.hpp>
 #include <mcs/share_service/Provider.hpp>
 #include <mcs/share_service/shmem_client.hpp>
+#include <mcs/share_service/tcp_provider.h>
 #include <mcs/testing/RPC/ProtocolState.hpp>
 #include <mcs/testing/UniqID.hpp>
+#include <mcs/testing/UniqTemporaryDirectory.hpp>
 #include <mcs/testing/random/Test.hpp>
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/util/cast.hpp>
+#include <mcs/util/not_null.hpp>
+#include <memory>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -54,6 +62,9 @@ namespace mcs::share_service
       auto operator= (RunningProvider&&) -> RunningProvider& = delete;
 
     private:
+      // Storage outlives context shutdown and pending coroutine cleanup.
+      //
+      typename share_service::Provider<Protocol>::Storages _storages{};
       rpc::ScopedRunningIOContext _io_context
         {rpc::ScopedRunningIOContext::NumberOfThreads {1u}, SIGINT, SIGTERM};
       testing::RPC::ProtocolState<Protocol> _protocol_state;
@@ -68,6 +79,7 @@ namespace mcs::share_service
                 { share_service::Provider<Protocol>
                   { _io_context
                   , _protocol_state.local_endpoint()
+                  , std::addressof (_storages)
                   }
                 };
 
@@ -137,6 +149,134 @@ namespace mcs::share_service
     TYPED_TEST_SUITE (MCSShareServiceShmemSocketClientT, Protocols);
   }
 
+  TEST (MCSShareServiceProvider, storage_outlives_the_listening_provider)
+  {
+    using Protocol = asio::local::stream_protocol;
+    auto storages {Provider<Protocol>::Storages{}};
+    auto protocol
+      { testing::RPC::ProtocolState<Protocol> {"external-storage"}
+      };
+    auto context
+      { rpc::ScopedRunningIOContext
+        { rpc::ScopedRunningIOContext::NumberOfThreads {1U}
+        }
+      };
+    auto provider
+      { std::optional<Provider<Protocol>>
+        { std::in_place
+        , context
+        , protocol.local_endpoint()
+        , util::not_null {std::addressof (storages)}
+        }
+      };
+    auto const socket {protocol.local_endpoint().path()};
+    auto const client
+      { make_shmem_local_stream_client
+        ( shmem_client::NumberOfThreads {1U}
+        , socket.c_str()
+        )
+      };
+
+    ASSERT_TRUE (client.ok());
+
+    auto const prefix {testing::UniqID {"external-storage"}()};
+    auto const first
+      { client.create (shmem_client::Size {16U}, prefix.c_str())
+      };
+    ASSERT_TRUE (first.ok());
+
+    provider.reset();
+
+    {
+      auto const span {client.attach_const (first)};
+      ASSERT_TRUE (span.ok());
+      EXPECT_EQ (span.size(), 16U);
+    }
+
+    auto const second_prefix {prefix + "-after"};
+    auto const second
+      { client.create (shmem_client::Size {16U}, second_prefix.c_str())
+      };
+
+    ASSERT_TRUE (second.ok());
+    EXPECT_TRUE (client.remove (first).ok());
+    EXPECT_TRUE (client.remove (second).ok());
+  }
+
+  TEST (MCSShareServiceProvider, tcp_provider_can_be_destroyed_before_run)
+  {
+    auto temporary {testing::UniqTemporaryDirectory {"ShareServiceLifetime"}};
+    auto const path {temporary.path() / "provider"};
+    auto* provider {static_cast<mcs_share_service_tcp_provider*> (nullptr)};
+
+    ASSERT_EQ
+      ( mcs_share_service_create_tcp_provider
+          ( 4
+          , 0
+          , path.c_str()
+          , 2
+          , std::addressof (provider)
+          )
+      , 0
+      );
+
+    auto const destroy
+      { [] (mcs_share_service_tcp_provider* value) noexcept
+        {
+          auto* handle {value};
+
+          std::ignore = mcs_share_service_destroy_tcp_provider
+            ( std::addressof (handle)
+            );
+        }
+      };
+
+    auto owner
+      { std::unique_ptr<mcs_share_service_tcp_provider, decltype (destroy)>
+          { provider
+          , destroy
+          }
+      };
+
+    EXPECT_TRUE (std::filesystem::exists (path / "PROVIDER"));
+
+    owner.reset();
+
+    EXPECT_FALSE (std::filesystem::exists (path));
+  }
+
+  TEST (MCSShareServiceShmemClient, parsing_failure_returns_error)
+  {
+    auto const invalid_text {"invalid"};
+    auto const chunk
+      { shmem_client::Chunk {invalid_text, std::strlen (invalid_text)}
+      };
+    ASSERT_FALSE (chunk.ok());
+    EXPECT_THAT (chunk.error(), ::testing::HasSubstr ("ParseError"));
+  }
+
+  TEST (MCSShareServiceShmemClient, create_failure_returns_error)
+  {
+    auto const running_provider
+      { RunningProvider<asio::local::stream_protocol> {"create_error"}
+      };
+    auto const client
+      { make_shmem_local_stream_client
+        ( shmem_client::NumberOfThreads {1u}
+        , running_provider.local_endpoint().path().c_str()
+        )
+      };
+    ASSERT_TRUE (client.ok());
+
+    auto const chunk
+      {client.create (shmem_client::Size {1u}, "invalid/prefix")};
+    ASSERT_FALSE (chunk.ok());
+    EXPECT_THAT
+      ( chunk.error()
+      , ::testing::HasSubstr ("rpc::error::HandlerError")
+      );
+    EXPECT_THAT (chunk.error(), ::testing::HasSubstr ("shm_open"));
+  }
 
   TYPED_TEST (MCSShareServiceShmemSocketClientT, create_write_cat_remove)
   {

@@ -1,10 +1,10 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
 #include <iterator>
 #include <mcs/nonstd/scope.hpp>
-#include <mcs/util/FMT/STD/optional.hpp>
+#include <mcs/util/FMT/STD/Optional.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/execute_and_die_on_exception.hpp>
 #include <mcs/util/read/Read.hpp>
@@ -136,7 +136,7 @@ namespace mcs::core::storage::implementation
       , Parameter::Segment::AccessMode mode
       , std::optional<Parameter::Segment::MLOCKed> mlocked
       )
-        : _prefix {prefix}
+        : _prefix {std::move (prefix)}
         , _segment_id {segment_id}
         , _buffer { shm_create ( name()
                                , memory::size_cast<std::size_t> (size)
@@ -153,7 +153,7 @@ namespace mcs::core::storage::implementation
       , segment::ID segment_id
       , memory::Size size
       )
-        : _prefix {prefix}
+        : _prefix {std::move (prefix)}
         , _segment_id {segment_id}
         , _buffer { shm_open ( name()
                              , memory::size_cast<std::size_t> (size)
@@ -233,7 +233,7 @@ namespace mcs::core::storage::implementation
           , fd
           , off_t {0}
           )
-        , Unmap {size, mlocked.has_value()}
+        , Unmap {size, mlocked}
         }
       };
 
@@ -303,18 +303,18 @@ namespace mcs::core::storage::implementation
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Tag>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Tag>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Tag>::format
       ( mcs::core::storage::implementation::SHMEM::Tag const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "mcs::core::storage::implementation::SHMEM"
       , std::make_tuple()
@@ -339,17 +339,17 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Prefix>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Prefix>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Prefix>::format
       ( mcs::core::storage::implementation::SHMEM::Prefix const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
-    return fmt::format_to (ctx.out(), "{}{}", "Prefix ", value.value);
+    return fmt::format_to (context.out(), "{}{}", "Prefix ", value.value);
   }
 }
 
@@ -371,18 +371,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Create>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Create>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Create>::format
       ( mcs::core::storage::implementation::SHMEM::Parameter::Create const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "SHMEM "
       , std::make_tuple (value.prefix, value.max_size)
@@ -413,18 +413,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Size::Max>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Size::Max>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Size::Max>::format
       ( mcs::core::storage::implementation::SHMEM::Parameter::Size::Max const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "SHMEM::Size::Max"
       , std::make_tuple()
@@ -449,18 +449,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Size::Used>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Size::Used>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Size::Used>::format
       ( mcs::core::storage::implementation::SHMEM::Parameter::Size::Used const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "SHMEM::Size::Used"
       , std::make_tuple()
@@ -485,18 +485,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode>::format
       ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::AccessMode const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "SHMEM::Segment::AccessMode"
       , std::make_tuple (value.value)
@@ -521,18 +521,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed>::format
       ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::MLOCKed const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "SHMEM::Segment::MLOCKed"
       , std::make_tuple()
@@ -557,21 +557,24 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create>::format
       ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "SHMEM::Segment::Create "
-      , std::make_tuple (value.access_mode, value.mlocked)
+      , std::make_tuple
+        ( value.access_mode
+        , mcs::util::FMT::STD::Optional {value.mlocked}
+        )
       );
   }
 }
@@ -599,18 +602,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove>::format
       ( mcs::core::storage::implementation::SHMEM::Parameter::Segment::Remove const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "SHMEM::Segment::Remove"
       , std::make_tuple()
@@ -635,18 +638,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description>::format
       ( mcs::core::storage::implementation::SHMEM::Parameter::Chunk::Description const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "SHMEM::Chunk::Description"
       , std::make_tuple()
@@ -671,18 +674,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::File::Read>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::File::Read>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::File::Read>::format
       ( mcs::core::storage::implementation::SHMEM::Parameter::File::Read const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "SHMEM::File::Read"
       , std::make_tuple()
@@ -707,18 +710,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::File::Write>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::File::Write>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::SHMEM::Parameter::File::Write>::format
       ( mcs::core::storage::implementation::SHMEM::Parameter::File::Write const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "SHMEM::File::Write"
       , std::make_tuple()

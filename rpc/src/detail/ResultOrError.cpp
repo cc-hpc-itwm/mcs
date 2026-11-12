@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/rpc/detail/ResultOrError.hpp>
@@ -12,7 +12,7 @@
 namespace mcs::rpc::detail
 {
   Error::Error (decltype (reason) _reason)
-    : reason {_reason}
+    : reason {std::move (_reason)}
   {}
 
   Error::Error (serialization::IArchive& ia)

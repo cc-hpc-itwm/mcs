@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -7,12 +7,12 @@
 #include <cstdint>
 #include <mcs/rpc/Client.hpp>
 #include <mcs/rpc/Concepts.hpp>
-#include <mcs/rpc/detail/Buffer.hpp>
 #include <mcs/rpc/detail/CallID.hpp>
 #include <mcs/rpc/detail/CommandIndex.hpp>
+#include <mcs/rpc/detail/ReceivedFrame.hpp>
 #include <mcs/rpc/detail/ResultHolder.hpp>
 #include <mcs/rpc/detail/ResultOrError.hpp>
-#include <tuple>
+#include <memory>
 #include <type_traits>
 
 namespace mcs::rpc
@@ -32,6 +32,15 @@ namespace mcs::rpc
       detail::CommandIndex index;
     };
 
+    // Both handles retain their owners throughout request execution.
+    //
+    template<is_protocol Protocol>
+      struct RequestContext
+    {
+      std::shared_ptr<Dispatcher> dispatcher;
+      std::shared_ptr<typename Protocol::socket> socket;
+    };
+
     static constexpr auto handshake_data();
 
     template<typename Command>
@@ -42,40 +51,41 @@ namespace mcs::rpc
 
     template<typename... HandlerArgs>
       requires (std::is_constructible_v<Handler, HandlerArgs...>)
-      explicit Dispatcher (HandlerArgs&&...);
+      explicit Dispatcher (HandlerArgs&&...)
+        noexcept (std::is_nothrow_constructible_v<Handler, HandlerArgs...>);
 
     template<is_protocol Protocol>
-      auto dispatch
-        ( std::tuple<Header, detail::Buffer>
-        , typename Protocol::socket&
+      [[nodiscard]] static auto dispatch
+        ( detail::ReceivedFrame<Header>
+        , RequestContext<Protocol>
         ) -> asio::awaitable<detail::ResultHolder>
       ;
 
   private:
     template<is_protocol Protocol, std::size_t>
-      auto handle_by_index
-        ( std::tuple<Header, detail::Buffer>
-        , typename Protocol::socket&
+      [[nodiscard]] static auto handle_by_index
+        ( detail::ReceivedFrame<Header>
+        , RequestContext<Protocol>
         ) -> asio::awaitable<detail::ResultHolder>
       ;
     template<is_protocol Protocol, std::size_t, typename, typename...>
-      auto handle_by_index
-        ( std::tuple<Header, detail::Buffer>
-        , typename Protocol::socket&
+      [[nodiscard]] static auto handle_by_index
+        ( detail::ReceivedFrame<Header>
+        , RequestContext<Protocol>
         ) -> asio::awaitable<detail::ResultHolder>
       ;
 
     template<is_protocol Protocol, is_command Command>
       requires (is_one_of_the_commands<Command, Commands...>)
-      auto handle
-        ( std::tuple<Header, detail::Buffer>
-        , typename Protocol::socket&
+      [[nodiscard]] static auto handle
+        ( detail::ReceivedFrame<Header>
+        , RequestContext<Protocol>
         ) -> asio::awaitable<detail::ResultHolder>
       ;
 
     template<is_protocol Protocol, is_command Command>
       requires (is_one_of_the_commands<Command, Commands...>)
-      [[nodiscard]] auto invoke (Command, typename Protocol::socket&)
+      [[nodiscard]] static auto invoke (Command, RequestContext<Protocol>)
         -> asio::awaitable<detail::ResultOrError<typename Command::Response>>
       ;
 

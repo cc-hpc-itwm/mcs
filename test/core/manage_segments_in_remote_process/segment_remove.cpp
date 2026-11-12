@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include "SupportedStorageImplementations.hpp"
@@ -11,32 +11,43 @@
 #include <mcs/core/storage/segment/ID.hpp>
 #include <mcs/rpc/ScopedRunningIOContext.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
+#include <mcs/util/arguments/View.hpp>
 #include <mcs/util/main.hpp>
 #include <mcs/util/read/read.hpp>
 #include <stdexcept>
+#include <tuple>
 
 namespace
 {
-  auto segment_remove_main (mcs::util::Args args) -> int
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {} provider_connectable storage_id storage_parameter"
+        " segment_id"
+      , args.at (0)
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print ("{}\n", usage (args));
+  }
+
+  auto segment_remove_main (mcs::util::arguments::View args) -> int
   {
     if (args.size() != 5)
     {
-      throw std::invalid_argument
-        { fmt::format
-            ( "usage: {} provider_connectable storage_id storage_parameter segment_id"
-            , args[0]
-            )
-        };
+      throw std::invalid_argument {usage (args)};
     }
 
     auto const provider_connectable
-      {mcs::util::read::read<mcs::util::ASIO::AnyConnectable> (args[1])};
+      {mcs::util::read::read<mcs::util::ASIO::AnyConnectable> (args.at (1))};
     auto const storage_id
-      {mcs::util::read::read<mcs::core::storage::ID> (args[2])};
+      {mcs::util::read::read<mcs::core::storage::ID> (args.at (2))};
     auto const storage_parameter
-      {mcs::util::read::read<mcs::core::storage::Parameter> (args[3])};
+      {mcs::util::read::read<mcs::core::storage::Parameter> (args.at (3))};
     auto const segment_id
-      {mcs::util::read::read<mcs::core::storage::segment::ID> (args[4])};
+      {mcs::util::read::read<mcs::core::storage::segment::ID> (args.at (4))};
 
     auto io_context
       { mcs::rpc::ScopedRunningIOContext
@@ -61,7 +72,7 @@ namespace
 
           // Remove segment at the remote storages
           //
-          client.segment_remove
+          std::ignore = client.segment_remove
             ( storage_id
             , storage_parameter
             , segment_id
@@ -75,5 +86,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, segment_remove_main);
+  return mcs::util::main (argc, argv, help, segment_remove_main);
 }

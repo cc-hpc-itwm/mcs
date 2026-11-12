@@ -1,11 +1,13 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
+#include <mcs/rpc/access_policy/Observed.hpp>
 #include <mcs/rpc/detail/command_holder/NonOwning.hpp>
 #include <mcs/rpc/detail/command_holder/Owning.hpp>
-#include <mcs/rpc/detail/observe.hpp>
+#include <mcs/rpc/detail/connected_socket.hpp>
 #include <mcs/rpc/detail/remote_call.hpp>
 #include <type_traits>
+#include <utility>
 
 namespace mcs::rpc
 {
@@ -13,10 +15,23 @@ namespace mcs::rpc
           , is_access_policy AccessPolicy
           , is_command... Commands
           >
+    auto Client<Protocol, AccessPolicy, Commands...>::shutdown
+      (
+      ) const -> std::future<void>
+  {
+    return _connection->shutdown();
+  }
+
+  template< is_protocol Protocol
+          , is_access_policy AccessPolicy
+          , is_command... Commands
+          >
     constexpr Client<Protocol, AccessPolicy, Commands...>::Client
-      ( detail::ClientState<Protocol, AccessPolicy, Commands...> state
+      ( std::shared_ptr<AccessPolicy> access_policy
+      , std::shared_ptr<Connection> connection
       ) noexcept
-        : _state {state}
+        : _access_policy {std::move (access_policy)}
+        , _connection {std::move (connection)}
   {}
 
   template< is_protocol Protocol
@@ -30,11 +45,13 @@ namespace mcs::rpc
         , std::shared_ptr<AccessPolicy> access_policy
         )
           : Client<Protocol, AccessPolicy, Commands...>
-            { detail::ClientState<Protocol, AccessPolicy, Commands...>
-                { executor
+            { std::move (access_policy)
+            , std::make_shared<Connection>
+              ( detail::connected_socket<Protocol, Commands...>
+                ( executor
                 , endpoint
-                , access_policy
-                }
+                )
+              )
             }
   {}
 
@@ -49,24 +66,15 @@ namespace mcs::rpc
         , std::shared_ptr<AccessPolicy> access_policy
         )
           : Client<Protocol, AccessPolicy, Commands...>
-            { detail::ClientState<Protocol, AccessPolicy, Commands...>
-                { executor
+            { std::move (access_policy)
+            , std::make_shared<Connection>
+              ( detail::connected_socket<Protocol, Commands...>
+                ( executor
                 , connectable
-                , access_policy
-                }
+                )
+              )
             }
   {}
-
-  template< is_protocol Protocol
-          , is_access_policy AccessPolicy
-          , is_command... Commands
-          >
-    auto make_client
-      ( detail::ClientState<Protocol, AccessPolicy, Commands...> state
-      ) noexcept
-  {
-    return Client<Protocol, AccessPolicy, Commands...> {state};
-  }
 
   template< is_protocol Protocol
           , is_access_policy AccessPolicy
@@ -78,10 +86,15 @@ namespace mcs::rpc
         ( ObserverArgs&&... observer_args
         ) const noexcept (std::is_nothrow_constructible_v<Observer, ObserverArgs...>)
   {
-    return make_client
-      ( detail::observe<Observer>
-          (_state, std::forward<ObserverArgs> (observer_args)...)
-      );
+    using ObservedAccessPolicy = access_policy::Observed<AccessPolicy, Observer>;
+
+    return Client<Protocol, ObservedAccessPolicy, Commands...>
+      { std::make_shared<ObservedAccessPolicy>
+          ( _access_policy
+          , std::forward<ObserverArgs> (observer_args)...
+          )
+      , _connection
+      };
   }
 }
 
@@ -99,8 +112,9 @@ namespace mcs::rpc
           ( std::reference_wrapper<Command const> command_ref
           ) const -> std::future<typename Command::Response>
   {
-    return detail::remote_call<Protocol, AccessPolicy, Command>
-      ( _state
+    return detail::remote_call<Protocol, AccessPolicy, Command, Commands...>
+      ( _connection
+      , _access_policy
       , detail::command_holder::NonOwning<Command> {command_ref}
       );
   }
@@ -134,8 +148,9 @@ namespace mcs::rpc
           ( CommandArgs&&... command_args
           ) const -> std::future<typename Command::Response>
   {
-    return detail::remote_call<Protocol, AccessPolicy, Command>
-      ( _state
+    return detail::remote_call<Protocol, AccessPolicy, Command, Commands...>
+      ( _connection
+      , _access_policy
       , detail::command_holder::Owning<Command>
           {std::forward<CommandArgs> (command_args)...}
       );
@@ -170,8 +185,9 @@ namespace mcs::rpc
           ( Command&& command
           ) const -> std::future<typename Command::Response>
   {
-    return detail::remote_call<Protocol, AccessPolicy, Command>
-      ( _state
+    return detail::remote_call<Protocol, AccessPolicy, Command, Commands...>
+      ( _connection
+      , _access_policy
       , detail::command_holder::Owning<Command>
           {std::forward<Command> (command)}
       );

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/format.h>
@@ -15,6 +15,14 @@
 
 namespace mcs::core::storage::implementation
 {
+  SHMEM::Unmap::Unmap
+    ( std::size_t size
+    , std::optional<Parameter::Segment::MLOCKed> mlocked
+    ) noexcept
+      : _size {size}
+      , _unlock {mlocked.has_value()}
+  {}
+
   auto SHMEM::Unmap::operator()
     ( void* ptr
     ) const -> void
@@ -123,7 +131,10 @@ namespace mcs::serialization
     auto prefix {load<decltype (mcs::core::storage::implementation::SHMEM::Parameter::Create::prefix)> (ia)};
     auto max_size {load<decltype (mcs::core::storage::implementation::SHMEM::Parameter::Create::max_size)> (ia)};
 
-    return mcs::core::storage::implementation::SHMEM::Parameter::Create {prefix, max_size};
+    return mcs::core::storage::implementation::SHMEM::Parameter::Create
+      { .prefix = prefix
+      , .max_size = max_size
+      };
   }
 }
 
@@ -146,7 +157,10 @@ namespace mcs::serialization
     auto access_mode {load<decltype (mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create::access_mode)> (ia)};
     auto mlocked {load<decltype (mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create::mlocked)> (ia)};
 
-    return mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create {access_mode, mlocked};
+    return mcs::core::storage::implementation::SHMEM::Parameter::Segment::Create
+      { .access_mode = access_mode
+      , .mlocked = mlocked
+      };
   }
 }
 

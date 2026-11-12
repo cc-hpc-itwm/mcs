@@ -4,6 +4,12 @@
 cmake_minimum_required (VERSION 3.24)
 project (mcs VERSION 0.8 LANGUAGES CXX C)
 
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  message (FATAL_ERROR
+    "MCS supports 'Linux' only. The target platform is '${CMAKE_SYSTEM_NAME}'."
+  )
+endif()
+
 include ("${CMAKE_CURRENT_LIST_DIR}/options.cmake")
 
 if (MCS_TRANSPORT_LIBFABRIC)

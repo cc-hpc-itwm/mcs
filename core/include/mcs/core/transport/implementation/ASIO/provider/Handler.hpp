@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -58,7 +58,7 @@ namespace mcs::core::transport::implementation::ASIO::provider
         auto operator= (CouldNotWriteAllData&&) noexcept  -> CouldNotWriteAllData& = default;
 
       private:
-        template<storage::is_implementation...> friend struct Handler;
+        friend struct Handler<StorageImplementations...>;
 
         CouldNotWriteAllData (Wanted, Written) noexcept;
 
@@ -79,8 +79,8 @@ namespace mcs::core::transport::implementation::ASIO::provider
           std::size_t value;
         };
 
-        constexpr auto wanted() const noexcept -> Wanted;
-        constexpr auto read() const noexcept -> Read;
+        [[nodiscard]] constexpr auto wanted() const noexcept -> Wanted;
+        [[nodiscard]] constexpr auto read() const noexcept -> Read;
 
         ~CouldNotReadAllData() override;
         CouldNotReadAllData (CouldNotReadAllData const&) = default;
@@ -89,7 +89,7 @@ namespace mcs::core::transport::implementation::ASIO::provider
         auto operator= (CouldNotReadAllData&&) noexcept  -> CouldNotReadAllData& = default;
 
       private:
-        template<storage::is_implementation...> friend struct Handler;
+        friend struct Handler<StorageImplementations...>;
 
         CouldNotReadAllData (Wanted, Read) noexcept;
 

@@ -17,16 +17,17 @@ Installation:
 Requirements:
 -------------
 
+- Linux operating system
 - [git](https://git-scm.com/)
 - [cmake](https://cmake.org/), version 3.24 or higher
 - a c++20 compiler
-  * tested: [gcc](https://gcc.gnu.org/) versions 11, 12, 13, 14, 15
-  * tested: [clang](https://clang.llvm.org/) versions 20, 21, 22
-  * tested: [Intel oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/overview.html) version 2026.0
+  * tested: [gcc](https://gcc.gnu.org/) versions 11, 12, 13, 14, 15, 16
+  * tested: [clang](https://clang.llvm.org/) versions 20, 21, 22, 23
+  * tested: [Intel oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/overview.html) version 2026.2
 
 MCS is tested on
 
-- [Alpine Linux](https://alpinelinux.org/) versions 3.21.7, 3.22.4, 3.23.4
+- [Alpine Linux](https://alpinelinux.org/) versions 3.22.8, 3.23.8, 3.24.4
 - [archlinux](https://archlinux.org/)
 - [Oracle Linux](https://www.oracle.com/linux/) version 9
 - [Rocky Linux](https://rockylinux.org/) version 9
@@ -44,8 +45,8 @@ How to install:
 
 Please note that the configure step will retrieve the source dependencies:
 
-- [asio](https://github.com/chriskohlhoff/asio.git)
-- [fmt](https://github.com/fmtlib/fmt.git)
+- [asio](https://github.com/chriskohlhoff/asio.git) version 1.39.0
+- [fmt](https://github.com/fmtlib/fmt.git) version 12.2.1
 
 Options:
 --------
@@ -64,14 +65,14 @@ Present MCS storage content as a filesystem.
 - `MCS_FUSE`: ON, OFF
 - Default: `MCS_FUSE=OFF`
 - Additional source dependency:
-  * [libfuse3](https://github.com/libfuse/libfuse) version 3.18.2
+  * [libfuse3](https://github.com/libfuse/libfuse) version 3.18.3
 - Additional runtime dependency:
   * The kernel must support fuse, the fuse-kernel module must be
     installed and inserted.
 
 ## The C++ standard version:
 
-- `MCS_CXX_STANDARD`: 20, 23.
+- `MCS_CXX_STANDARD`: 20, 23, 26.
 - Default: `-DMCS_CXX_STANDARD=20`
 
 ## Enable testing:
@@ -86,7 +87,7 @@ Components details:
 
 Please see the individual README files for details about the components.
 
-- [fuse/bin/storage/README.md](fuse/bin/storage/README.md)
+- [fuse/bin/README.md](fuse/bin/README.md)
 - [core/README.md](core/README.md)
 - [share_service/README.md](share_service/README.md)
 - [block_device/README.md](block_device/README.md)

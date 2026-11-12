@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -17,8 +17,8 @@ namespace mcs::core::storage::implementation::trace::parameter
     requires (storage::trace::is_tracer<Tracer, Storage>)
     struct Create
   {
-    typename Tracer::Parameter::Create _parameter_tracer_create;
-    typename Storage::Parameter::Create _parameter_storage_create;
+    typename Tracer::Parameter::Create parameter_tracer_create;
+    typename Storage::Parameter::Create parameter_storage_create;
   };
 }
 
@@ -47,8 +47,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::trace::parameter::Create<Tracer, Storage> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

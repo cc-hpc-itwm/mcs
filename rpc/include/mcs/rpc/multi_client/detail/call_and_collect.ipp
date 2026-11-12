@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -40,8 +40,8 @@ namespace mcs::rpc::multi_client
 
       struct Call
       {
-        decltype (*std::cbegin (client_ids)) _client_id;
-        std::future<typename Command::Response> _result;
+        decltype (*std::cbegin (client_ids)) client_id;
+        std::future<typename Command::Response> result;
       };
 
       auto calls {std::unordered_map<detail::CallID, Call>{}};

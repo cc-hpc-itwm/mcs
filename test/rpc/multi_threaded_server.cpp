@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -42,7 +42,7 @@ namespace
   {
     using Dispatcher = mcs::rpc::Dispatcher<Handler, Handler::Sleep>;
 
-    auto io_context_server
+    auto io_context_provider
       { mcs::rpc::ScopedRunningIOContext
           {mcs::rpc::ScopedRunningIOContext::NumberOfThreads {server_threads}}
       };
@@ -54,7 +54,7 @@ namespace
     auto const provider
       { mcs::rpc::make_provider<Protocol, Dispatcher>
           ( typename Protocol::endpoint{}
-          , io_context_server
+          , io_context_provider
           )
       };
 

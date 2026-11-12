@@ -1,7 +1,7 @@
-# Copyright (C) 2025 Fraunhofer ITWM
+# Copyright (C) 2025-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
-set (MCS_TEST_FUSE_BIN_STORAGE_FS "${CMAKE_BINARY_DIR}/fuse/bin/storage/mcs_fuse_bin_storage_fs")
+set (MCS_TEST_FUSE_BIN_FS "${CMAKE_BINARY_DIR}/fuse/bin/mcs_fuse_bin_fs")
 set (MCS_TEST_FUSE_BIN_STORAGE_DEMO_PRODUCER "${CMAKE_BINARY_DIR}/fuse/bin/storage/demo/mcs_fuse_bin_storage_demo_producer")
 set (MCS_TEST_FUSE_BIN_STORAGE_DEMO_CONSUMER "${CMAKE_BINARY_DIR}/fuse/bin/storage/demo/mcs_fuse_bin_storage_demo_consumer")
 set (TESTING_BASH_DIRECTORY "${PROJECT_SOURCE_DIR}/testing/bash")

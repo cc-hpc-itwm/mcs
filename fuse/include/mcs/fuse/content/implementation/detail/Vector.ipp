@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -60,14 +60,11 @@ namespace mcs::fuse::content::implementation
 {
   Vector::Vector
     ( util::not_null<State>
-    , util::not_null<state::inode::Common> inode
-    , state::writing auto const& write_access
+    , util::not_null<state::inode::Common>
+    , state::writing auto const&
     , ::fuse_ino_t
     )
-      : _inode {inode}
-  {
-    xattr_set_capacity (write_access, XATTR_CREATE);
-  }
+  {}
 
   constexpr auto Vector::size
     ( state::reading auto const&
@@ -96,13 +93,12 @@ namespace mcs::fuse::content::implementation
   }
 
   auto Vector::resize
-    ( state::writing auto const& write_access
+    ( state::writing auto const&
     , size_t size
     ) -> content::result::Resize
   {
     _data.resize (size, std::byte {0});
     _data.shrink_to_fit();
-    xattr_set_capacity (write_access, XATTR_REPLACE);
 
     return content::result::resize::Success {size};
   }
@@ -167,84 +163,10 @@ namespace mcs::fuse::content::implementation
     return content::result::write::Error {ENOMEM};
   }
 
-  auto Vector::fallocate
-    ( state::writing auto const& write_access
-    , int mode
-    , off_t offset
-    , off_t length
-    ) -> int
-  {
-    if (mode & FALLOC_FL_PUNCH_HOLE)
-    {
-      return EOPNOTSUPP;
-    }
-    if (mode & FALLOC_FL_NO_HIDE_STALE)
-    {
-      return EOPNOTSUPP;
-    }
-    if (mode & FALLOC_FL_COLLAPSE_RANGE)
-    {
-      return EOPNOTSUPP;
-    }
-    if (mode & FALLOC_FL_INSERT_RANGE)
-    {
-      return EOPNOTSUPP;
-    }
-    if (mode & FALLOC_FL_UNSHARE_RANGE)
-    {
-      return EOPNOTSUPP;
-    }
-
-    auto const size {this->size (write_access)};
-    auto const min_size {util::cast<size_t> (offset + length)};
-
-    if (mode & FALLOC_FL_KEEP_SIZE)
-    {
-      if (std::cmp_less (size, min_size))
-      {
-        return EOPNOTSUPP;
-      }
-    }
-
-    resize (write_access, min_size);
-
-    auto pos_at
-      { [&] (auto n)
-        {
-          auto pos {std::begin (_data)};
-          std::advance (pos, n);
-          return pos;
-        }
-      };
-
-    std::fill ( pos_at (offset)
-              , pos_at (std::min (size, min_size))
-              , std::byte {0}
-              );
-
-    return 0;
-  }
-
   auto Vector::cleanup
     ( state::writing auto const&
     ) -> void
   {
     return;
-  }
-}
-
-namespace mcs::fuse::content::implementation
-{
-  auto Vector::xattr_set_capacity
-    ( state::writing auto const& write_access
-    , int flags
-    ) -> void
-  {
-    _inode->setxattr
-      ( write_access
-      , _xattr_key_capacity
-      , _data.capacity()
-      , flags
-      );
   }
 }

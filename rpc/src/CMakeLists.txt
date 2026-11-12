@@ -1,11 +1,9 @@
-# Copyright (C) 2022-2025 Fraunhofer ITWM
+# Copyright (C) 2022-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 target_sources (mcs_rpc
+  PRIVATE ScopedIOContext.cpp
   PRIVATE ScopedRunningIOContext.cpp
-  PRIVATE access_policy/Concurrent.cpp
-  PRIVATE access_policy/Exclusive.cpp
-  PRIVATE access_policy/Sequential.cpp
   PRIVATE detail/Buffer.cpp
   PRIVATE detail/Completion.cpp
   PRIVATE detail/ResultOrError.cpp

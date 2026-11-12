@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -16,7 +16,7 @@ namespace mcs::block_device
   template<typename MakeTransportClient, typename MetaDataClient>
     struct Writer
   {
-    Writer (MetaDataClient&, MakeTransportClient&&);
+    Writer (MetaDataClient&, MakeTransportClient);
 
     struct Create{};
     template<typename... Args>

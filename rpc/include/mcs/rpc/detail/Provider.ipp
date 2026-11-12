@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/bind_executor.hpp>
@@ -8,68 +8,98 @@
 #include <asio/this_coro.hpp>
 #include <asio/use_awaitable.hpp>
 #include <asio/write.hpp>
+#include <atomic>
+#include <cstdio>
 #include <exception>
+#include <functional>
 #include <mcs/rpc/detail/Buffer.hpp>
 #include <mcs/rpc/detail/ResultHolder.hpp>
 #include <mcs/rpc/detail/receive_buffer_with_header.hpp>
 #include <mcs/serialization/OArchive.hpp>
 #include <mcs/util/ASIO/SetSocketOptions.hpp>
+#include <mcs/util/FMT/STD/exception.hpp>
+#include <mcs/util/FMT/print_noexcept.hpp>
 #include <memory>
+#include <tuple>
+#include <type_traits>
 #include <utility>
 
-namespace mcs::rpc
+namespace mcs::rpc::detail
 {
-  template<is_protocol Protocol, typename Dispatcher, typename... HandlerArgs>
-    template<typename Executor>
-      Provider<Protocol, Dispatcher, HandlerArgs...>::Provider
-        ( typename Protocol::endpoint endpoint
-        , Executor& executor
-        , HandlerArgs... handler_args
-        )
-          : _acceptor {executor, endpoint}
+  template< is_protocol Protocol
+          , typename Dispatcher
+          , is_handler_arg... HandlerArgs
+          >
+    struct ConnectionState
   {
-    asio::co_spawn
-      ( executor
-      , accept_clients (handler_args...)
-      , asio::detached
-      );
-  }
-
-  template<is_protocol Protocol, typename Dispatcher, typename... HandlerArgs>
-    auto Provider<Protocol, Dispatcher, HandlerArgs...>::local_endpoint
-      (
-      ) const
-  {
-    return _acceptor.local_endpoint();
-  }
-
-  template<is_protocol Protocol, typename Dispatcher, typename... HandlerArgs>
-    auto Provider<Protocol, Dispatcher, HandlerArgs...>::accept_clients
-      ( HandlerArgs... handler_args
-      ) -> asio::awaitable<void>
-  {
-    auto executor {co_await asio::this_coro::executor};
-
-    while (true)
-    {
-      auto socket {co_await _acceptor.async_accept()};
-
-      asio::co_spawn
-        ( executor
-        , dispatch (std::move (socket), handler_args...)
-        , asio::detached
-        );
-    }
-  }
-
-  template<is_protocol Protocol, typename Dispatcher, typename... HandlerArgs>
-    auto Provider<Protocol, Dispatcher, HandlerArgs...>::dispatch
+    explicit ConnectionState
       ( typename Protocol::socket socket
       , HandlerArgs... handler_args
-      ) -> asio::awaitable<void>
+      ) noexcept
+          (  std::is_nothrow_move_constructible_v<typename Protocol::socket>
+          && std::is_nothrow_constructible_v<Dispatcher, HandlerArgs...>
+          )
+        : _socket {std::move (socket)}
+        , _dispatcher {std::forward<HandlerArgs> (handler_args)...}
+    {}
+
+    [[nodiscard]] auto socket() -> typename Protocol::socket&
+    {
+      return _socket;
+    }
+
+    [[nodiscard]] auto ok() const noexcept -> bool
+    {
+      return !_closed.load();
+    }
+
+    [[nodiscard]] static auto invoke
+      ( std::shared_ptr<ConnectionState> state
+      , ReceivedFrame<typename Dispatcher::Header> response
+      ) -> asio::awaitable<detail::ResultHolder>
+    {
+      return Dispatcher::template dispatch<Protocol>
+        ( std::move (response)
+        , typename Dispatcher::template RequestContext<Protocol>
+          { .dispatcher = std::shared_ptr<Dispatcher>
+              { state
+              , std::addressof (state->_dispatcher)
+              }
+          , .socket = std::shared_ptr<typename Protocol::socket>
+              { state
+              , std::addressof (state->_socket)
+              }
+          }
+        );
+    }
+
+    auto shutdown() noexcept -> void
+    {
+      if (!_closed.exchange (true))
+      {
+        auto error {asio::error_code{}};
+
+        _socket.shutdown (Protocol::socket::shutdown_both, error);
+      }
+    }
+
+  private:
+    typename Protocol::socket _socket;
+    Dispatcher _dispatcher;
+    std::atomic_bool _closed {false};
+  };
+
+  template< is_protocol Protocol
+          , typename Dispatcher
+          , is_handler_arg... HandlerArgs
+          >
+    auto dispatch
+      ( typename Protocol::socket socket
+      , HandlerArgs... handler_args
+      ) noexcept -> asio::awaitable<void>
   try
   {
-    util::ASIO::SetSocketOptions<Protocol>{} (socket);
+    std::invoke (util::ASIO::SetSocketOptions<Protocol>{}, socket);
 
     {
       auto const data {Dispatcher::handshake_data()};
@@ -80,51 +110,74 @@ namespace mcs::rpc
 
     auto executor {co_await asio::this_coro::executor};
     auto strand {asio::make_strand (executor)};
-    auto dispatcher {Dispatcher {handler_args...}};
-
-    auto error {std::exception_ptr{}};
-
-    while (!error)
-    {
-      auto response
-        {co_await detail::receive_buffer_with_header<typename Dispatcher::Header> (socket)};
-
-      asio::co_spawn
-        ( executor
-        , dispatcher.template dispatch<Protocol> (std::move (response), socket)
-        , asio::bind_executor
-          ( strand
-          , [&]
-              ( std::exception_ptr rpc_error
-              , detail::ResultHolder result_holder
-              ) noexcept
-            {
-              if (rpc_error)
-              {
-                error = rpc_error;
-              }
-              else
-              {
-                // \note the write might fail in case that the client
-                // has been destroyed, exceptions must be catched to
-                // prevent from terminate as the completion handler
-                // must be noexcept
-                try
-                {
-                  asio::write (socket, result_holder.archive().buffers());
-                }
-                catch (...)
-                {
-                  error = std::current_exception();
-                }
-              }
-            }
+    auto state
+      { std::make_shared<ConnectionState<Protocol, Dispatcher, HandlerArgs...>>
+          ( std::move (socket)
+          , std::forward<HandlerArgs> (handler_args)...
           )
-        );
-    }
+      };
+    auto const owned_socket
+      { std::shared_ptr<typename Protocol::socket>
+          { state
+          , std::addressof (state->socket())
+          }
+      };
 
-    // \todo handle rpc_error in a specific way rethrow and catch
-    // below std::rethrow_exception (error);
+    try
+    {
+      while (state->ok())
+      {
+        auto response
+          { co_await detail::receive_buffer_with_header<typename Dispatcher::Header>
+            ( owned_socket
+            )
+          };
+
+        if (state->ok())
+        {
+          asio::co_spawn
+            ( executor
+            , ConnectionState<Protocol, Dispatcher, HandlerArgs...>::invoke
+                ( state
+                , std::move (response)
+                )
+            , asio::bind_executor
+              ( strand
+              , [state]
+                  ( std::exception_ptr rpc_error
+                  , detail::ResultHolder result_holder
+                  ) noexcept
+                {
+                  if (state->ok())
+                  {
+                    if (rpc_error)
+                    {
+                      state->shutdown();
+                    }
+                    else
+                    {
+                      try
+                      {
+                        asio::write ( state->socket()
+                                    , result_holder.archive().buffers()
+                                    );
+                      }
+                      catch (...)
+                      {
+                        state->shutdown();
+                      }
+                    }
+                  }
+                }
+              )
+            );
+        }
+      }
+    }
+    catch (...)
+    {
+      state->shutdown();
+    }
   }
   catch (...) // NOLINT (bugprone-empty-catch)
   {
@@ -136,8 +189,86 @@ namespace mcs::rpc
 {
   template< is_protocol Protocol
           , typename Dispatcher
+          , is_handler_arg... HandlerArgs
+          >
+    template<typename Executor>
+      Provider<Protocol, Dispatcher, HandlerArgs...>::Provider
+        ( typename Protocol::endpoint endpoint
+        , Executor& executor
+        , HandlerArgs... handler_args
+        )
+          : _state
+              { std::make_shared<detail::provider::State<Protocol>>
+                  (executor, endpoint)
+              }
+  {
+    _state->start
+      ( [ executor = _state->executor()
+        , arguments = std::tuple<HandlerArgs...> {handler_args...}
+        ] (typename Protocol::socket socket) mutable
+        {
+          std::apply
+            ( [&] (auto&... args)
+              {
+                asio::co_spawn
+                  ( executor
+                  , detail::dispatch<Protocol, Dispatcher, HandlerArgs...>
+                      (std::move (socket), args...)
+                  , asio::detached
+                  );
+              }
+            , arguments
+            );
+        }
+      );
+  }
+
+  template< is_protocol Protocol
+          , typename Dispatcher
+          , is_handler_arg... HandlerArgs
+          >
+    auto Provider<Protocol, Dispatcher, HandlerArgs...>::local_endpoint
+      (
+      ) const -> typename Protocol::endpoint
+  {
+    return _state->local_endpoint();
+  }
+
+  template< is_protocol Protocol
+          , typename Dispatcher
+          , is_handler_arg... HandlerArgs
+          >
+    auto Provider<Protocol, Dispatcher, HandlerArgs...>::stop_accepting
+      (
+      ) const -> std::shared_future<void>
+  {
+    return _state->stop_accepting();
+  }
+
+  template< is_protocol Protocol
+          , typename Dispatcher
+          , is_handler_arg... HandlerArgs
+          >
+    Provider<Protocol, Dispatcher, HandlerArgs...>::~Provider()
+  {
+    try
+    {
+      _state->request_stop();
+    }
+    catch (...)
+    {
+      util::FMT::print_noexcept
+        ( stderr
+        , "rpc::Provider::~Provider: {}\n"
+        , std::current_exception()
+        );
+    }
+  }
+
+  template< is_protocol Protocol
+          , typename Dispatcher
           , typename Executor
-          , typename... HandlerArgs
+          , is_handler_arg... HandlerArgs
           >
     requires (std::is_constructible_v<typename Dispatcher::HandlerType, HandlerArgs...>)
     auto make_provider

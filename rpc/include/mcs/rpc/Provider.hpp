@@ -1,48 +1,67 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
 
-#include <asio/awaitable.hpp>
+#include <future>
 #include <mcs/rpc/Concepts.hpp>
-#include <mcs/util/ASIO/ListeningAcceptor.hpp>
+#include <mcs/rpc/detail/provider/State.hpp>
+#include <memory>
 #include <type_traits>
 
 namespace mcs::rpc
 {
-  template<is_protocol Protocol, typename Dispatcher, typename... HandlerArgs>
+  template< is_protocol Protocol
+          , typename Dispatcher
+          , is_handler_arg... HandlerArgs
+          >
     struct [[nodiscard]] Provider
   {
     static_assert
-      (std::is_constructible_v<typename Dispatcher::HandlerType, HandlerArgs...>);
+      ( std::is_constructible_v< typename Dispatcher::HandlerType
+                               , HandlerArgs...
+                               >
+      );
 
-    auto local_endpoint() const;
+    [[nodiscard]] auto local_endpoint() const -> typename Protocol::endpoint;
+
+    // Stops the listener, not established connections or their
+    // handlers. The context must outlive the provider and run until
+    // completion. Do not wait on its worker thread. get() reports
+    // terminal loop errors.
+    //
+    [[nodiscard]] auto stop_accepting() const -> std::shared_future<void>;
 
     template<typename Executor>
       explicit Provider
         ( typename Protocol::endpoint
         , Executor&
+          // \todo deal with handler arg copies precisly
         , HandlerArgs...
         );
 
-  private:
-    util::ASIO::ListeningAcceptor<Protocol> _acceptor;
+    // Requests stopping without waiting. Use stop_accepting() to
+    // await close.
+    //
+    ~Provider();
+    Provider (Provider const&) = delete;
+    Provider (Provider&&) = delete;
+    auto operator= (Provider const&) -> Provider& = delete;
+    auto operator= (Provider&&) -> Provider& = delete;
 
-    auto accept_clients
-      ( HandlerArgs...
-      ) -> asio::awaitable<void>;
-    auto dispatch
-      ( typename Protocol::socket
-      , HandlerArgs...
-      ) -> asio::awaitable<void>;
+  private:
+    std::shared_ptr<detail::provider::State<Protocol>> _state;
   };
 
   template< is_protocol Protocol
           , typename Dispatcher
           , typename Executor
-          , typename... HandlerArgs
+          , is_handler_arg... HandlerArgs
           >
-    requires (std::is_constructible_v<typename Dispatcher::HandlerType, HandlerArgs...>)
+    requires ( std::is_constructible_v< typename Dispatcher::HandlerType
+                                      , HandlerArgs...
+                                      >
+             )
       auto make_provider
         ( typename Protocol::endpoint
         , Executor&

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/overloaded.hpp>
@@ -50,9 +50,9 @@ namespace fmt
       constexpr auto formatter
         < mcs::core::transport::implementation::libfabric::provider
           ::ConnectionInformation<Protocol>
-        >::parse (ParseContext& ctx)
+        >::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<mcs::util::ASIO::is_protocol Protocol>
     template<typename FormatContext>
@@ -62,11 +62,11 @@ namespace fmt
         >::format
           ( mcs::core::transport::implementation::libfabric::provider
               ::ConnectionInformation<Protocol> const& connection_information
-          , FormatContext& ctx
-          ) const -> decltype (ctx.out())
+          , FormatContext& context
+          ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "ConnectionInformation ({}, {})"
       , connection_information.control
       , connection_information.transport

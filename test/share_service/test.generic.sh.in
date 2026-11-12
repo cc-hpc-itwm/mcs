@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 
@@ -23,20 +23,20 @@ MCS_TEST_SHARE_SERVICE_UNIQUE_ID="$(hostname).$$"
 
 protocol=0
 
-for MCS_TEST_SHARE_SERVICE_PROTOCOL in                  \
-    "ip::tcp()"                                         \
+for MCS_TEST_SHARE_SERVICE_PROTOCOL in                               \
+    "ip::tcp()"                                                      \
     "local::stream_protocol(\"${TMP_DIRECTORY}/SOCK\")"
 do
   MCS_TEST_SHARE_SERVICE_PATH="${TMP_DIRECTORY}/mcs_service_test-${protocol}.${MCS_TEST_SHARE_SERVICE_UNIQUE_ID}"
   protocol=$((protocol+1))
 
-  "${MCS_TEST_SHARE_SERVICE_BIN_PROVIDER}"             \
-      "${MCS_TEST_SHARE_SERVICE_PROTOCOL}"             \
-      "${MCS_TEST_SHARE_SERVICE_PATH}"                 \
-      "ScopedRunningIOContext::NumberOfThreads 1" &
+  "${MCS_TEST_SHARE_SERVICE_BIN_PROVIDER}"                           \
+      --endpoint "${MCS_TEST_SHARE_SERVICE_PROTOCOL}"                \
+      --share-service-path "${MCS_TEST_SHARE_SERVICE_PATH}"          \
+      --number-of-threads "ScopedIOContext::NumberOfThreads (1)"
 
   DAEMON_PATH="${MCS_TEST_SHARE_SERVICE_PATH}"
-  source "${TESTING_BASH_DIRECTORY}/daemonize"
+  source "${TESTING_BASH_DIRECTORY}/daemonized"
 
   MCS_TEST_SHARE_SERVICE_TESTCASE_OUTPUT="${TMP_DIRECTORY}/${MCS_TEST_SHARE_SERVICE_TESTCASE}.${MCS_TEST_SHARE_SERVICE_UNIQUE_ID}.out"
   MCS_TEST_SHARE_SERVICE_TEST_SHMEM_PREFIX="test.generic.${MCS_TEST_SHARE_SERVICE_UNIQUE_ID}"

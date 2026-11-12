@@ -777,34 +777,11 @@ namespace mcs::util
     ASSERT_TRUE (reader.get());
   }
 
-  // first_owner                                     second_owner
-  // |                                               |
-  // | lock (mutex)                                  | latch.wait
-  // | latch.count_down()                            |
-  // |   releases latch for second_owner  ==>        | lock (mutex)
-  // |                                               |   waits for first_owner to release mutex
-  // |                                               |   :
-  // | sleep_for (10ms)                              |   :
-  // |   ensures second_owner is waiting for mutex   |   :
-  // |                                               |   :
-  // | first_owner_resource.modify()                 |   :
-  // |   gives second_owner something to observe     |   :
-  // |                                               |   :
-  // | unlock (mutex)                                |   :
-  // |   allows second_owner to acquire mutex        |   acquires mutex
-  // |                                               |
-  // | lock (mutex)                                  | tests modification of first_owner_resource
-  // |    waits for second_owner to release mutex    |
-  // |    :                                          | sleep_for (10ms)
-  // |    :                                          |   ensures first_owner is waiting for mutex
-  // |    :                                          |
-  // |    :                                          | second_owner_resource.modify()
-  // |    :                                          |   gives first_owner something to observe
-  // |    :                                          |
-  // |    :                                          | return
-  // |    : acquire mutex                            |   unlocks mutex
-  // |                                               |
-  // | return                                        |
+  // Synchronize the handoff explicitly, even with a FIFO queue: a
+  // sleep cannot guarantee that the second owner has requested the
+  // lock. After unlocking, the first owner waits until the second
+  // owner has acquired its shared lock before reacquiring the unique
+  // lock and checking both modifications.
   //
   TYPED_TEST
     ( MCSLockR
@@ -816,7 +793,8 @@ namespace mcs::util
     auto first_owner_resource {SharedResource{}};
     auto second_owner_resource {SharedResource{}};
 
-    auto lock_is_acquired {std::latch {1}};
+    auto first_lock_is_acquired {std::latch {1}};
+    auto second_lock_is_acquired {std::latch {1}};
 
     auto first_owner
       { std::async
@@ -825,25 +803,14 @@ namespace mcs::util
           {
             auto lock {std::unique_lock (mutex)};
 
-            lock_is_acquired.count_down();
-
-            std::this_thread::sleep_for (std::chrono::milliseconds {10});
+            first_lock_is_acquired.count_down();
 
             first_owner_resource.modify();
 
             lock.unlock();
 
-            // Ensures the second owner has acquired the lock.
-            // This is not necessary for FIFO.
-            //
-            std::this_thread::sleep_for (std::chrono::milliseconds {10});
+            second_lock_is_acquired.wait();
 
-            // now the second owner can acquire the lock and observe
-            // the modification of first_owner_resource.
-            // After that the second owner modifies second_owner_resource,
-            // which is observed by the first owner after it reacquires
-            // the lock.
-            //
             lock.lock();
 
             return (  first_owner_resource.is_modified()
@@ -858,16 +825,16 @@ namespace mcs::util
         ( std::launch::async
         , [&]
           {
-            lock_is_acquired.wait();
+            first_lock_is_acquired.wait();
 
             auto const lock {std::shared_lock (mutex)};
+
+            second_lock_is_acquired.count_down();
 
             if (!first_owner_resource.is_modified())
             {
               return false;
             }
-
-            std::this_thread::sleep_for (std::chrono::milliseconds {10});
 
             second_owner_resource.modify();
 

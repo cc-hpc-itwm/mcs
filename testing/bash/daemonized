@@ -1,0 +1,9 @@
+# Copyright (C) 2026 Fraunhofer ITWM
+# License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
+
+test -s ${DAEMON_PATH}/PID
+
+source "${TESTING_BASH_DIRECTORY}/wait"
+
+on_exit+=("wait 50 test ! -s ${DAEMON_PATH}/PID")
+on_exit+=("kill $(cat ${DAEMON_PATH}/PID)")

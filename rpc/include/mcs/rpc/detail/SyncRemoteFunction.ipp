@@ -1,4 +1,4 @@
-// Copyright (C) 2022,2024-2025 Fraunhofer ITWM
+// Copyright (C) 2022,2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <utility>
@@ -25,7 +25,7 @@ namespace mcs::rpc
         ( Command&& command
         ) -> typename Command::Response
   {
-    return _client (std::forward<Command> (command));
+    return _client (std::move (command));
   }
 
   template<typename Client, is_command Command>

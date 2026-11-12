@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -19,8 +19,8 @@ namespace mcs::core::storage::trace::event::segment
     auto const essence
       { [&] (auto const& x)
         {
-          return std::tie ( x._parameter_segment_create
-                          , x._size
+          return std::tie ( x.parameter_segment_create
+                          , x.size
                           );
         }
       };

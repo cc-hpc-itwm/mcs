@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -20,7 +20,7 @@ namespace mcs::core::transport::implementation::libfabric::libfabric
     [[nodiscard]] operator std::vector<std::byte> const&() const noexcept;
 
   private:
-    template<typename> friend struct serialization::Implementation;
+    friend struct serialization::Implementation<Name>;
     std::vector<std::byte> _value;
   };
 }
@@ -36,8 +36,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::transport::implementation::libfabric::libfabric::Name const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   }
   ;
 }

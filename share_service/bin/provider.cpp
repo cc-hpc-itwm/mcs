@@ -1,48 +1,98 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <csignal>
 #include <fmt/format.h>
 #include <mcs/rpc/Concepts.hpp>
+#include <mcs/rpc/ScopedIOContext.hpp>
 #include <mcs/rpc/ScopedRunningIOContext.hpp>
 #include <mcs/share_service/Provider.hpp>
 #include <mcs/util/ASIO/Connectable.hpp>
 #include <mcs/util/ASIO/Endpoint.hpp>
 #include <mcs/util/TemporaryDirectory.hpp>
 #include <mcs/util/TemporaryFile.hpp>
-#include <mcs/util/main.hpp>
+#include <mcs/util/arguments/View.hpp>
+#include <mcs/util/command_line/Parsed.hpp>
+#include <mcs/util/daemon.hpp>
+#include <mcs/util/daemon/option.hpp>
 #include <mcs/util/read/read.hpp>
 #include <mcs/util/syscall/getpid.hpp>
+#include <memory>
 #include <stdexcept>
 #include <utility>
 
 namespace
 {
-  auto provider_main (mcs::util::Args args) -> int
+  namespace option
   {
-    if (args.size() != 4)
-    {
-      throw std::invalid_argument
-        { fmt::format
-          ( "usage: {} endpoint share_service_path number_of_threads"
-          , args[0]
-          )
-        };
-    }
+    using mcs::util::command_line::option::Parameter;
 
+    constexpr auto endpoint {Parameter {"endpoint"}};
+    constexpr auto number_of_threads {Parameter {"number-of-threads"}};
+    constexpr auto share_service_path {Parameter {"share-service-path"}};
+  }
+
+  [[nodiscard]] auto usage (mcs::util::arguments::View args)
+  {
+    return fmt::format
+      ( "usage: {0} [OPTIONS]\n"
+        "Required options:\n"
+        "  --{1} <ENDPOINT>\n"
+        "    Share-service listening endpoint.\n"
+        "  --{2} <PATH>\n"
+        "    Directory for publishing share-service information.\n"
+        "  --{3} <COUNT>\n"
+        "    Number of RPC I/O threads.\n"
+      , args.at (0)
+      , option::endpoint
+      , option::share_service_path
+      , option::number_of_threads
+      );
+  }
+
+  auto help (mcs::util::arguments::View args)
+  {
+    fmt::print
+      ( "{0}\nOptional settings:\n"
+        "  {1}  Run in foreground (default: background)\n"
+      , usage (args)
+      , mcs::util::daemon::option::foreground
+      );
+  }
+
+  auto provider_main
+    ( mcs::util::arguments::View args
+    , mcs::util::Daemon& daemon
+    ) -> int
+  {
+    auto const options
+      { args.from (1UL).parse
+        ( mcs::util::command_line::Schema{}
+        . add (option::endpoint)
+        . add (option::share_service_path)
+        . add (option::number_of_threads)
+        )
+      };
     return mcs::util::ASIO::run
-      ( mcs::util::read::read<mcs::util::ASIO::Endpoint> (args[1])
+      ( mcs::util::read::read<mcs::util::ASIO::Endpoint>
+          ( options.at (option::endpoint)
+          )
       , [&]<mcs::util::ASIO::is_protocol Protocol>
           (typename Protocol::endpoint endpoint)
         {
           auto const temporary_directory
-            { mcs::util::TemporaryDirectory {args[2]}
+            { mcs::util::TemporaryDirectory
+              { options.at (option::share_service_path)
+              }
             };
 
+          auto storages
+            { typename mcs::share_service::Provider<Protocol>::Storages{}
+            };
           auto io_context
             { mcs::rpc::ScopedRunningIOContext
-                { mcs::util::read::read<mcs::rpc::ScopedRunningIOContext::NumberOfThreads>
-                    (args[3])
+                { mcs::util::read::read<mcs::rpc::ScopedIOContext::NumberOfThreads>
+                    (options.at (option::number_of_threads))
                 , SIGINT, SIGTERM
                 }
             };
@@ -51,6 +101,7 @@ namespace
             { mcs::share_service::Provider<Protocol>
                 { io_context
                 , endpoint
+                , std::addressof (storages)
                 }
             };
 
@@ -70,10 +121,9 @@ namespace
               }
             };
 
-          io_context.join();
+          daemon.ready();
 
-          // \todo daemonize and proper return once the connection
-          // information has been written
+          io_context.join();
 
           return EXIT_SUCCESS;
         }
@@ -83,5 +133,5 @@ namespace
 
 auto main (int argc, char const** argv) noexcept -> int
 {
-  return mcs::util::main (argc, argv, provider_main);
+  return mcs::util::daemonize (argc, argv, help, provider_main);
 }

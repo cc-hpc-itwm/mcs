@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -36,7 +36,7 @@ namespace mcs::block_device::meta_data
     [[nodiscard]] auto number_of_blocks() const -> block::Count;
     [[nodiscard]] auto blocks() const -> std::list<block::Range>;
     [[nodiscard]] auto add (Storage) const -> Blocks::AddResult;
-    auto remove (block::Range) const -> Blocks::RemoveResult;
+    [[nodiscard]] auto remove (block::Range) const -> Blocks::RemoveResult;
     [[nodiscard]] auto location (block::ID) const -> Blocks::Location;
 
   private:

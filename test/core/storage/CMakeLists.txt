@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 function (mcs_test_core_storage name)
@@ -15,5 +15,6 @@ function (mcs_test_core_storage name)
 endfunction()
 
 mcs_test_core_storage (MaxSize)
+mcs_test_core_storage (Selection)
 
 add_subdirectory (implementation)

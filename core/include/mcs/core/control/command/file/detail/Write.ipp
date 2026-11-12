@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Fraunhofer ITWM
+// Copyright (C) 2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -9,27 +9,27 @@
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::control::command::file::Write>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::control::command::file::Write>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::control::command::file::Write>::format
       ( mcs::core::control::command::file::Write const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "control::provider::file::Write "
       , std::make_tuple 
-          ( value._storage_id
-          , value._parameter_file_write
-          , value._segment_id
-          , value._offset
-          , value._file
-          , value._range
+          ( value.storage_id
+          , value.parameter_file_write
+          , value.segment_id
+          , value.offset
+          , value.file
+          , value.range
           )
       );
   }
@@ -47,12 +47,12 @@ namespace mcs::util::read
     using Write = mcs::core::control::command::file::Write;
     return std::make_from_tuple<Write>
       ( parse< std::tuple
-               < decltype (Write::_storage_id)
-               , decltype (Write::_parameter_file_write)
-               , decltype (Write::_segment_id)
-               , decltype (Write::_offset)
-               , decltype (Write::_file)
-               , decltype (Write::_range)
+               < decltype (Write::storage_id)
+               , decltype (Write::parameter_file_write)
+               , decltype (Write::segment_id)
+               , decltype (Write::offset)
+               , decltype (Write::file)
+               , decltype (Write::range)
                >
              > (state)
       );

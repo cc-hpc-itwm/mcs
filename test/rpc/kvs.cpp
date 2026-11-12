@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/ip/tcp.hpp>
@@ -202,7 +202,9 @@ TYPED_TEST (RPCClientT, synchronous_call_basics)
     (client1.template call<Assign> (key, random_value()).old_value.has_value());
 
   {
-    auto const old {client1 (Assign {key, random_value()}).old_value};
+    auto const old
+      { client1 (Assign {.key = key, .value = random_value()}).old_value
+      };
 
     ASSERT_TRUE (old.has_value() && (old.value() == value));
   }

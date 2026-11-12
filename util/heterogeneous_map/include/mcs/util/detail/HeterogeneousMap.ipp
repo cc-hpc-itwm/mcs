@@ -77,7 +77,7 @@ namespace mcs::util
 
   template<heterogeneous_map::is_key Key, typename... Ts>
     template<typename Fun>
-    requires (std::invocable<Fun, Ts const&> && ...)
+    requires (mcs::util::is_visitor<Fun, Ts const&...>)
       auto UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>>::visit
         ( Key key
         , Fun&& fun
@@ -88,7 +88,7 @@ namespace mcs::util
 
   template<heterogeneous_map::is_key Key, typename... Ts>
     template<typename Fun>
-    requires (std::invocable<Fun, Ts&> && ...)
+    requires (mcs::util::is_visitor<Fun, Ts&...>)
       auto UnsynchronizedHeterogeneousMap<Key, util::type::List<Ts...>>::visit
         ( Key key
         , Fun&& fun

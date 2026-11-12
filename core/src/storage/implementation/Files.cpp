@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -16,6 +16,7 @@
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
 #include <mcs/util/Copy.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/read/read.hpp>
 #include <mcs/util/syscall/statfs.hpp>
 #include <mcs/util/touch.hpp>
@@ -102,7 +103,7 @@ namespace mcs::core::storage::implementation
         { fmt::format
           ( "storage::implementation::Files::PrefixContainsNonSegmentFile: prefix '{}', file '{}'"
           , prefix
-          , non_segment_file
+          , util::FMT::STD::FILESYSTEM::Path {non_segment_file}
           )
       }
     , _prefix {prefix}
@@ -199,7 +200,10 @@ namespace mcs::serialization
     auto prefix {load<decltype (mcs::core::storage::implementation::Files::Parameter::Create::prefix)> (ia)};
     auto max_size {load<decltype (mcs::core::storage::implementation::Files::Parameter::Create::max_size)> (ia)};
 
-    return mcs::core::storage::implementation::Files::Parameter::Create {prefix, max_size};
+    return mcs::core::storage::implementation::Files::Parameter::Create
+      { .prefix = prefix
+      , .max_size = max_size
+      };
   }
 }
 
@@ -221,6 +225,31 @@ namespace mcs::serialization
     auto persistency {load<decltype (mcs::core::storage::implementation::Files::Parameter::Segment::Create::persistency)> (ia)};
 
     return mcs::core::storage::implementation::Files::Parameter::Segment::Create {persistency};
+  }
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::Persistency>::output
+    ( OArchive& oa
+    , mcs::core::storage::implementation::Files::Parameter::Segment::Persistency const& persistency
+    ) -> OArchive&
+  {
+    save (oa, persistency._value);
+
+    return oa;
+  }
+  auto Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::Persistency>::input
+    ( IArchive& ia
+    ) -> mcs::core::storage::implementation::Files::Parameter::Segment::Persistency
+  {
+    using Persistency
+      = core::storage::implementation::Files::Parameter::Segment::Persistency
+      ;
+
+    auto _value {load<decltype (Persistency::_value)> (ia)};
+
+    return Persistency {_value};
   }
 }
 
@@ -380,7 +409,7 @@ namespace mcs::core::storage::implementation
     }
 
     auto const size_freed
-      { std::visit
+      { file->_persistency.visit
         ( util::overloaded
           ( [] (Parameter::Segment::OnRemove::Keep)
             {
@@ -392,7 +421,6 @@ namespace mcs::core::storage::implementation
               return memory::make_size (file->data().size());
             }
           )
-        , file->_persistency
         )
       };
 

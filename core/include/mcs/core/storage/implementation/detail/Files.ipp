@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <cerrno>
@@ -12,8 +12,9 @@
 #include <mcs/serialization/OArchive.hpp>
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
-#include <mcs/util/FMT/STD/filesystem/path.hpp>
-#include <mcs/util/FMT/STD/optional.hpp>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
+#include <mcs/util/FMT/STD/Optional.hpp>
+#include <mcs/util/FMT/STD/Variant.hpp>
 #include <mcs/util/execute_and_die_on_exception.hpp>
 #include <mcs/util/overloaded.hpp>
 #include <mcs/util/read/Read.hpp>
@@ -26,6 +27,7 @@
 #include <mcs/util/syscall/munmap.hpp>
 #include <memory>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace mcs::core::storage::implementation
@@ -144,7 +146,7 @@ namespace mcs::core::storage::implementation
           { fmt::format
             ( "storage::implementation::Files::OpenFileImpl::CouldNotOpen: "
               "path '{}', mode '{}', error '{}'"
-            , path
+            , util::FMT::STD::FILESYSTEM::Path {path}
             , mode
             , strerror (error_code)
             )
@@ -186,7 +188,7 @@ namespace mcs::core::storage::implementation
           { fmt::format
             ( "storage::implementation::Files::OpenFileImpl::CouldNotCloseAfterTouch: "
               "path '{}', error '{}'"
-            , path
+            , util::FMT::STD::FILESYSTEM::Path {path}
             , strerror (error_code)
             )
           }
@@ -216,7 +218,7 @@ namespace mcs::core::storage::implementation
       , Parameter::Segment::Persistency persistency
       , memory::Size size
       )
-        : _path {path}
+        : _path {std::move (path)}
         , _persistency {persistency}
         , _size {memory::size_cast<std::size_t> (size)}
         , _data
@@ -244,7 +246,7 @@ namespace mcs::core::storage::implementation
 
                             throw mcs::Error
                               { fmt::format ( "Failure when closing '{}': {}"
-                                            , _path
+                                            , mcs::util::FMT::STD::FILESYSTEM::Path {_path}
                                             , strerror (error_code)
                                             )
                               };
@@ -283,7 +285,7 @@ namespace mcs::core::storage::implementation
   {
     util::execute_and_die_on_exception
       ( fmt::format ( "Failure when removing '{}'"
-                    , open_file->_path
+                    , mcs::util::FMT::STD::FILESYSTEM::Path {open_file->_path}
                     )
       , [&]
         {
@@ -292,7 +294,7 @@ namespace mcs::core::storage::implementation
             , open_file->_size
             );
 
-          std::visit
+          open_file->_persistency.visit
             ( util::overloaded
               ( [] (Parameter::Segment::OnRemove::Keep) noexcept
                 {
@@ -303,7 +305,6 @@ namespace mcs::core::storage::implementation
                   std::filesystem::remove (open_file->_path);
                 }
               )
-            , open_file->_persistency
             );
 
           std::default_delete<OpenFileImpl>{} (open_file);
@@ -356,18 +357,18 @@ namespace mcs::core::storage::implementation
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Tag>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Tag>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Tag>::format
       ( mcs::core::storage::implementation::Files::Tag const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "mcs::core::storage::implementation::Files"
       , std::make_tuple()
@@ -392,17 +393,22 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Prefix>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Prefix>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Prefix>::format
       ( mcs::core::storage::implementation::Files::Prefix const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
-    return fmt::format_to (ctx.out(), "{}{}", "Prefix ", value.value);
+    return fmt::format_to
+      ( context.out()
+      , "{}{}"
+      , "Prefix "
+      , mcs::util::FMT::STD::FILESYSTEM::Path {value.value}
+      );
   }
 }
 
@@ -424,18 +430,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Create>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Create>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Create>::format
       ( mcs::core::storage::implementation::Files::Parameter::Create const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files "
       , std::make_tuple (value.prefix, value.max_size)
@@ -466,18 +472,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Size::Max>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Size::Max>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Size::Max>::format
       ( mcs::core::storage::implementation::Files::Parameter::Size::Max const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files::Size::Max"
       , std::make_tuple()
@@ -502,18 +508,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Size::Used>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Size::Used>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Size::Used>::format
       ( mcs::core::storage::implementation::Files::Parameter::Size::Used const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files::Size::Used"
       , std::make_tuple()
@@ -535,21 +541,94 @@ namespace mcs::util::read
   }
 }
 
+namespace mcs::core::storage::implementation
+{
+  constexpr Files::Parameter::Segment::Persistency::Persistency
+    ( Value value
+    ) noexcept
+      : _value {value}
+  {
+    static_assert (std::is_nothrow_copy_constructible_v<decltype (_value)>);
+  }
+  constexpr Files::Parameter::Segment::Persistency::Persistency
+    ( OnRemove::Keep keep
+    ) noexcept
+      : Persistency {Value {keep}}
+  {}
+  constexpr Files::Parameter::Segment::Persistency::Persistency
+    ( OnRemove::Remove remove
+    ) noexcept
+      : Persistency {Value {remove}}
+  {}
+
+  template<typename Visitor>
+    requires ( util::is_visitor
+               < Visitor
+               , Files::Parameter::Segment::OnRemove::Keep const&
+               , Files::Parameter::Segment::OnRemove::Remove const&
+               >
+             )
+  constexpr auto Files::Parameter::Segment::Persistency::visit
+    ( Visitor&& visitor
+    ) const
+  {
+    return std::visit (std::forward<Visitor> (visitor), _value);
+  }
+}
+
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Persistency>::parse
+      ( ParseContext& context
+      )
   {
-    return ctx.begin();
+    return context.begin();
+  }
+
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Persistency>::format
+      ( mcs::core::storage::implementation::Files::Parameter::Segment::Persistency const& persistency
+      , FormatContext& context
+      ) const -> decltype (context.out())
+  {
+    return fmt::format_to
+      ( context.out()
+      , "{}"
+      , mcs::util::FMT::STD::Variant {persistency._value}
+      );
+  }
+}
+
+namespace mcs::util::read
+{
+  template<typename Char>
+    auto Read<mcs::core::storage::implementation::Files::Parameter::Segment::Persistency>::read
+      ( State<Char>& state
+      ) -> mcs::core::storage::implementation::Files::Parameter::Segment::Persistency
+  {
+    using Persistency
+      = mcs::core::storage::implementation::Files::Parameter::Segment::Persistency;
+
+    return Persistency {parse<decltype (Persistency::_value)> (state)};
+  }
+}
+
+namespace fmt
+{
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep>::parse (ParseContext& context)
+  {
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep>::format
       ( mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files::Segment::OnRemove::Keep"
       , std::make_tuple()
@@ -574,18 +653,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove>::format
       ( mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files::Segment::OnRemove::Remove"
       , std::make_tuple()
@@ -610,18 +689,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Create>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Create>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Create>::format
       ( mcs::core::storage::implementation::Files::Parameter::Segment::Create const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files::Segment::Create "
       , std::make_tuple (value.persistency)
@@ -646,18 +725,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval>::format
       ( mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files::Segment::ForceRemoval"
       , std::make_tuple()
@@ -682,21 +761,23 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Remove>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Remove>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Remove>::format
       ( mcs::core::storage::implementation::Files::Parameter::Segment::Remove const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files::Segment::Remove "
-      , std::make_tuple (value.force_removal)
+      , std::make_tuple
+        ( mcs::util::FMT::STD::Optional {value.force_removal}
+        )
       );
   }
 }
@@ -718,18 +799,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Chunk::Description>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Chunk::Description>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::Chunk::Description>::format
       ( mcs::core::storage::implementation::Files::Parameter::Chunk::Description const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files::Chunk::Description"
       , std::make_tuple()
@@ -754,18 +835,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::File::Read>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::File::Read>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::File::Read>::format
       ( mcs::core::storage::implementation::Files::Parameter::File::Read const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files::File::Read"
       , std::make_tuple()
@@ -790,18 +871,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::File::Write>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::File::Write>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Files::Parameter::File::Write>::format
       ( mcs::core::storage::implementation::Files::Parameter::File::Write const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Files::File::Write"
       , std::make_tuple()
@@ -876,7 +957,7 @@ namespace fmt
       , "Files::Chunk::Description<{}> {}"
       , Access{}
       , std::make_tuple
-        ( description.path
+        ( mcs::util::FMT::STD::FILESYSTEM::Path {description.path}
         , description.file_size
         , description.range
         )

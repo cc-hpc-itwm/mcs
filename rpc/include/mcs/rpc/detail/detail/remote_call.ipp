@@ -1,21 +1,39 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <asio/awaitable.hpp>
-#include <asio/co_spawn.hpp>
+#include <asio/use_awaitable.hpp>
 #include <asio/write.hpp>
-#include <exception>
-#include <mcs/rpc/detail/Buffer.hpp>
-#include <mcs/rpc/detail/CallID.hpp>
 #include <mcs/rpc/detail/CommandIndex.hpp>
 #include <mcs/rpc/detail/Completion.hpp>
-#include <mcs/rpc/detail/receive_buffer_with_header.hpp>
 #include <mcs/serialization/OArchive.hpp>
-#include <tuple>
 #include <utility>
 
 namespace mcs::rpc::detail
 {
+  template< is_protocol Protocol
+          , is_command Command
+          , is_command... Commands
+          , typename CommandHolder
+          >
+    auto send_command
+      ( std::shared_ptr<typename Protocol::socket> socket
+      , CallID call_id
+      , CommandHolder command
+      ) -> asio::awaitable<void>
+  {
+    auto constexpr index {command_index<Command, Commands...>()};
+
+    auto oa {serialization::OArchive {call_id, index, command.ref()}};
+
+    co_await asio::async_write (*socket, oa.buffers(), asio::use_awaitable);
+
+    if constexpr (command_is_streaming<Command, typename Protocol::socket>)
+    {
+      command.ref().stream (*socket);
+    }
+  }
+
   template< is_protocol Protocol
           , is_access_policy AccessPolicy
           , is_command Command
@@ -24,70 +42,41 @@ namespace mcs::rpc::detail
           >
     requires (is_one_of_the_commands<Command, Commands...>)
     auto remote_call
-      ( ClientState<Protocol, AccessPolicy, Commands...> client
+      ( std::shared_ptr<client::Connection<Protocol, typename AccessPolicy::admission>> connection
+      , std::shared_ptr<AccessPolicy> access_policy
       , CommandHolder command
       ) -> std::future<typename Command::Response>
   {
     auto promise {std::promise<typename Command::Response>{}};
     auto future {promise.get_future()};
-    auto const call_id
-      {client.access_policy->start_call (Completion {std::move (promise)})};
-    auto constexpr index {command_index<Command, Commands...>()};
 
-    auto oa {serialization::OArchive { call_id
-                                     , index
-                                     , command.ref()
-                                     }
-            };
+    auto completion {Completion {std::move (promise), access_policy}};
 
-    asio::write (*client.socket, oa.buffers());
-
-    if constexpr (command_is_streaming<Command, typename Protocol::socket>)
+    try
     {
-      command.ref().stream (*client.socket);
-    }
-
-    if constexpr (needs_sent_notification<AccessPolicy>)
-    {
-      client.access_policy->sent();
-    }
-
-    auto completion
-      { [access_policy = client.access_policy]
-          ( std::exception_ptr rpc_error
-          , std::tuple<CallID, Buffer> response
-          )
-        {
-          if (rpc_error)
+      connection->submit
+        ( [command = std::move (command)]
+            ( std::shared_ptr<typename Protocol::socket> socket
+            , CallID call_id
+            ) mutable
           {
-            access_policy->error (rpc_error);
+            return send_command<Protocol, Command, Commands...>
+              ( std::move (socket)
+              , call_id
+              , std::move (command)
+              );
           }
-          else
-          {
-            // \note completed_call_id might be different from call_id
-            auto& [completed_call_id, buffer] {response};
-
-            access_policy->completion (completed_call_id) (std::move (buffer));
-          }
-        }
-      };
-
-    if constexpr (needs_read_lock<AccessPolicy>)
-    {
-      asio::co_spawn
-        ( client.socket->get_executor()
-        , receive_buffer_with_header<Protocol, CallID>
-            (client.socket, client.access_policy->read_lock())
-        , completion
+        , std::move (completion)
         );
     }
-    else
+    catch (...)
     {
-      asio::co_spawn
-        ( client.socket->get_executor()
-        , receive_buffer_with_header<Protocol, CallID> (client.socket)
-        , completion
-        );
+      if constexpr (has_error_execution<AccessPolicy>)
+      {
+        access_policy->error_execution();
+      }
+
+      throw;
     }
 
     return future;

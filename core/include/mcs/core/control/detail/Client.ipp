@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <memory>
@@ -83,10 +83,10 @@ namespace mcs::core::control
       ) const -> storage::MaxSize
   {
     return Base::operator()
-      ( command::storage::size::Max
-        { storage_id
-        , storage_parameter
-        }
+      ( command::storage::size::make_max
+          ( storage_id
+          , std::move (storage_parameter)
+          )
       );
   }
 }
@@ -106,10 +106,10 @@ namespace mcs::core::control
       ) const -> memory::Size
   {
     return Base::operator()
-      ( command::storage::size::Used
-        { storage_id
-        , storage_parameter
-        }
+      ( command::storage::size::make_used
+          ( storage_id
+          , std::move (storage_parameter)
+          )
       );
   }
 }
@@ -131,9 +131,9 @@ namespace mcs::core::control
   {
     return Base::operator()
       ( command::storage::Size
-        { storage_id
-        , storage_parameter_size_max
-        , storage_parameter_size_used
+        { .storage_id = storage_id
+        , .storage_parameter_size_max = storage_parameter_size_max
+        , .storage_parameter_size_used = storage_parameter_size_used
         }
       );
   }
@@ -154,11 +154,11 @@ namespace mcs::core::control
       ) const -> storage::segment::ID
   {
     return Base::operator()
-      ( command::segment::Create
-        { storage_id
-        , storage_parameter
-        , memory_size
-        }
+      ( command::segment::make_create
+          ( storage_id
+          , std::move (storage_parameter)
+          , memory_size
+          )
       );
   }
 }
@@ -179,11 +179,11 @@ namespace mcs::core::control
       ) const -> memory::Size
   {
     return Base::operator()
-      ( command::segment::Remove
-        { storage_id
-        , storage_parameter
-        , segment_id
-        }
+      ( command::segment::make_remove
+          ( storage_id
+          , std::move (storage_parameter)
+          , segment_id
+          )
       );
   }
 }
@@ -236,12 +236,12 @@ namespace mcs::core::control
   {
     return Base::operator()
       ( command::file::Read
-        { storage_id
-        , storage_parameter
-        , segment_id
-        , offset
-        , path
-        , range
+        { .storage_id = storage_id
+        , .parameter_file_read = storage_parameter
+        , .segment_id = segment_id
+        , .offset = offset
+        , .file = path
+        , .range = range
         }
       );
   }
@@ -264,12 +264,12 @@ namespace mcs::core::control
   {
     return Base::operator()
       ( command::file::Write
-        { storage_id
-        , storage_parameter
-        , segment_id
-        , offset
-        , path
-        , range
+        { .storage_id = storage_id
+        , .parameter_file_write = storage_parameter
+        , .segment_id = segment_id
+        , .offset = offset
+        , .file = path
+        , .range = range
         }
       );
   }

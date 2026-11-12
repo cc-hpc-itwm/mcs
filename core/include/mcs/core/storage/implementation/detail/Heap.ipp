@@ -1,9 +1,10 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <exception>
 #include <fmt/ranges.h>
 #include <iterator>
+#include <mcs/util/FMT/STD/Optional.hpp>
 #include <mcs/util/cast.hpp>
 #include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/prefix.hpp>
@@ -128,18 +129,18 @@ namespace mcs::core::storage::implementation
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Heap::Tag>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Tag>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Heap::Tag>::format
       ( mcs::core::storage::implementation::Heap::Tag const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "mcs::core::storage::implementation::Heap"
       , std::make_tuple()
@@ -164,18 +165,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Create>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Create>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Create>::format
       ( mcs::core::storage::implementation::Heap::Parameter::Create const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Heap "
       , std::make_tuple (value.max_size)
@@ -200,18 +201,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Max>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Max>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Max>::format
       ( mcs::core::storage::implementation::Heap::Parameter::Size::Max const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Heap::Size::Max"
       , std::make_tuple()
@@ -236,18 +237,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Used>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Used>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Size::Used>::format
       ( mcs::core::storage::implementation::Heap::Parameter::Size::Used const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Heap::Size::Used"
       , std::make_tuple()
@@ -272,18 +273,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed>::format
       ( mcs::core::storage::implementation::Heap::Parameter::Segment::MLOCKed const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Heap::Segment::MLOCKed"
       , std::make_tuple()
@@ -308,21 +309,21 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Create>::format
       ( mcs::core::storage::implementation::Heap::Parameter::Segment::Create const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Heap::Segment::Create "
-      , std::make_tuple (value.mlocked)
+      , std::make_tuple (mcs::util::FMT::STD::Optional {value.mlocked})
       );
   }
 }
@@ -344,18 +345,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Remove>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Remove>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Segment::Remove>::format
       ( mcs::core::storage::implementation::Heap::Parameter::Segment::Remove const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Heap::Segment::Remove"
       , std::make_tuple()
@@ -380,18 +381,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Chunk::Description>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Chunk::Description>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::Chunk::Description>::format
       ( mcs::core::storage::implementation::Heap::Parameter::Chunk::Description const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Heap::Chunk::Description"
       , std::make_tuple()
@@ -416,18 +417,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::File::Read>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::File::Read>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::File::Read>::format
       ( mcs::core::storage::implementation::Heap::Parameter::File::Read const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Heap::File::Read"
       , std::make_tuple()
@@ -452,18 +453,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::File::Write>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::File::Write>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::storage::implementation::Heap::Parameter::File::Write>::format
       ( mcs::core::storage::implementation::Heap::Parameter::File::Write const&
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "Heap::File::Write"
       , std::make_tuple()

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 namespace fmt
@@ -19,7 +19,7 @@ namespace fmt
     return fmt::format_to
       ( context.out()
       , "trace::event::segment::create::Result = {}"
-      , segment_create_result._segment_id
+      , segment_create_result.segment_id
       );
   }
 }

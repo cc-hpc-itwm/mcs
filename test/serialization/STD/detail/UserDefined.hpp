@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -83,11 +83,11 @@ namespace mcs::testing::random
   template<>
     struct value<UserDefined>
   {
-    value<int> _value{};
+    value<int> value{};
 
     auto operator()()
     {
-      return UserDefined {_value()};
+      return UserDefined {value()};
     }
   };
 }

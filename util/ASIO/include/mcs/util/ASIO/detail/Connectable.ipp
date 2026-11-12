@@ -1,10 +1,11 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <exception>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
-#include <mcs/util/FMT/STD/variant.hpp>
+#include <fmt/std.h>
+#include <mcs/util/FMT/STD/Variant.hpp>
 #include <mcs/util/overloaded.hpp>
 #include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/STD/tuple.hpp>
@@ -15,54 +16,88 @@
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::util::ASIO::AnyConnectable>::parse
+      ( ParseContext& context
+      )
   {
-    return ctx.begin();
+    return context.begin();
   }
+
   template<typename FormatContext>
-    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>>::format
-      ( mcs::util::ASIO::Connectable<asio::ip::tcp> const& connectable
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+    constexpr auto formatter<mcs::util::ASIO::AnyConnectable>::format
+      ( mcs::util::ASIO::AnyConnectable const& connectable
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
-      , "ip::tcp {}"
-      , std::make_tuple (connectable.address_or_hostname, connectable.port)
+      ( context.out()
+      , "{}"
+      , mcs::util::FMT::STD::Variant {connectable._value}
       );
   }
 
   template<typename ParseContext>
-    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>::Address>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
+  }
+  template<typename FormatContext>
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>>::format
+      ( mcs::util::ASIO::Connectable<asio::ip::tcp> const& connectable
+      , FormatContext& context
+      ) const -> decltype (context.out())
+  {
+    return fmt::format_to
+      ( context.out()
+      , "ip::tcp {}"
+      , std::make_tuple
+        ( mcs::util::FMT::STD::Variant {connectable.address_or_hostname}
+        , connectable.port
+        )
+      );
+  }
+
+  template<typename ParseContext>
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>::Address>::parse (ParseContext& context)
+  {
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>::Address>::format
       ( mcs::util::ASIO::Connectable<asio::ip::tcp>::Address const& address
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
-    return fmt::format_to (ctx.out(), "Address {}", address.address_string);
+    return fmt::format_to (context.out(), "Address {}", address.address_string);
   }
 
   template<typename ParseContext>
-    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>::Hostname>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>::Hostname>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::util::ASIO::Connectable<asio::ip::tcp>::Hostname>::format
       ( mcs::util::ASIO::Connectable<asio::ip::tcp>::Hostname const& hostname
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
-    return fmt::format_to (ctx.out(), "Hostname {}", hostname.hostname);
+    return fmt::format_to (context.out(), "Hostname {}", hostname.hostname);
   }
 }
 
 namespace mcs::util::read
 {
+  template<typename Char>
+    auto Read<util::ASIO::AnyConnectable>::read
+      ( State<Char>& state
+      ) -> util::ASIO::AnyConnectable
+  {
+    return util::ASIO::AnyConnectable
+      { Read<util::ASIO::AnyConnectable::Value>::read (state)
+      };
+  }
+
   template<typename Char>
     auto Read<util::ASIO::Connectable<asio::ip::tcp>>::read
       ( State<Char>& state
@@ -118,18 +153,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::local::stream_protocol>>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::util::ASIO::Connectable<asio::local::stream_protocol>>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::util::ASIO::Connectable<asio::local::stream_protocol>>::format
       ( mcs::util::ASIO::Connectable<asio::local::stream_protocol> const& connectable
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "local::stream_protocol {}"
       , std::make_tuple (connectable.path)
       );
@@ -157,10 +192,31 @@ namespace mcs::util::read
 
 namespace mcs::util::ASIO
 {
+  template<typename Visitor>
+    requires ( util::is_visitor
+               < Visitor
+               , Connectable<asio::ip::tcp> const&
+               , Connectable<asio::local::stream_protocol> const&
+               >
+             )
+    constexpr auto AnyConnectable::visit (Visitor&& visitor) const
+  {
+    return std::visit
+      ( [&] (auto const& connectable)
+        {
+          return std::invoke
+            ( std::forward<Visitor> (visitor)
+            , connectable
+            );
+        }
+      , _value
+      );
+  }
+
   template<typename Runner, typename... Args>
     auto run (AnyConnectable connectable, Runner&& runner, Args&&... args)
   {
-    return std::visit
+    return connectable.visit
       ( util::overloaded
         ( [&] (Connectable<asio::ip::tcp> _connectable)
           {
@@ -179,7 +235,6 @@ namespace mcs::util::ASIO
                   );
           }
         )
-      , connectable
       );
   }
 }

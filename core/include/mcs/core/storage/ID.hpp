@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -27,10 +27,10 @@ namespace mcs::core::storage
 
     [[nodiscard]] constexpr explicit ID (underlying_type) noexcept;
 
-    template<typename, typename, typename> friend struct fmt::formatter;
-    template<typename> friend struct std::hash;
-    template<typename> friend struct serialization::Implementation;
-    template<typename> friend struct util::read::Read;
+    friend struct fmt::formatter<ID>;
+    friend struct std::hash<ID>;
+    friend struct serialization::Implementation<ID>;
+    friend struct util::read::Read<ID>;
   };
 }
 
@@ -45,8 +45,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::ID const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

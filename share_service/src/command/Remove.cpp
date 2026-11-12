@@ -1,9 +1,24 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/serialization/load.hpp>
 #include <mcs/serialization/save.hpp>
 #include <mcs/share_service/command/Remove.hpp>
+#include <utility>
+
+namespace mcs::share_service::command
+{
+  auto make_remove
+    ( Chunk chunk
+    , Remove::Parameters::Variant parameters
+    ) -> Remove
+  {
+    return Remove
+      { .chunk = std::move (chunk)
+      , .parameters = std::move (parameters)
+      };
+  }
+}
 
 namespace mcs::serialization
 {
@@ -24,6 +39,9 @@ namespace mcs::serialization
     auto chunk {load<decltype (mcs::share_service::command::Remove::chunk)> (ia)};
     auto parameters {load<decltype (mcs::share_service::command::Remove::parameters)> (ia)};
 
-    return mcs::share_service::command::Remove {chunk, parameters};
+    return mcs::share_service::command::make_remove
+      ( std::move (chunk)
+      , std::move (parameters)
+      );
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2022,2024-2025 Fraunhofer ITWM
+// Copyright (C) 2022,2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <type_traits>
@@ -38,19 +38,19 @@ namespace fmt
     struct formatter<mcs::rpc::detail::CommandIndex>
   {
     template<typename ParseContext>
-      constexpr auto parse (ParseContext& ctx) const
+      constexpr auto parse (ParseContext& context) const
     {
-      return ctx.begin();
+      return context.begin();
     }
 
     template<typename FormatContext>
       constexpr auto format
         ( mcs::rpc::detail::CommandIndex const& command_index
-        , FormatContext& ctx
+        , FormatContext& context
         ) const
     {
       return fmt::format_to
-        (ctx.out(), "CommandIndex {}", command_index._value);
+        (context.out(), "CommandIndex {}", command_index._value);
     }
   };
 }

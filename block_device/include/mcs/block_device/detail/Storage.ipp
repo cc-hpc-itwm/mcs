@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -9,26 +9,26 @@
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::block_device::Storage>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::block_device::Storage>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::block_device::Storage>::format
       ( mcs::block_device::Storage const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "mcs::block_device::Storage "
-      , std::make_tuple 
-          ( value._provider_connectable
-          , value._storage_id
-          , value._storage_parameter_chunk_description
-          , value._segment_id
-          , value._range
+      , std::make_tuple
+          ( value.provider_connectable
+          , value.storage_id
+          , value.storage_parameter_chunk_description
+          , value.segment_id
+          , value.range
           )
       );
   }
@@ -46,11 +46,11 @@ namespace mcs::util::read
     using Storage = mcs::block_device::Storage;
     return std::make_from_tuple<Storage>
       ( parse< std::tuple
-               < decltype (Storage::_provider_connectable)
-               , decltype (Storage::_storage_id)
-               , decltype (Storage::_storage_parameter_chunk_description)
-               , decltype (Storage::_segment_id)
-               , decltype (Storage::_range)
+               < decltype (Storage::provider_connectable)
+               , decltype (Storage::storage_id)
+               , decltype (Storage::storage_parameter_chunk_description)
+               , decltype (Storage::segment_id)
+               , decltype (Storage::range)
                >
              > (state)
       );

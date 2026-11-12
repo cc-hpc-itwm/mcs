@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -26,7 +26,7 @@ namespace mcs::util
 
     template<typename U> [[nodiscard]] auto data() const -> std::span<U>;
 
-    constexpr auto size() const noexcept -> std::size_t;
+    [[nodiscard]] constexpr auto size() const noexcept -> std::size_t;
 
   private:
     std::size_t _size {0};

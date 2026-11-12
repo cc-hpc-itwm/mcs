@@ -1,7 +1,9 @@
-# Copyright (C) 2025 Fraunhofer ITWM
+# Copyright (C) 2025-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 target_sources (mcs_fuse
+  PRIVATE content/implementation/Realloc.cpp
+  PRIVATE content/select.cpp
   PRIVATE fuse/reply.cpp
   PRIVATE session/Options.cpp
   PRIVATE state/inode/Common.cpp

@@ -1,8 +1,9 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <mcs/util/FMT/STD/FILESYSTEM/Path.hpp>
 #include <mcs/util/execute_and_die_on_exception.hpp>
 #include <utility>
 
@@ -10,11 +11,11 @@ namespace mcs::core::storage::tracer
 {
   template<is_implementation Storage>
     LogFile<Storage>::LogFile (Parameter::Create create)
-      : _log {create._path}
+      : _log {create.path}
   {
     if (!_log)
     {
-      throw typename Error::CouldNotOpenFile {create._path};
+      throw typename Error::CouldNotOpenFile {create.path};
     }
   }
 }
@@ -45,7 +46,10 @@ namespace mcs::core::storage::tracer
       ( std::filesystem::path path
       )
         : mcs::Error
-          { fmt::format ("tracer::LogFile::CouldNotOpenFile: {}", path)
+          { fmt::format
+              ( "tracer::LogFile::CouldNotOpenFile: {}"
+              , util::FMT::STD::FILESYSTEM::Path {path}
+              )
           }
         , _path {path}
   {}

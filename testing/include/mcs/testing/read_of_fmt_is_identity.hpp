@@ -1,14 +1,39 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
 
 #include <concepts>
 #include <fmt/base.h>
+#include <functional>
 #include <mcs/util/read/Concepts.hpp>
+#include <string>
 
 namespace mcs::testing
 {
+  template<typename F, typename T>
+    concept is_formatter = requires (F&& formatter, T const& x)
+    {
+      { std::invoke (std::forward<F> (formatter), x)
+      } -> std::convertible_to<std::string>
+      ;
+    }
+    ;
+
+  template<typename T>
+    concept read_from_custom_formatter_identity_testable =
+       util::read::is_readable<T>
+    && std::equality_comparable<T>
+    ;
+
+  template<typename Formatter, read_from_custom_formatter_identity_testable T>
+    requires (is_formatter<Formatter, T>)
+    constexpr auto read_from_custom_formatter_is_identity
+      ( Formatter&&
+      , T const&
+      )
+      ;
+
   template<typename T>
     concept read_fmt_identity_testable =
        fmt::formattable<T>

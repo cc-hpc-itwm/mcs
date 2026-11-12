@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <concepts>
@@ -76,7 +76,7 @@ namespace
     {
       struct Create
       {
-        mcs::util::not_null<EventSink<Storage>> _event_sink;
+        mcs::util::not_null<EventSink<Storage>> event_sink;
       };
     };
 
@@ -109,13 +109,13 @@ namespace fmt
     struct formatter<CustomTracerTag>
   {
     template<typename ParseContext>
-      constexpr auto parse (ParseContext&);
+      [[maybe_unused]] constexpr auto parse (ParseContext&);
 
     template<typename FormatContext>
-      constexpr auto format
+      [[maybe_unused]] constexpr auto format
         ( CustomTracerTag const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -417,7 +417,7 @@ namespace
 {
   template<mcs::core::storage::is_implementation Storage>
     CustomTracer<Storage>::CustomTracer (Parameter::Create create)
-      : _event_sink {create._event_sink}
+      : _event_sink {create.event_sink}
   {}
 
   template<mcs::core::storage::is_implementation Storage>

@@ -1,8 +1,9 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
 
+#include <concepts>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
@@ -16,6 +17,7 @@
 #include <mcs/core/storage/segment/ID.hpp>
 #include <mcs/serialization/Concepts.hpp>
 #include <mcs/serialization/STD/filesystem/path.hpp>
+#include <mcs/util/is_visitor.hpp>
 #include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/State.hpp>
 #include <mcs/util/require_semi.hpp>
@@ -65,7 +67,31 @@ namespace mcs::core::storage::implementation
           struct Keep{};
           struct Remove{};
         };
-        using Persistency = std::variant<OnRemove::Keep, OnRemove::Remove>;
+
+        struct Persistency
+        {
+          [[nodiscard]] constexpr Persistency (OnRemove::Keep) noexcept;
+          [[nodiscard]] constexpr Persistency (OnRemove::Remove) noexcept;
+
+          template<typename Visitor>
+            requires ( util::is_visitor
+                       < Visitor
+                       , OnRemove::Keep const&
+                       , OnRemove::Remove const&
+                       >
+                     )
+          constexpr auto visit (Visitor&&) const;
+
+        private:
+          friend struct fmt::formatter<Persistency>;
+          friend struct mcs::serialization::Implementation<Persistency>;
+          friend struct mcs::util::read::Read<Persistency>;
+
+          using Value = std::variant<OnRemove::Keep, OnRemove::Remove>;
+          Value _value;
+
+          [[nodiscard]] constexpr Persistency (Value) noexcept;
+        };
 
         struct Create
         {
@@ -96,7 +122,7 @@ namespace mcs::core::storage::implementation
     {
       struct Create : public mcs::Error
       {
-        auto parameter() const -> Parameter::Create;
+        [[nodiscard]] auto parameter() const -> Parameter::Create;
 
         ~Create() override;
         Create (Create const&) = default;
@@ -106,7 +132,7 @@ namespace mcs::core::storage::implementation
 
         struct PrefixDoesNotExist : public mcs::Error
         {
-          auto prefix() const -> Prefix;
+          [[nodiscard]] auto prefix() const -> Prefix;
 
           ~PrefixDoesNotExist() override;
           PrefixDoesNotExist (PrefixDoesNotExist const&) = default;
@@ -124,7 +150,7 @@ namespace mcs::core::storage::implementation
 
         struct UnsupportedNFSMount : public mcs::Error
         {
-          auto prefix() const -> Prefix;
+          [[nodiscard]] auto prefix() const -> Prefix;
 
           ~UnsupportedNFSMount() override;
           UnsupportedNFSMount (UnsupportedNFSMount const&) = default;
@@ -142,8 +168,8 @@ namespace mcs::core::storage::implementation
 
         struct PrefixContainsNonSegmentFile : public mcs::Error
         {
-          auto prefix() const -> Prefix;
-          auto non_segment_file() const -> std::filesystem::path;
+          [[nodiscard]] auto prefix() const -> Prefix;
+          [[nodiscard]] auto non_segment_file() const -> std::filesystem::path;
 
           ~PrefixContainsNonSegmentFile() override;
           PrefixContainsNonSegmentFile (PrefixContainsNonSegmentFile const&) = default;
@@ -170,9 +196,9 @@ namespace mcs::core::storage::implementation
 
       struct BadAlloc : public mcs::Error
       {
-        constexpr auto requested() const noexcept -> memory::Size;
-        constexpr auto used() const noexcept -> memory::Size;
-        constexpr auto max() const noexcept -> MaxSize;
+        [[nodiscard]] constexpr auto requested() const noexcept -> memory::Size;
+        [[nodiscard]] constexpr auto used() const noexcept -> memory::Size;
+        [[nodiscard]] constexpr auto max() const noexcept -> MaxSize;
 
         ~BadAlloc() override;
         BadAlloc (BadAlloc const&) = default;
@@ -196,12 +222,18 @@ namespace mcs::core::storage::implementation
 
       struct ChunkDescription : public mcs::Error
       {
-        constexpr auto parameter
+        [[nodiscard]] constexpr auto parameter
           (
           ) const noexcept -> Parameter::Chunk::Description const&
           ;
-        constexpr auto segment_id() const noexcept -> segment::ID;
-        constexpr auto memory_range() const noexcept -> memory::Range;
+        [[nodiscard]] constexpr auto segment_id
+          (
+          ) const noexcept -> segment::ID
+          ;
+        [[nodiscard]] constexpr auto memory_range
+          (
+          ) const noexcept -> memory::Range
+          ;
 
         ~ChunkDescription() override;
         ChunkDescription (ChunkDescription const&) = default;
@@ -248,9 +280,9 @@ namespace mcs::core::storage::implementation
         {
           CouldNotOpen (std::filesystem::path, char const*, int);
 
-          auto path() const -> std::filesystem::path;
-          auto mode() const noexcept -> char const*;
-          auto error_code() const noexcept -> int;
+          [[nodiscard]] auto path() const -> std::filesystem::path;
+          [[nodiscard]] auto mode() const noexcept -> char const*;
+          [[nodiscard]] auto error_code() const noexcept -> int;
 
           ~CouldNotOpen() override;
           CouldNotOpen (CouldNotOpen const&) = default;
@@ -268,8 +300,8 @@ namespace mcs::core::storage::implementation
         {
           CouldNotCloseAfterTouch (std::filesystem::path, int);
 
-          auto path() const -> std::filesystem::path;
-          auto error_code() const noexcept -> int;
+          [[nodiscard]] auto path() const -> std::filesystem::path;
+          [[nodiscard]] auto error_code() const noexcept -> int;
 
           ~CouldNotCloseAfterTouch() override;
           CouldNotCloseAfterTouch (CouldNotCloseAfterTouch const&) = default;
@@ -283,7 +315,10 @@ namespace mcs::core::storage::implementation
         };
       };
 
-      auto data() const -> typename Access::template Span<std::byte>;
+      [[nodiscard]] auto data
+        (
+        ) const -> typename Access::template Span<std::byte>
+        ;
 
     private:
       explicit OpenFileImpl
@@ -326,7 +361,10 @@ namespace mcs::core::storage::implementation
         {
           explicit State (Description<Access> const&);
 
-          auto bytes() const -> typename Access::template Span<std::byte>;
+          [[nodiscard]] auto bytes
+            (
+            ) const -> typename Access::template Span<std::byte>
+            ;
 
         private:
           OpenFile<Access> _open_file;
@@ -430,8 +468,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Chunk::Description<Access> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -446,8 +484,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Tag const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -487,8 +525,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Prefix const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -528,8 +566,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::Create const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -569,8 +607,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::Size::Max const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -610,8 +648,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::Size::Used const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -651,8 +689,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Keep const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -692,8 +730,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::Segment::OnRemove::Remove const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -725,6 +763,49 @@ namespace mcs::util::read
 namespace fmt
 {
   template<>
+    struct formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Persistency>
+  {
+    template<typename ParseContext>
+      constexpr auto parse (ParseContext&);
+
+    template<typename FormatContext>
+      constexpr auto format
+        ( mcs::core::storage::implementation::Files::Parameter::Segment::Persistency const&
+        , FormatContext& context
+        ) const -> decltype (context.out());
+  };
+}
+
+namespace mcs::serialization
+{
+  template<>
+    struct Implementation<mcs::core::storage::implementation::Files::Parameter::Segment::Persistency>
+  {
+    using Type
+      = mcs::core::storage::implementation::Files::Parameter::Segment::Persistency
+      ;
+
+    static auto output (OArchive&, Type const&) -> OArchive&;
+    static auto input (IArchive&) -> Type;
+  };
+}
+
+namespace mcs::util::read
+{
+  template<>
+    struct Read<mcs::core::storage::implementation::Files::Parameter::Segment::Persistency>
+    {
+      template<typename Char>
+        static auto read
+          ( State<Char>&
+          ) -> mcs::core::storage::implementation::Files::Parameter::Segment::Persistency
+          ;
+    };
+}
+
+namespace fmt
+{
+  template<>
     struct formatter<mcs::core::storage::implementation::Files::Parameter::Segment::Create>
   {
     template<typename ParseContext>
@@ -733,8 +814,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::Segment::Create const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -774,8 +855,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::Segment::ForceRemoval const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -815,8 +896,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::Segment::Remove const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -856,8 +937,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::Chunk::Description const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -897,8 +978,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::File::Read const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -938,8 +1019,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Files::Parameter::File::Write const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

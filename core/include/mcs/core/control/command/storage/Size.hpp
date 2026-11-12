@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -37,9 +37,9 @@ namespace mcs::core::control::command::storage
       core::storage::MaxSize _max;
       core::memory::Size _used;
 
-      template<typename, typename, typename> friend struct fmt::formatter;
-      template<typename> friend struct serialization::Implementation;
-      template<typename> friend struct util::read::Read;
+      friend struct fmt::formatter<Size>;
+      friend struct serialization::Implementation<Response>;
+      friend struct util::read::Read<Size>;
     };
 
     core::storage::ID storage_id;
@@ -59,8 +59,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::control::command::storage::Size::Response const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -100,8 +100,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::control::command::storage::Size const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

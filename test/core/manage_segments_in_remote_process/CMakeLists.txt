@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 function (mcs_test_core_manage_segments_in_remote_process name)
@@ -12,6 +12,7 @@ target_link_libraries (mcs_test_core_manage_segments_in_remote_process_segment_c
   PRIVATE mcs_core
   PRIVATE mcs_testing_core
   PRIVATE mcs_util
+  PRIVATE mcs_util_command_line
   PRIVATE mcs_util_FMT
   PRIVATE mcs_util_read
 )
@@ -23,6 +24,7 @@ target_link_libraries (mcs_test_core_manage_segments_in_remote_process_segment_r
   PRIVATE mcs_config
   PRIVATE mcs_core
   PRIVATE mcs_util
+  PRIVATE mcs_util_command_line
   PRIVATE mcs_util_read
 )
 

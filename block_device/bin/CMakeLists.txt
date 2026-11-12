@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2025 Fraunhofer ITWM
+# Copyright (C) 2023-2026 Fraunhofer ITWM
 # License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 function (mcs_block_device_bin name)
@@ -11,6 +11,7 @@ function (mcs_block_device_bin name)
     PRIVATE mcs_block_device
     PRIVATE mcs_rpc
     PRIVATE mcs_util
+    PRIVATE mcs_util_command_line
     PRIVATE mcs_util_read
     ${ARGN}
   )
@@ -23,8 +24,14 @@ endfunction()
 mcs_block_device_bin (block_size)
 mcs_block_device_bin (blocks)
 mcs_block_device_bin (cat)
-mcs_block_device_bin (meta_data_provider PRIVATE mcs_util_syscall)
+mcs_block_device_bin (meta_data_provider
+  PRIVATE mcs_util_daemon
+  PRIVATE mcs_util_syscall
+)
 mcs_block_device_bin (number_of_blocks)
 mcs_block_device_bin (remove)
-mcs_block_device_bin (storage_provider PRIVATE mcs_util_syscall)
+mcs_block_device_bin (storage_provider
+  PRIVATE mcs_util_daemon
+  PRIVATE mcs_util_syscall
+)
 mcs_block_device_bin (write)

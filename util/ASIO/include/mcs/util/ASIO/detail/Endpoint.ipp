@@ -1,12 +1,12 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/overloaded.hpp>
 #include <mcs/util/read/Read.hpp>
 #include <mcs/util/read/STD/tuple.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/read/maybe.hpp>
 #include <mcs/util/read/prefix.hpp>
-#include <mcs/util/read/uint.hpp>
 #include <mcs/util/string.hpp>
 #include <utility>
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2022,2024-2025 Fraunhofer ITWM
+// Copyright (C) 2022,2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -30,15 +30,6 @@ namespace mcs::serialization
          }
       ;
   template<typename T>
-    concept has_intrusive_serialize =
-         std::is_default_constructible_v<T>
-      && requires (T& x, IArchive& ia, OArchive& oa, unsigned int version)
-         {
-           { x.serialize (ia, version) } -> std::convertible_to<void>;
-           { x.serialize (oa, version) } -> std::convertible_to<void>;
-         }
-      ;
-  template<typename T>
     concept has_nonintrusive_Implementation =
        requires (T& x, IArchive& ia, OArchive& oa)
        {
@@ -51,7 +42,6 @@ namespace mcs::serialization
       (  is_empty<T>
       || is_trivial<T>
       || has_intrusive_ctor_and_save<T>
-      || has_intrusive_serialize<T>
       || has_nonintrusive_Implementation<T>
       )
       ;

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -11,7 +11,7 @@
 #include <mcs/testing/random/value/integral.hpp>
 #include <mcs/testing/read_of_fmt_is_identity.hpp>
 #include <mcs/util/read/STD/list.hpp>
-#include <mcs/util/read/uint.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <mcs/util/string.hpp>
 
 namespace mcs::util::read

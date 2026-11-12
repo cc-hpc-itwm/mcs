@@ -1,9 +1,9 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/util/overloaded.hpp>
 #include <mcs/util/read/State.hpp>
-#include <mcs/util/read/uint.hpp>
+#include <mcs/util/read/integer.hpp>
 #include <tuple>
 
 namespace mcs::rpc::multi_client
@@ -22,26 +22,26 @@ namespace fmt
 {
   template<typename ParseContext>
     constexpr auto formatter<mcs::rpc::multi_client::ParallelCallsLimit>::parse
-      (ParseContext& ctx)
+      (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::rpc::multi_client::ParallelCallsLimit>::format
       ( mcs::rpc::multi_client::ParallelCallsLimit const& parallel_calls_limit
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return std::visit
       ( mcs::util::overloaded
         ( [&] (mcs::rpc::multi_client::ParallelCalls::Unlimited)
           {
-            return fmt::format_to (ctx.out(), "ParallelCalls::Unlimited");
+            return fmt::format_to (context.out(), "ParallelCalls::Unlimited");
           }
         , [&] (mcs::rpc::multi_client::ParallelCalls::AtMost at_most)
           {
             return fmt::format_to
-              ( ctx.out()
+              ( context.out()
               , "ParallelCalls::AtMost {}"
               , std::make_tuple (at_most.value)
               );

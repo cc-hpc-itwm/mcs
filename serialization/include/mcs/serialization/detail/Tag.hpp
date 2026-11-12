@@ -9,6 +9,7 @@
 #include <mcs/serialization/detail/tag/STD/Set.hpp>
 #include <mcs/serialization/detail/tag/STD/String.hpp>
 #include <mcs/serialization/detail/tag/STD/UnorderedMap.hpp>
+#include <mcs/serialization/detail/tag/STD/UnorderedSet.hpp>
 #include <mcs/serialization/detail/tag/STD/Variant.hpp>
 #include <mcs/serialization/detail/tag/STD/Vector.hpp>
 #include <variant>
@@ -22,6 +23,7 @@ namespace mcs::serialization::detail
     , tag::STD::Set
     , tag::STD::String
     , tag::STD::UnorderedMap
+    , tag::STD::UnorderedSet
     , tag::STD::Variant
     , tag::STD::Vector
     >;

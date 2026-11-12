@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -17,8 +17,8 @@ namespace mcs::core::storage::trace::event::chunk
   {
     typename Storage::Parameter::Chunk::Description
       _parameter_chunk_description;
-    core::storage::segment::ID _segment_id;
-    core::memory::Range _memory_range;
+    core::storage::segment::ID segment_id;
+    core::memory::Range memory_range;
   };
 }
 
@@ -35,8 +35,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::trace::event::chunk::Description<Storage, Access> const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

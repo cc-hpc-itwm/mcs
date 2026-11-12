@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -34,9 +34,15 @@ namespace mcs::core::storage::implementation
     {
       struct Create
       {
-        std::filesystem::path _shared_object;
-        StorageParameter _parameter_create;
+        std::filesystem::path shared_object;
+        StorageParameter parameter_create;
       };
+
+      [[nodiscard]] static auto make_create
+        ( std::filesystem::path
+        , StorageParameter
+        ) -> Create
+        ;
 
       using Size = Import_C_API::Parameter::Size;
       using Segment = Import_C_API::Parameter::Segment;
@@ -80,11 +86,11 @@ namespace mcs::core::storage::implementation
 
     explicit Virtual (Parameter::Create);
 
-    auto size_max
+    [[nodiscard]] auto size_max
       ( Parameter::Size::Max
       ) const -> MaxSize
       ;
-    auto size_used
+    [[nodiscard]] auto size_used
       ( Parameter::Size::Used
       ) const -> memory::Size
       ;
@@ -101,14 +107,14 @@ namespace mcs::core::storage::implementation
       ;
 
     template<chunk::is_access Access>
-      auto chunk_description
+      [[nodiscard]] auto chunk_description
         ( Parameter::Chunk::Description
         , segment::ID
         , memory::Range
         ) const -> Chunk::Description<Access>
       ;
 
-    auto file_read
+    [[nodiscard]] auto file_read
       ( Parameter::File::Read
       , segment::ID
       , memory::Offset
@@ -116,7 +122,7 @@ namespace mcs::core::storage::implementation
       , memory::Range
       ) const -> memory::Size
       ;
-    auto file_write
+    [[nodiscard]] auto file_write
       ( Parameter::File::Write
       , segment::ID
       , memory::Offset
@@ -142,8 +148,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Virtual::Tag const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 
@@ -183,8 +189,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::storage::implementation::Virtual::Parameter::Create const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

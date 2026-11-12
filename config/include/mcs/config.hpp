@@ -26,6 +26,7 @@
 #if defined (__clang__) && (  __clang_major__ == 20                   \
                            || __clang_major__ == 21                   \
                            || __clang_major__ == 22                   \
+                           || __clang_major__ == 23                   \
                            )
 #define MCS_CONFIG_CLANG_TEMPLATED_DTOR_PARSER_IS_BROKEN
 // see https://github.com/llvm/llvm-project/issues/46323

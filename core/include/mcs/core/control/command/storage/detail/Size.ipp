@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <fmt/ranges.h>
@@ -32,18 +32,18 @@ namespace mcs::core::control::command::storage
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::control::command::storage::Size::Response>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::control::command::storage::Size::Response>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::control::command::storage::Size::Response>::format
       ( mcs::core::control::command::storage::Size::Response const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "control::provider::segment::storage::Size::Response "
       , std::make_tuple (value._max, value._used)
@@ -74,18 +74,18 @@ namespace mcs::util::read
 namespace fmt
 {
   template<typename ParseContext>
-    constexpr auto formatter<mcs::core::control::command::storage::Size>::parse (ParseContext& ctx)
+    constexpr auto formatter<mcs::core::control::command::storage::Size>::parse (ParseContext& context)
   {
-    return ctx.begin();
+    return context.begin();
   }
   template<typename FormatContext>
     constexpr auto formatter<mcs::core::control::command::storage::Size>::format
       ( mcs::core::control::command::storage::Size const& value
-      , FormatContext& ctx
-      ) const -> decltype (ctx.out())
+      , FormatContext& context
+      ) const -> decltype (context.out())
   {
     return fmt::format_to
-      ( ctx.out()
+      ( context.out()
       , "{}{}"
       , "control::provider::segment::storage::Size "
       , std::make_tuple 

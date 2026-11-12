@@ -1,4 +1,4 @@
-// Copyright (C) 2024-2025 Fraunhofer ITWM
+// Copyright (C) 2024-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <exception>
@@ -68,7 +68,7 @@ namespace mcs::core::storage::segment
       ) noexcept
         : _storages {storages}
         , _storage_id {storage_id}
-        , _parameter_segment_remove {parameter_segment_remove}
+        , _parameter_segment_remove {std::move (parameter_segment_remove)}
   {}
 
   template< is_implementation StorageImplementation

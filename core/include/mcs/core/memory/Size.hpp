@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -94,9 +94,9 @@ namespace mcs::core::memory
     template<std::signed_integral I>
       [[nodiscard]] constexpr explicit Size (I);
 
-    template<typename, typename, typename> friend struct fmt::formatter;
-    template<typename> friend struct std::hash;
-    template<typename> friend struct serialization::Implementation;
+    friend struct fmt::formatter<Size>;
+    friend struct std::hash<Size>;
+    friend struct serialization::Implementation<Size>;
   };
 
   template<std::integral I>
@@ -173,8 +173,8 @@ namespace fmt
     template<typename FormatContext>
       constexpr auto format
         ( mcs::core::memory::Size const&
-        , FormatContext& ctx
-        ) const -> decltype (ctx.out());
+        , FormatContext& context
+        ) const -> decltype (context.out());
   };
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -52,7 +52,7 @@ namespace mcs::fuse::state
       , .retrieve_reply = nullptr
       , .forget_multi = detail::forget_multi<Content>
       , .flock = nullptr
-      , .fallocate = detail::fallocate<Content>
+      , .fallocate = nullptr
       , .readdirplus = detail::readdirplus<Content>
       , .copy_file_range = detail::copy_file_range<Content>
       , .lseek = detail::lseek<Content>

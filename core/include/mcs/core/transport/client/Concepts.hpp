@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Fraunhofer ITWM
+// Copyright (C) 2025-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #pragma once
@@ -14,7 +14,7 @@ namespace mcs::core::transport::client
   {
     template<typename Client>
       concept has_memory_get = requires
-        ( Client const& client
+        ( Client& client
         , Address destination
         , Address source
         , memory::Size size
@@ -30,7 +30,7 @@ namespace mcs::core::transport::client
 
     template<typename Client>
       concept has_memory_put = requires
-        ( Client const& client
+        ( Client& client
         , Address destination
         , Address source
         , memory::Size size
@@ -46,8 +46,14 @@ namespace mcs::core::transport::client
   }
 
   template<typename Client>
-    concept is_implementation =
+    concept is_stateful_implementation =
        detail::has_memory_get<Client>
     && detail::has_memory_put<Client>
+    ;
+
+  template<typename Client>
+    concept is_stateless_implementation =
+       detail::has_memory_get<Client const>
+    && detail::has_memory_put<Client const>
     ;
 }

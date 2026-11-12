@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/serialization/IArchive.hpp>
@@ -29,7 +29,7 @@ namespace mcs::util::ASIO
     ( decltype (address_or_hostname) address_or_hostname_
     , decltype (port) port_
     )
-      : address_or_hostname {address_or_hostname_}
+      : address_or_hostname {std::move (address_or_hostname_)}
       , port {port_}
   {}
 }
@@ -170,5 +170,54 @@ namespace mcs::serialization
     return Connectable
       { std::move (path)
       };
+  }
+}
+
+namespace mcs::util::ASIO
+{
+  AnyConnectable::AnyConnectable (Value value) noexcept
+    : _value {std::move (value)}
+  {}
+
+  AnyConnectable::AnyConnectable
+    ( Connectable<asio::ip::tcp> connectable
+    ) noexcept
+      : _value {std::move (connectable)}
+  {}
+
+  AnyConnectable::AnyConnectable
+    ( Connectable<asio::local::stream_protocol> connectable
+    ) noexcept
+      : _value {std::move (connectable)}
+  {}
+}
+
+namespace mcs::serialization
+{
+  auto Implementation<util::ASIO::AnyConnectable>::output
+    ( OArchive& oa
+    , Type const& value
+    ) -> OArchive&
+  {
+    save (oa, value._value);
+
+    return oa;
+  }
+
+  auto Implementation<util::ASIO::AnyConnectable>::input
+    ( IArchive& ia
+    ) -> Type
+  {
+    return Type {load<Type::Value> (ia)};
+  }
+}
+
+namespace std
+{
+  auto hash<mcs::util::ASIO::AnyConnectable>::operator()
+    ( AnyConnectable const& connectable
+    ) const noexcept -> size_t
+  {
+    return _hash (connectable._value);
   }
 }

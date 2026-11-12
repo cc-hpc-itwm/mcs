@@ -1,12 +1,13 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <mcs/Error.hpp>
+#include <utility>
 
 namespace mcs
 {
   Error::Error (std::string what)
-    : _what {what}
+    : _what {std::move (what)}
   {}
 
   auto Error::what() const noexcept -> char const*

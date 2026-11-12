@@ -8,6 +8,7 @@
 #include <mcs/util/concurrency/SharedMutex.hpp>
 #include <mcs/util/concurrency/queue/Fast.hpp>
 #include <mcs/util/heterogeneous_map/Concepts.hpp>
+#include <mcs/util/is_visitor.hpp>
 #include <mcs/util/not_null.hpp>
 #include <mcs/util/type/List.hpp>
 #include <mutex>
@@ -82,10 +83,10 @@ namespace mcs::util
     //     );
     //
     template<typename Fun>
-      requires (std::invocable<Fun, Ts const&> && ...)
+      requires (mcs::util::is_visitor<Fun, Ts const&...>)
       auto visit (Key, Fun&&) const;
     template<typename Fun>
-      requires (std::invocable<Fun, Ts&> && ...)
+      requires (mcs::util::is_visitor<Fun, Ts&...>)
       auto visit (Key, Fun&&);
 
     // Typed direct access to an element with a certain key. If the
@@ -119,7 +120,7 @@ namespace mcs::util
     {
       struct UnknownKey : public mcs::Error
       {
-        auto key() const -> Key;
+        [[nodiscard]] auto key() const -> Key;
 
         ~UnknownKey() override;
         UnknownKey (UnknownKey const&) = default;
@@ -171,7 +172,7 @@ namespace mcs::util
       // some inline function definitions to make clang accept
 
       template<typename Fun>
-        requires (std::invocable<Fun, Ts const&> && ...)
+        requires (mcs::util::is_visitor<Fun, Ts const&...>)
         auto visit (Key key, Fun&& fun) const
       {
         return _const_base->template visit<Fun> (key, std::forward<Fun> (fun));
@@ -214,7 +215,7 @@ namespace mcs::util
       auto remove (Key key) const -> void;
 
       template<typename Fun>
-        requires (std::invocable<Fun, Ts&> && ...)
+        requires (mcs::util::is_visitor<Fun, Ts&...>)
         auto visit (Key key, Fun&& fun) const
       {
         return _mutable_base->template visit<Fun> (key, std::forward<Fun> (fun));

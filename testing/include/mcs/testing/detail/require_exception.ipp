@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2025 Fraunhofer ITWM
+// Copyright (C) 2022-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <exception>
@@ -29,7 +29,7 @@ namespace mcs::testing
       constexpr explicit Nested
         ( testing::Assert<Expected> assert_
         )
-          : _assert {assert_}
+          : _assert {std::move (assert_)}
       {}
 
       auto operator() (std::exception_ptr error) const noexcept -> void
@@ -70,8 +70,8 @@ namespace mcs::testing
         ( testing::Assert<Expected> assert_
         , testing::Assert<Expecteds>... asserts_
         )
-          : Nested<Expecteds...> {asserts_...}
-          , _assert {assert_}
+          : Nested<Expecteds...> {std::move (asserts_)...}
+          , _assert {std::move (assert_)}
       {}
 
       auto operator() (std::exception_ptr error) const noexcept -> void

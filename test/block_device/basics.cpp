@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2025 Fraunhofer ITWM
+// Copyright (C) 2023-2026 Fraunhofer ITWM
 // License: https://raw.githubusercontent.com/cc-hpc-itwm/mcs/main/LICENSE
 
 #include <algorithm>
@@ -171,13 +171,15 @@ namespace
       , std::addressof (_used_storages)
       };
     mcs::block_device::Storage _block_device_storage
-      { _transport_provider.connection_information()
+      { mcs::block_device::make_storage
+      ( _transport_provider.connection_information()
       , _storage->id()
       , mcs::core::storage::make_parameter
           (_testing_storage.parameter_chunk_description())
       , _segment->id()
       , mcs::core::memory::make_range
           (mcs::core::memory::make_offset (0), _size)
+      )
       };
   };
 
@@ -359,11 +361,11 @@ namespace mcs::block_device
           auto [storage_id, storage_parameter, segment_id, offset] {address};
           auto s {provider.storage()};
 
-          ASSERT_EQ (connectable, s._provider_connectable);
-          ASSERT_EQ (storage_id, s._storage_id);
-          ASSERT_EQ (storage_parameter, s._storage_parameter_chunk_description);
-          ASSERT_EQ (segment_id, s._segment_id);
-          ASSERT_EQ (offset, begin (s._range) + block::make_count (shift_offset) * block_size);
+          ASSERT_EQ (connectable, s.provider_connectable);
+          ASSERT_EQ (storage_id, s.storage_id);
+          ASSERT_EQ (storage_parameter, s.storage_parameter_chunk_description);
+          ASSERT_EQ (segment_id, s.segment_id);
+          ASSERT_EQ (offset, begin (s.range) + block::make_count (shift_offset) * block_size);
         }
       };
 
